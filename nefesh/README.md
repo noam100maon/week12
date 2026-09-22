@@ -28,7 +28,7 @@ list, and a wisdom vault holding everything you starred.
 
 **Results** — system momentum over 7/30/90/365 days or all time; a seven-day
 rolling consistency curve you can scrub for any day's figure; days above and
-below your own average; a twelve-week grid where each square darkens with the
+below your own average; an eight-week grid where each square darkens with the
 share of that day's habits completed and carries a × when something came due
 and did not get done; per-habit insight bars measuring each habit against the
 same length of time before it; mood, including the split between days you

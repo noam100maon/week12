@@ -976,9 +976,9 @@ function renderHeat() {
   const grid = $('#heat');
   grid.textContent = '';
 
-  /* twelve weeks back, aligned to Sunday */
+  /* eight weeks back, aligned to Sunday */
   const end = shift(today, 6 - weekday(today));
-  const start = shift(end, -(12 * 7 - 1));
+  const start = shift(end, -(8 * 7 - 1));
 
   for (let d = start; d <= end; d = shift(d, 1)) {
     const cell = el('div', 'cell');
