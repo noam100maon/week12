@@ -1,305 +1,468 @@
+<meta charset="utf-8">
 <title>Tanya Reels</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Karla:wght@400;600&display=swap">
+<meta name="theme-color" content="#F2F2F3">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <style>
+/* Mono — same system as Nefesh: black, white, nothing else. */
 :root{
-  --ground:#e9ece4; --surface:#f6f7f2; --ink:#1f2a25; --muted:#5d6b63;
-  --sage:#4f6358; --gold:#a8843f; --line:#cfd5c9; --reel:#4f6358; --reel-ink:#f3efe3;
-  --ok:#3d7a4f; --danger:#a3402f;
-  --display:"Cormorant Garamond",Georgia,"Times New Roman",serif;
-  --body:"Source Serif 4",Georgia,serif;
-  --ui:"Karla",system-ui,-apple-system,sans-serif;
-  --fs:1.25rem;
+  --ink:#0B0B0C; --ink-80:rgba(11,11,12,.80); --ink-55:rgba(11,11,12,.56); --ink-40:rgba(11,11,12,.42);
+  --ink-25:rgba(11,11,12,.26); --ink-12:rgba(11,11,12,.13);
+  --bg:#F2F2F3; --card:#FFFFFF; --fill:rgba(11,11,12,.06); --fill-2:rgba(11,11,12,.12); --sep:rgba(11,11,12,.10);
+  --accent:#0B0B0C; --on-accent:#FFFFFF; --accent-tint:#ECECEE;
+  --shadow:0 0 0 .5px rgba(0,0,0,.08);
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --serif:ui-serif,"New York","Iowan Old Style",Georgia,serif;
+  --r-card:18px; --r-ctl:13px; --r-pill:980px;
+  --ease:cubic-bezier(.32,.72,0,1); --ease-out:cubic-bezier(.25,.46,.45,.94);
+  --tabbar:49px; --fs:19px;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  color-scheme:dark;--ground:#141b18;--surface:#1c2521;--ink:#e6e9e1;--muted:#9aa89f;
-  --sage:#8fa89a;--gold:#c8a86b;--line:#2d3833;--reel:#233029;--reel-ink:#efe9d8;--ok:#7fbf8f;--danger:#e08a78;}}
+  color-scheme:dark;
+  --ink:#F5F5F7; --ink-80:rgba(245,245,247,.80); --ink-55:rgba(245,245,247,.58); --ink-40:rgba(245,245,247,.42);
+  --ink-25:rgba(245,245,247,.26); --ink-12:rgba(245,245,247,.13);
+  --bg:#000000; --card:#1C1C1E; --fill:rgba(245,245,247,.08); --fill-2:rgba(245,245,247,.15); --sep:rgba(245,245,247,.12);
+  --accent:#F5F5F7; --on-accent:#0B0B0C; --accent-tint:#2C2C2E; --shadow:0 0 0 .5px rgba(255,255,255,.06);}}
 :root[data-theme="dark"]{
-  color-scheme:dark;--ground:#141b18;--surface:#1c2521;--ink:#e6e9e1;--muted:#9aa89f;
-  --sage:#8fa89a;--gold:#c8a86b;--line:#2d3833;--reel:#233029;--reel-ink:#efe9d8;--ok:#7fbf8f;--danger:#e08a78;}
+  color-scheme:dark;
+  --ink:#F5F5F7; --ink-80:rgba(245,245,247,.80); --ink-55:rgba(245,245,247,.58); --ink-40:rgba(245,245,247,.42);
+  --ink-25:rgba(245,245,247,.26); --ink-12:rgba(245,245,247,.13);
+  --bg:#000000; --card:#1C1C1E; --fill:rgba(245,245,247,.08); --fill-2:rgba(245,245,247,.15); --sep:rgba(245,245,247,.12);
+  --accent:#F5F5F7; --on-accent:#0B0B0C; --accent-tint:#2C2C2E; --shadow:0 0 0 .5px rgba(255,255,255,.06);}
+
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
 html,body{height:100%}
-body{background:var(--ground);color:var(--ink);font-family:var(--ui);font-size:15px;margin:0}
-button,input,textarea,select{font:inherit;color:inherit}
-button{cursor:pointer}
-:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:17px;line-height:22px;letter-spacing:-.022em;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit;letter-spacing:inherit}
+button{background:none;border:0;padding:0;cursor:pointer}
+h1,h2,h3,p{margin:0}
+:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
 
-/* Library */
-#library{max-width:640px;margin:0 auto;padding:28px 16px 48px;display:flex;flex-direction:column;gap:28px}
-.mast{display:flex;flex-direction:column;gap:4px}
-.eyebrow{font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);font-weight:600}
-h1{font-family:var(--display);font-weight:600;font-size:2.6rem;line-height:1;margin:0;letter-spacing:.04em}
-.mast p{margin:6px 0 0;color:var(--muted);max-width:52ch;line-height:1.5}
-h2{font-family:var(--display);font-weight:600;font-size:1.5rem;margin:0}
-.chapters{display:flex;flex-direction:column;border-top:1px solid var(--line)}
-.ch{display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:center;padding:14px 0;border-bottom:1px solid var(--line)}
-.ch-open{all:unset;cursor:pointer;display:flex;flex-direction:column;gap:4px;min-width:0}
-.ch-open:focus-visible{outline:2px solid var(--gold)}
-.ch-title{font-family:var(--display);font-size:1.35rem;font-weight:600;overflow-wrap:anywhere}
-.ch-meta{font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nums}
-.bar{height:3px;background:var(--line);border-radius:2px;overflow:hidden;margin-top:4px}
-.bar i{display:block;height:100%;background:var(--gold)}
-.ch-actions{display:flex;gap:6px}
-.ghost{background:none;border:1px solid var(--line);border-radius:6px;padding:6px 10px;font-size:.8rem;color:var(--muted)}
-.ghost.danger{color:var(--danger);border-color:var(--danger)}
-.empty{color:var(--muted);padding:16px 0}
-form{display:flex;flex-direction:column;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px 16px}
-label{font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600;display:flex;flex-direction:column;gap:6px}
-input[type=text],textarea,select{background:var(--ground);border:1px solid var(--line);border-radius:6px;padding:10px;font-size:1rem;letter-spacing:0;text-transform:none;font-weight:400}
-textarea{min-height:180px;resize:vertical;font-family:var(--body);line-height:1.5}
-.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
-.primary{background:var(--sage);color:var(--surface);border:0;border-radius:6px;padding:11px 18px;font-weight:600}
-.file{font-size:.85rem;color:var(--muted)}
-.hint{font-size:.8rem;color:var(--muted);line-height:1.45;margin:0}
-#formMsg{font-size:.85rem;margin:0}
+.app{max-width:600px;margin:0 auto;padding:0 16px calc(var(--tabbar) + env(safe-area-inset-bottom,0px) + 28px)}
+.view{display:none}.view.on{display:block}
+.topbar{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:14px 0 2px}
+.greet{color:var(--ink-55);font-size:15px;line-height:20px}
+.t-large{font-size:34px;line-height:41px;font-weight:700;letter-spacing:-.026em}
+.gear{width:36px;height:36px;flex:none;display:grid;place-items:center;border-radius:var(--r-pill);background:var(--fill);color:var(--ink)}
+.gear:active{transform:scale(.92)}
+.sec{margin:26px 0 8px;display:flex;align-items:center;gap:6px}
+.sec h2{font-size:13px;line-height:18px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-40)}
+.card{background:var(--card);border-radius:var(--r-card);box-shadow:var(--shadow)}
+.group{background:var(--card);border-radius:var(--r-card);overflow:hidden;box-shadow:var(--shadow)}
+.row{display:flex;align-items:center;gap:12px;min-height:44px;padding:11px 16px;width:100%;text-align:left;position:relative;transition:background .12s}
+.row + .row:before{content:"";position:absolute;left:16px;right:0;top:0;height:.5px;background:var(--sep)}
+.row:active{background:var(--fill)}
+.row-main{flex:1;min-width:0}
+.row-title{display:block;font-size:17px;line-height:22px}
+.row-sub{display:block;font-size:13px;line-height:18px;color:var(--ink-40);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .num{font-variant-numeric:tabular-nums;font-size:13px;color:var(--ink-40);flex:none}
+.chev{color:var(--ink-25);flex:none;width:8px;height:13px}
+.ring{width:26px;height:26px;flex:none}
+.ring circle{fill:none;stroke-width:3}
+.ring .bgc{stroke:var(--fill-2)}.ring .fgc{stroke:var(--ink);stroke-linecap:round;transform:rotate(-90deg);transform-origin:50% 50%}
+.done-dot{width:26px;height:26px;border-radius:50%;background:var(--ink);color:var(--card);display:grid;place-items:center;flex:none;font-size:13px;font-weight:700}
 
-/* Reader */
-#reader{position:fixed;inset:0;background:var(--ground);display:flex;flex-direction:column}
-.top{display:flex;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top,0px)) 16px 10px;border-bottom:1px solid var(--line)}
-.top .t{flex:1;min-width:0;font-family:var(--display);font-weight:600;font-size:1.15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.count{font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nums}
-.progress{height:3px;background:var(--line)}
-.progress i{display:block;height:100%;width:0;background:var(--gold);transition:width .2s}
-#reels{flex:1;overflow-y:auto;scroll-snap-type:y mandatory;overscroll-behavior:contain}
-.reel{scroll-snap-align:start;scroll-snap-stop:always;height:100%;box-sizing:border-box;display:flex;padding:16px}
-.card{flex:1;background:var(--reel);color:var(--reel-ink);border-radius:14px;padding:28px 22px 22px;display:flex;flex-direction:column;gap:16px;position:relative;overflow:hidden;
-  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--gold) 45%,transparent), inset 0 0 0 7px var(--reel), inset 0 0 0 8px color-mix(in srgb,var(--gold) 30%,transparent)}
-.card .num{font-size:.7rem;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);font-weight:600;text-align:center}
-.card .txt{flex:1;overflow-y:auto;display:flex;flex-direction:column;justify-content:center;gap:.8em;font-family:var(--body);font-size:var(--fs);line-height:1.6;max-width:36ch;margin:0 auto;width:100%}
-.card .txt p{margin:0}
-.card .foot{display:flex;justify-content:space-between;font-size:.75rem;color:color-mix(in srgb,var(--reel-ink) 65%,transparent);font-variant-numeric:tabular-nums}
-.card.end .txt{align-items:center;text-align:center;font-family:var(--display);font-size:1.6rem}
-.fs button{background:none;border:1px solid var(--line);border-radius:6px;width:34px;height:30px;color:var(--ink)}
-@media (prefers-reduced-motion:reduce){#reels{scroll-behavior:auto}.progress i{transition:none}}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:44px;padding:0 20px;border-radius:var(--r-ctl);font-size:17px;font-weight:600;background:var(--accent);color:var(--on-accent);width:100%;transition:transform .12s var(--ease-out)}
+.btn:active{transform:scale(.975)}
+.btn.sec{background:var(--accent-tint);color:var(--ink)}
+.btn.sm{min-height:34px;padding:0 14px;font-size:15px;border-radius:10px;width:auto}
+
+.hero{padding:18px 16px 16px;display:flex;flex-direction:column;gap:12px}
+.kicker{font-size:13px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-40)}
+.hero h2{font-size:28px;line-height:34px;font-weight:700;letter-spacing:-.026em}
+.hero .line{font-family:var(--serif);font-size:16px;line-height:23px;color:var(--ink-80);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.track{height:4px;border-radius:4px;background:var(--fill-2);overflow:hidden}
+.track i{display:block;height:100%;background:var(--ink);border-radius:4px}
+.meta{display:flex;justify-content:space-between;font-size:13px;color:var(--ink-55);font-variant-numeric:tabular-nums}
+
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;background:var(--fill);border-radius:10px;padding:2px}
+.seg button{min-height:30px;border-radius:8px;font-size:13px;font-weight:600;color:var(--ink-55);transition:background .2s,color .2s}
+.seg button.on{background:var(--card);color:var(--ink);box-shadow:0 3px 8px rgba(0,0,0,.08),0 0 0 .5px rgba(0,0,0,.04)}
+
+/* tab bar */
+.tabbar{position:fixed;inset:auto 0 0 0;z-index:30;padding-bottom:env(safe-area-inset-bottom,0px);background:color-mix(in srgb,var(--bg) 80%,transparent);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-top:.5px solid var(--sep)}
+.tabbar-inner{max-width:600px;margin:0 auto;height:var(--tabbar);display:grid;grid-template-columns:1fr 1fr}
+.tabbtn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--ink-40);font-size:10px;font-weight:500;letter-spacing:.01em}
+.tabbtn svg{width:24px;height:24px}
+.tabbtn.on{color:var(--ink)}
+
+/* sheets */
+.scrim{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.32);opacity:0;pointer-events:none;transition:opacity .3s var(--ease)}
+.scrim.on{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:61;max-width:600px;margin:0 auto;max-height:88%;overflow-y:auto;background:var(--card);border-radius:20px 20px 0 0;padding:8px 16px calc(20px + env(safe-area-inset-bottom,0px));transform:translateY(105%);transition:transform .42s var(--ease)}
+.sheet.on{transform:none}
+.grabber{width:36px;height:5px;border-radius:3px;background:var(--ink-25);margin:0 auto 14px}
+.sheet h2{font-size:22px;line-height:28px;font-weight:700;letter-spacing:-.026em}
+.sheet .lead{margin-top:6px;color:var(--ink-55);font-size:15px;line-height:20px}
+.sheet .note-body{margin-top:12px;font-family:var(--serif);font-size:17px;line-height:25px}
+.field{display:flex;flex-direction:column;gap:6px;margin-top:16px}
+.field label{font-size:13px;font-weight:600;color:var(--ink-55)}
+.field input,.field textarea{background:var(--fill);border:0;border-radius:10px;padding:11px 12px;font-size:17px;width:100%}
+.field textarea{min-height:160px;resize:vertical;font-family:var(--serif);line-height:23px}
+.sheet-acts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px}
+.fine{font-size:13px;line-height:18px;color:var(--ink-55);margin-top:14px}
+.fine a{color:var(--ink)}
+
+/* reader */
+#reader{position:fixed;inset:0;z-index:50;background:var(--bg);display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px)}
+.rtop{display:flex;align-items:center;gap:10px;padding:8px 16px 8px}
+.rtop .t{flex:1;min-width:0;text-align:center;font-size:17px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rtop .count{font-size:13px;color:var(--ink-55);font-variant-numeric:tabular-nums;min-width:36px;text-align:right}
+.pips{display:flex;gap:3px;padding:0 16px 8px}
+.pips i{flex:1;height:3px;border-radius:2px;background:var(--fill-2)}
+.pips i.on{background:var(--ink)}
+.pbar{height:3px;margin:0 16px 8px;border-radius:2px;background:var(--fill-2);overflow:hidden}
+.pbar i{display:block;height:100%;background:var(--ink);width:0;transition:width .2s}
+#reels{flex:1;overflow-y:auto;scroll-snap-type:y mandatory;overscroll-behavior:contain;scrollbar-width:none}
+#reels::-webkit-scrollbar{display:none}
+.reel{scroll-snap-align:start;scroll-snap-stop:always;height:100%;padding:4px 16px calc(12px + env(safe-area-inset-bottom,0px));display:flex}
+.rcard{flex:1;min-height:0;background:var(--card);border-radius:22px;box-shadow:var(--shadow);display:flex;flex-direction:column;padding:22px 22px 16px}
+.rcard .rk{display:flex;justify-content:space-between;font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-40);font-variant-numeric:tabular-nums}
+.rtxt{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;padding:16px 0}
+.rtxt .inner{margin:auto 0;display:flex;flex-direction:column;gap:.75em;font-family:var(--serif);font-size:var(--fs);line-height:1.55;letter-spacing:-.005em;max-width:34em}
+.rtxt p{margin:0}
+.rtxt .cont{text-indent:0}
+.gloss{display:block;font-size:.86em;line-height:1.5;color:var(--ink-80);border-left:2px solid var(--ink-25);padding-left:12px;margin:.3em 0}
+sup{font-size:.62em;line-height:0}
+.fn{font-family:var(--sans);font-weight:700;background:var(--fill-2);border-radius:6px;padding:1px 5px;margin-left:1px;cursor:pointer;vertical-align:super;font-size:.58em;line-height:1}
+.rfoot{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px;color:var(--ink-40);font-variant-numeric:tabular-nums}
+.chip{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:0 13px;border-radius:var(--r-pill);background:var(--fill);color:var(--ink-80);font-size:14px}
+.chip:active{transform:scale(.95)}
+.endcard{align-items:center;justify-content:center;text-align:center;gap:14px}
+.endcard .big{font-size:34px;line-height:41px;font-weight:700;letter-spacing:-.026em}
+.fsb{width:36px;height:32px;border-radius:10px;background:var(--fill);font-size:14px;font-weight:600}
+.empty{padding:22px 16px;color:var(--ink-55);font-size:15px;line-height:20px}
+.toast{position:fixed;left:50%;bottom:calc(var(--tabbar) + env(safe-area-inset-bottom,0px) + 16px);transform:translate(-50%,20px);z-index:80;background:var(--ink);color:var(--card);padding:10px 16px;border-radius:var(--r-pill);font-size:15px;opacity:0;pointer-events:none;transition:opacity .25s,transform .35s var(--ease)}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 
-<main id="library">
-  <header class="mast">
-    <span class="eyebrow">Bite-size reading</span>
-    <h1>Tanya Reels</h1>
-    <p>Paste a chapter and it becomes a stack of swipeable reels. Every word stays — breaks fall on paragraph and sentence ends, and each chapter is checked word-for-word against what you pasted.</p>
-  </header>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <g id="i-book" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5C6.5 4.3 9.5 4.3 12 6c2.5-1.7 5.5-1.7 8-.5v13c-2.5-1.2-5.5-1.2-8 .5-2.5-1.7-5.5-1.7-8-.5z"/><path d="M12 6v13"/></g>
+  <g id="i-doc" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3.5h7l4 4V20a.5.5 0 0 1-.5.5h-10A.5.5 0 0 1 7 20z"/><path d="M14 3.5v4h4M9.5 12h6M9.5 15.5h6"/></g>
+  <g id="i-gear" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="3.1"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/></g>
+  <g id="i-chev" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 4.5 16 12l-7.5 7.5"/></g>
+  <g id="i-x" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></g>
+</defs></svg>
 
-  <section style="display:flex;flex-direction:column;gap:10px">
-    <h2>Your chapters</h2>
-    <div class="chapters" id="list"></div>
+<div class="app">
+  <section class="view on" id="v-book">
+    <div class="topbar">
+      <div><p class="greet">Likkutei Amarim · Part One</p><h1 class="t-large">Tanya</h1></div>
+      <button class="gear" id="open-settings" aria-label="Settings"><svg viewBox="0 0 24 24" width="19" height="19"><use href="#i-gear"/></svg></button>
+    </div>
+
+    <div class="card hero" style="margin-top:16px" id="hero">
+      <p class="kicker" id="hero-kicker">Loading</p>
+      <h2 id="hero-title">The Book for Inbetweeners</h2>
+      <p class="line" id="hero-line"></p>
+      <div class="track"><i id="hero-bar" style="width:0%"></i></div>
+      <div class="meta"><span id="hero-meta"></span><span id="hero-pct"></span></div>
+      <button class="btn" id="hero-go" disabled>Continue</button>
+    </div>
+
+    <div class="sec"><h2>Reel length</h2></div>
+    <div class="seg" id="len">
+      <button data-w="40">Short</button><button data-w="70">Medium</button><button data-w="110">Long</button>
+    </div>
+
+    <div class="sec"><h2>Chapters</h2><span style="flex:1"></span><span class="t-foot" id="book-tally" style="font-size:13px;color:var(--ink-40)"></span></div>
+    <div class="group" id="chapters"><div class="empty">Loading the text…</div></div>
+    <p class="fine">English translation © Kehot Publication Society, via <a href="https://www.sefaria.org/Tanya,_Part_I;_Likkutei_Amarim" target="_blank" rel="noopener">Sefaria</a>, CC-BY-NC. The bracketed explanations and footnotes are the translators' commentary. Every word and every note is kept.</p>
   </section>
 
-  <section style="display:flex;flex-direction:column;gap:10px">
-    <h2 id="formTitle">Add a chapter</h2>
-    <form id="addForm">
-      <label for="chTitle">Chapter name
-        <input type="text" id="chTitle" placeholder="e.g. Chapter 1 — The Inbetweener" required>
-      </label>
-      <label for="chText">Chapter text
-        <textarea id="chText" placeholder="Paste the full chapter here" required></textarea>
-      </label>
-      <div class="row">
-        <input type="file" id="chFile" accept=".txt,text/plain" class="file" aria-label="Load a .txt file">
-      </div>
-      <label for="chSize">Reel length
-        <select id="chSize">
-          <option value="40">Short · ~40 words</option>
-          <option value="70" selected>Medium · ~70 words</option>
-          <option value="110">Long · ~110 words</option>
-        </select>
-      </label>
-      <div class="row">
-        <button class="primary" type="submit" id="saveBtn">Make reels</button>
-        <button class="ghost" type="button" id="cancelEdit" hidden>Cancel</button>
-      </div>
-      <p id="formMsg" role="status"></p>
-      <p class="hint">Chapters are saved in this browser only. Tip: paste one chapter at a time so each gets its own progress bar.</p>
-    </form>
+  <section class="view" id="v-mine">
+    <div class="topbar">
+      <div><p class="greet">Paste from your own copy</p><h1 class="t-large">My texts</h1></div>
+    </div>
+    <p class="fine" style="margin-top:10px">Reading <i>The Practical Tanya</i> or another book? Paste a chapter and it becomes reels too, split at sentence ends with nothing cut.</p>
+    <div class="sec"><h2>Saved</h2></div>
+    <div class="group" id="mine"></div>
+    <button class="btn" id="add-text" style="margin-top:14px">Add a chapter</button>
   </section>
-</main>
+</div>
+
+<nav class="tabbar"><div class="tabbar-inner">
+  <button class="tabbtn on" data-tab="book"><svg viewBox="0 0 24 24"><use href="#i-book"/></svg><span>Tanya</span></button>
+  <button class="tabbtn" data-tab="mine"><svg viewBox="0 0 24 24"><use href="#i-doc"/></svg><span>My texts</span></button>
+</div></nav>
 
 <section id="reader" hidden aria-label="Reader">
-  <div class="top">
-    <button class="ghost" id="back" aria-label="Back to chapters">←</button>
-    <div class="t" id="rTitle"></div>
-    <span class="count" id="rCount"></span>
-    <span class="fs"><button id="smaller" aria-label="Smaller text">A−</button> <button id="bigger" aria-label="Bigger text">A+</button></span>
+  <div class="rtop">
+    <button class="gear" id="close" aria-label="Close"><svg viewBox="0 0 24 24" width="17" height="17"><use href="#i-x"/></svg></button>
+    <div class="t" id="r-title"></div>
+    <button class="fsb" id="smaller" aria-label="Smaller text">A−</button>
+    <button class="fsb" id="bigger" aria-label="Bigger text">A+</button>
   </div>
-  <div class="progress"><i id="rProg"></i></div>
+  <div class="pbar"><i id="r-bar"></i></div>
   <div id="reels" tabindex="0"></div>
 </section>
 
+<div class="scrim" id="scrim"></div>
+
+<div class="sheet" id="sheet-note" role="dialog" aria-label="Footnote">
+  <div class="grabber"></div>
+  <h2 id="note-title">Note</h2>
+  <div class="note-body" id="note-body"></div>
+  <div style="margin-top:20px"><button class="btn" data-close>Done</button></div>
+</div>
+
+<div class="sheet" id="sheet-add" role="dialog" aria-label="Add a chapter">
+  <div class="grabber"></div>
+  <form id="add-form">
+    <h2 id="add-h">Add a chapter</h2>
+    <p class="lead">Paste one chapter at a time so each gets its own progress.</p>
+    <div class="field"><label for="f-title">Name</label><input id="f-title" required maxlength="80" placeholder="Practical Tanya — Chapter 1" autocomplete="off"></div>
+    <div class="field"><label for="f-text">Text</label><textarea id="f-text" required placeholder="Paste the full chapter"></textarea></div>
+    <div class="field"><label for="f-file">Or load a .txt file</label><input type="file" id="f-file" accept=".txt,text/plain"></div>
+    <p class="fine" id="add-msg" role="status"></p>
+    <div class="sheet-acts"><button type="button" class="btn sec" data-close>Cancel</button><button type="submit" class="btn">Make reels</button></div>
+    <button type="button" class="btn sec" id="del-text" style="margin-top:10px" hidden>Delete</button>
+  </form>
+</div>
+
+<div class="sheet" id="sheet-settings" role="dialog" aria-label="Settings">
+  <div class="grabber"></div>
+  <h2>Settings</h2>
+  <div class="sec"><h2>Reading</h2></div>
+  <div class="group">
+    <button class="row" id="s-reset"><span class="row-main"><span class="row-title">Reset progress</span><span class="row-sub">Start every Tanya chapter from the top</span></span></button>
+  </div>
+  <div class="sec"><h2>About the text</h2></div>
+  <p class="fine" style="margin-top:0" id="about">Tanya, Part I (Likkutei Amarim) by Rabbi Shneur Zalman of Liadi. English translation and notes © Kehot Publication Society, published on Sefaria under CC-BY-NC for non-commercial use. Everything you read and save stays on this device.</p>
+  <div style="margin-top:20px"><button class="btn" data-close>Done</button></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
 <script>
-const KEY = 'tanyaReels.v1';
-const SAMPLE = {
-  id: 'sample',
-  title: 'Sample — how a chapter looks',
-  size: 70,
-  text: `This is example text written for the demo, not a chapter from the book. Paste your own chapter below and it will be split the same way.
+const $ = id => document.getElementById(id);
+const KEY = 'tanyaReels.v2';
+let S = {len:70, fs:19, pos:{}, done:{}, mine:[], last:null};
+try{ Object.assign(S, JSON.parse(localStorage.getItem(KEY))||{}); }catch(e){}
+const save = ()=>{ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} };
+let BOOK = null;
 
-The opening of the Tanya asks a simple question with a surprising answer. Most of us assume the world divides into good people and bad people. Rabbi Shneur Zalman proposes a third figure, the beinoni, the "inbetweener," and argues that this is the level a person can actually aim for.
-
-The inbetweener still feels the pull of selfish desire. The feelings do not vanish. What changes is that they never get the final word: thought, speech and action stay in line, one decision at a time.
-
-That is why the book calls itself practical. It does not ask you to become a different person overnight. It asks you to notice the moment of choice, and to choose again, and again, and again.
-
-Swipe up to keep going. When you reach the last reel, the chapter is complete, with nothing left out.`,
-  pos: 0
-};
-
-let store = load();
-let current = null, editing = null;
-
-function load(){
-  try{ const s = JSON.parse(localStorage.getItem(KEY)); if(s && Array.isArray(s.chapters)) return s; }catch(e){}
-  return {chapters:[SAMPLE], fs:1.25};
-}
-function save(){ try{ localStorage.setItem(KEY, JSON.stringify(store)); }catch(e){} }
-
-/* ---- Splitting: every reel is an exact slice of the original, so nothing can be cut ---- */
-function split(text, target){
-  const min = Math.round(target*0.6), max = Math.round(target*1.6);
-  // word boundaries (positions where a new word starts)
-  const cands = []; // {pos, pri, words}
-  let words = 0;
-  const re = /\s+/g; let m;
-  const firstWord = text.search(/\S/);
-  if(firstWord < 0) return [];
-  while((m = re.exec(text))){
-    const end = m.index + m[0].length;
-    if(end >= text.length) break;
-    words++;
-    const before = text.slice(Math.max(0,m.index-3), m.index);
-    let pri = 0;
-    if(/\n\s*\n/.test(m[0])) pri = 4;
-    else if(m[0].includes('\n')) pri = 3;
-    else if(/[.!?…]["'”’)\]]*$/.test(before)) pri = 2;
-    else if(/[;:,—–]["'”’)]*$/.test(before)) pri = 1;
-    cands.push({pos:end, pri, words});
+/* ---------- reels ---------- */
+// Tanya chapters come pre-cut into sentence units (tools/build_data.py verifies every word).
+// Reels are whole units packed together, so nothing can be dropped.
+function packUnits(units, target){
+  const reels = []; let cur = [], w = 0;
+  for(const u of units){
+    const over = w + u.w > target*1.3;
+    const paraBreak = u.p && w >= target*0.6;
+    if(cur.length && (over || paraBreak)){ reels.push(cur); cur = []; w = 0; }
+    cur.push(u); w += u.w;
   }
-  const total = words + 1;
-  const chunks = []; let start = 0, startWords = 0, i = 0;
-  while(true){
-    if(total - startWords <= max){ chunks.push(text.slice(start)); break; }
-    let best = null, bestScore = -Infinity;
-    for(let j=i; j<cands.length; j++){
-      const n = cands[j].words - startWords;
-      if(n < min) continue;
-      if(n > max) break;
-      const score = cands[j].pri*100 - Math.abs(n-target);
-      if(score > bestScore){ bestScore = score; best = j; }
-    }
-    if(best === null){ best = i; while(best < cands.length-1 && cands[best].words - startWords < min) best++; }
-    const c = cands[best];
-    // avoid a tiny leftover at the end
-    if(total - c.words < min*0.5 && total - startWords <= max*1.4){ chunks.push(text.slice(start)); break; }
-    chunks.push(text.slice(start, c.pos));
-    start = c.pos; startWords = c.words; i = best+1;
+  if(cur.length){
+    const last = reels[reels.length-1];
+    if(last && w < target*0.3 && last.reduce((a,u)=>a+u.w,0) + w <= target*1.6) last.push(...cur); else reels.push(cur);
   }
-  return chunks;
+  return reels;
 }
 const wc = s => (s.match(/\S+/g)||[]).length;
-function verify(text, chunks){ return chunks.join('') === text && chunks.reduce((a,c)=>a+wc(c),0) === wc(text); }
+// Pasted text: turn into the same units (sentence groups, exact slices of the original).
+function unitsFromText(text){
+  const units = [];
+  text.split(/\n\s*\n/).forEach(par=>{
+    const parts = par.match(/[^.!?…]+(?:[.!?…]+["'”’)\]]*|$)\s*/g) || [par];
+    let buf = '', first = true;
+    parts.forEach((s,i)=>{
+      buf += s;
+      if(wc(buf) >= 20 || i === parts.length-1){
+        if(buf.trim()) units.push({h:esc(buf.trim()).replace(/\n/g,' '), w:wc(buf), p:first?1:0});
+        buf = ''; first = false;
+      }
+    });
+  });
+  return units;
+}
+const esc = s => s.replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
-/* ---- Library ---- */
-const $ = id => document.getElementById(id);
-function renderList(){
-  const list = $('list'); list.innerHTML = '';
-  if(!store.chapters.length){ list.innerHTML = '<div class="empty">No chapters yet — add one below.</div>'; return; }
-  store.chapters.forEach(ch=>{
-    const reels = split(ch.text, ch.size);
-    const ok = verify(ch.text, reels);
-    const pct = reels.length>1 ? Math.round(ch.pos/(reels.length-1)*100) : 0;
-    const row = document.createElement('div'); row.className='ch';
-    row.innerHTML = `<button class="ch-open"><span class="ch-title"></span>
-      <span class="ch-meta">${reels.length} reels · ${wc(ch.text).toLocaleString()} words · ${ok?'all words kept ✓':'check failed'}${ch.pos?` · reel ${ch.pos+1}`:''}</span>
-      <span class="bar"><i style="width:${pct}%"></i></span></button>
-      <span class="ch-actions"><button class="ghost" data-a="edit">Edit</button><button class="ghost" data-a="del">Delete</button></span>`;
-    row.querySelector('.ch-title').textContent = ch.title;
-    row.querySelector('.ch-open').onclick = ()=>openReader(ch);
-    row.querySelector('[data-a=edit]').onclick = ()=>startEdit(ch);
-    const del = row.querySelector('[data-a=del]');
-    del.onclick = ()=>{
-      if(del.dataset.armed){ store.chapters = store.chapters.filter(c=>c!==ch); save(); renderList(); return; }
-      del.dataset.armed='1'; del.textContent='Tap to confirm'; del.classList.add('danger');
-      setTimeout(()=>{ if(del.isConnected){ delete del.dataset.armed; del.textContent='Delete'; del.classList.remove('danger'); } },3000);
-    };
-    list.appendChild(row);
+/* ---------- library ---------- */
+function chInfo(i){
+  const ch = BOOK.chapters[i];
+  const n = packUnits(ch.u, S.len).length;
+  const pos = S.pos[i]||0;
+  const done = !!S.done[i];
+  return {ch, n, pos, done, pct: done ? 1 : n>1 ? pos/(n-1) : 0};
+}
+function ring(p){
+  const r = 10, c = 2*Math.PI*r;
+  return `<svg class="ring" viewBox="0 0 26 26"><circle class="bgc" cx="13" cy="13" r="${r}"/><circle class="fgc" cx="13" cy="13" r="${r}" stroke-dasharray="${c}" stroke-dashoffset="${c*(1-p)}"/></svg>`;
+}
+const firstLine = ch => (ch.u.find(u=>u.w>8)||ch.u[0]).h.replace(/<sup>.*?<\/sup>/g,'').replace(/<[^>]+>/g,'');
+function renderBook(){
+  if(!BOOK) return;
+  const list = $('chapters'); list.innerHTML = '';
+  let doneCount = 0;
+  BOOK.chapters.forEach((ch,i)=>{
+    const info = chInfo(i); if(info.done) doneCount++;
+    const b = document.createElement('button'); b.className = 'row';
+    b.innerHTML = `${info.done?'<span class="done-dot">✓</span>':ring(info.pct)}
+      <span class="row-main"><span class="row-title">${esc(ch.t)}</span><span class="row-sub"></span></span>
+      <span class="num">${info.n} reels</span><svg class="chev" viewBox="0 0 24 24"><use href="#i-chev"/></svg>`;
+    b.querySelector('.row-sub').textContent = firstLine(ch);
+    b.onclick = ()=>openBook(i);
+    list.appendChild(b);
+  });
+  $('book-tally').textContent = `${doneCount} of ${BOOK.chapters.length} read`;
+  // hero: resume where you left off
+  let i = S.last ?? BOOK.chapters.findIndex((_,k)=>!S.done[k]);
+  if(i < 0) i = 0;
+  const info = chInfo(i);
+  $('hero-kicker').textContent = S.last!=null ? 'Continue' : 'Start here';
+  $('hero-title').textContent = info.ch.t;
+  $('hero-line').textContent = firstLine(info.ch);
+  $('hero-bar').style.width = Math.round(info.pct*100)+'%';
+  $('hero-meta').textContent = info.done ? 'Finished' : `Reel ${info.pos+1} of ${info.n}`;
+  $('hero-pct').textContent = Math.round(info.pct*100)+'%';
+  $('hero-go').disabled = false;
+  $('hero-go').textContent = info.pos||info.done ? 'Continue' : 'Start reading';
+  $('hero-go').onclick = ()=>openBook(i);
+  document.querySelectorAll('#len button').forEach(b=>b.classList.toggle('on', +b.dataset.w===S.len));
+}
+function renderMine(){
+  const list = $('mine'); list.innerHTML = '';
+  if(!S.mine.length){ list.innerHTML = '<div class="empty">Nothing yet. Add a chapter from your copy of the book.</div>'; return; }
+  S.mine.forEach((m,i)=>{
+    const n = packUnits(unitsFromText(m.text), S.len).length;
+    const p = m.done ? 1 : n>1 ? (m.pos||0)/(n-1) : 0;
+    const b = document.createElement('div'); b.className='row'; b.style.cursor='pointer';
+    b.innerHTML = `${m.done?'<span class="done-dot">✓</span>':ring(p)}<span class="row-main"><span class="row-title"></span><span class="row-sub">${n} reels · ${wc(m.text).toLocaleString()} words</span></span>
+      <button class="btn sm sec" style="min-height:30px">Edit</button><svg class="chev" viewBox="0 0 24 24"><use href="#i-chev"/></svg>`;
+    b.querySelector('.row-title').textContent = m.title;
+    b.onclick = e=>{ if(e.target.closest('button')) editText(i); else openMine(i); };
+    list.appendChild(b);
   });
 }
-function startEdit(ch){
-  editing = ch; $('chTitle').value = ch.title; $('chText').value = ch.text; $('chSize').value = String(ch.size);
-  $('formTitle').textContent = 'Edit chapter'; $('saveBtn').textContent='Save changes'; $('cancelEdit').hidden=false;
-  $('addForm').scrollIntoView({behavior:'smooth'});
-}
-function resetForm(){
-  editing = null; $('addForm').reset(); $('formTitle').textContent='Add a chapter'; $('saveBtn').textContent='Make reels'; $('cancelEdit').hidden=true;
-}
-$('cancelEdit').onclick = ()=>{ resetForm(); $('formMsg').textContent=''; };
-$('chFile').onchange = e=>{
-  const f = e.target.files[0]; if(!f) return;
-  const r = new FileReader();
-  r.onload = ()=>{ $('chText').value = r.result; if(!$('chTitle').value) $('chTitle').value = f.name.replace(/\.[^.]+$/,''); };
-  r.readAsText(f);
-};
-$('addForm').onsubmit = e=>{
-  e.preventDefault();
-  const text = $('chText').value.replace(/\r\n?/g,'\n').trim();
-  const title = $('chTitle').value.trim();
-  if(!text || !title) return;
-  const size = +$('chSize').value;
-  const reels = split(text, size);
-  if(!verify(text, reels)){ $('formMsg').textContent = 'Could not split this text without losing words — nothing was saved.'; $('formMsg').style.color='var(--danger)'; return; }
-  if(editing){ Object.assign(editing,{title,text,size,pos:Math.min(editing.pos,reels.length-1)}); }
-  else store.chapters.push({id:Date.now().toString(36), title, text, size, pos:0});
-  save(); renderList(); resetForm();
-  $('formMsg').style.color='var(--ok)';
-  $('formMsg').textContent = `Saved “${title}” as ${reels.length} reels — all ${wc(text).toLocaleString()} words kept.`;
-};
 
-/* ---- Reader ---- */
-function paras(s){
-  const frag = document.createDocumentFragment();
-  s.trim().split(/\n\s*\n/).forEach(p=>{ const el=document.createElement('p'); el.dir='auto'; el.textContent=p.replace(/\s*\n\s*/g,' '); frag.appendChild(el); });
-  return frag;
+/* ---------- reader ---------- */
+let R = null;
+function openBook(i){
+  const ch = BOOK.chapters[i]; S.last = i; save();
+  openReader({title:ch.t, units:ch.u, notes:ch.n, pos:S.pos[i]||0,
+    onPos:p=>{ S.pos[i]=p; save(); }, onDone:()=>{ S.done[i]=1; save(); },
+    next: i+1 < BOOK.chapters.length ? ()=>openBook(i+1) : null});
 }
-function openReader(ch){
-  current = ch;
-  const reels = split(ch.text, ch.size);
-  $('rTitle').textContent = ch.title;
-  const box = $('reels'); box.innerHTML='';
-  reels.forEach((r,i)=>{
-    const sec = document.createElement('div'); sec.className='reel';
-    sec.innerHTML = `<article class="card"><div class="num">Reel ${i+1} of ${reels.length}</div><div class="txt"></div>
-      <div class="foot"><span>${wc(r)} words</span><span>${i<reels.length-1?'swipe up ↑':'end of chapter'}</span></div></article>`;
-    sec.querySelector('.txt').appendChild(paras(r));
-    box.appendChild(sec);
+function openMine(i){
+  const m = S.mine[i];
+  openReader({title:m.title, units:unitsFromText(m.text), notes:[], pos:m.pos||0,
+    onPos:p=>{ m.pos=p; save(); }, onDone:()=>{ m.done=1; save(); }, next:null});
+}
+function openReader(o){
+  R = o;
+  const reels = packUnits(o.units, S.len);
+  const notes = Object.fromEntries(o.notes);
+  $('r-title').textContent = o.title;
+  const box = $('reels'); box.innerHTML = '';
+  reels.forEach((units,k)=>{
+    const words = units.reduce((a,u)=>a+u.w,0);
+    let html = '', open = false;
+    units.forEach((u,j)=>{
+      if(u.p || j===0){ if(open) html += '</p>'; html += `<p dir="auto">`; open = true; } else html += ' ';
+      html += u.h.replace(/<sup>(.*?)<\/sup>/g, (m,n)=> notes[n]!==undefined ? `<button class="fn" data-n="${esc(n)}" aria-label="Footnote ${esc(n)}">${esc(n)}</button>` : m);
+    });
+    if(open) html += '</p>';
+    const fnCount = (html.match(/class="fn"/g)||[]).length;
+    const d = document.createElement('div'); d.className='reel';
+    d.innerHTML = `<article class="rcard"><div class="rk"><span>${k+1} / ${reels.length}</span><span>${words} words</span></div>
+      <div class="rtxt"><div class="inner">${html}</div></div>
+      <div class="rfoot"><span>${fnCount? fnCount+(fnCount>1?' notes — tap a number':' note — tap the number') : ''}</span><span>${k<reels.length-1?'Swipe up':'Last reel'}</span></div></article>`;
+    box.appendChild(d);
   });
   const end = document.createElement('div'); end.className='reel';
-  end.innerHTML = `<article class="card end"><div class="num">Chapter complete</div><div class="txt"><p>You read every word.</p>
-    <p style="font-family:var(--ui);font-size:.9rem">${wc(ch.text).toLocaleString()} words across ${reels.length} reels</p>
-    <button class="primary" style="font-family:var(--ui);font-size:.95rem;background:var(--gold);color:var(--reel)">Back to chapters</button></div></article>`;
-  end.querySelector('button').onclick = closeReader;
+  const total = o.units.reduce((a,u)=>a+u.w,0);
+  end.innerHTML = `<article class="rcard endcard"><p class="kicker">Complete</p><p class="big">${esc(o.title)}</p>
+    <p class="greet">${total.toLocaleString()} words · ${reels.length} reels · nothing skipped</p>
+    <div style="display:flex;flex-direction:column;gap:10px;width:100%;max-width:320px;margin-top:8px">
+      ${o.next?'<button class="btn" id="go-next">Next chapter</button>':''}<button class="btn sec" id="go-back">Back</button></div></article>`;
   box.appendChild(end);
-  $('library').hidden = true; $('reader').hidden = false;
+  end.querySelector('#go-back').onclick = closeReader;
+  if(o.next) end.querySelector('#go-next').onclick = ()=>{ o.next(); };
+  box.onclick = e=>{ const f = e.target.closest('.fn'); if(f) showNote(f.dataset.n, notes[f.dataset.n]); };
+  $('reader').hidden = false; document.body.style.overflow='hidden';
   const n = reels.length;
-  const onScroll = ()=>{
+  box.onscroll = ()=>{
     const idx = Math.round(box.scrollTop / box.clientHeight);
-    const shown = Math.min(idx, n-1);
-    $('rCount').textContent = idx>=n ? `${n}/${n}` : `${shown+1}/${n}`;
-    $('rProg').style.width = (Math.min(idx+1,n)/n*100)+'%';
-    if(current){ current.pos = shown; save(); }
+    $('r-bar').style.width = (Math.min(idx+1,n)/n*100)+'%';
+    if(idx >= n){ o.onDone(); } else o.onPos(idx);
   };
-  box.onscroll = onScroll;
-  requestAnimationFrame(()=>{ box.scrollTop = ch.pos*box.clientHeight; onScroll(); box.focus(); });
+  requestAnimationFrame(()=>{ box.scrollTop = Math.min(o.pos, n-1)*box.clientHeight; box.onscroll(); box.focus(); });
 }
-function closeReader(){ current=null; $('reader').hidden=true; $('library').hidden=false; renderList(); }
-$('back').onclick = closeReader;
-function setFs(v){ store.fs = Math.max(.95, Math.min(1.9, v)); document.documentElement.style.setProperty('--fs', store.fs+'rem'); save(); }
-$('smaller').onclick = ()=>setFs(store.fs-.1);
-$('bigger').onclick = ()=>setFs(store.fs+.1);
+function closeReader(){ $('reader').hidden = true; document.body.style.overflow=''; R=null; renderBook(); renderMine(); }
+$('close').onclick = closeReader;
+function setFs(v){ S.fs = Math.max(15, Math.min(28, v)); document.documentElement.style.setProperty('--fs', S.fs+'px'); save(); }
+$('smaller').onclick = ()=>setFs(S.fs-1);
+$('bigger').onclick = ()=>setFs(S.fs+1);
 document.addEventListener('keydown', e=>{
   if($('reader').hidden) return;
+  if(document.querySelector('.sheet.on')){ if(e.key==='Escape') closeSheets(); return; }
   const box = $('reels');
   if(['ArrowDown','PageDown',' '].includes(e.key)){ e.preventDefault(); box.scrollBy({top:box.clientHeight}); }
   if(['ArrowUp','PageUp'].includes(e.key)){ e.preventDefault(); box.scrollBy({top:-box.clientHeight}); }
   if(e.key==='Escape') closeReader();
 });
-setFs(store.fs||1.25);
-renderList();
+
+/* ---------- sheets ---------- */
+function openSheet(id){ $('scrim').classList.add('on'); $(id).classList.add('on'); }
+function closeSheets(){ $('scrim').classList.remove('on'); document.querySelectorAll('.sheet').forEach(s=>s.classList.remove('on')); }
+$('scrim').onclick = closeSheets;
+document.querySelectorAll('[data-close]').forEach(b=>b.onclick = closeSheets);
+function showNote(n, html){ $('note-title').textContent = 'Note '+n; $('note-body').innerHTML = html; openSheet('sheet-note'); }
+$('open-settings').onclick = ()=>openSheet('sheet-settings');
+const resetBtn = $('s-reset');
+resetBtn.onclick = ()=>{
+  const t = resetBtn.querySelector('.row-title');
+  if(resetBtn.dataset.armed){ S.pos={}; S.done={}; S.last=null; save(); renderBook(); closeSheets(); toast('Progress reset'); delete resetBtn.dataset.armed; t.textContent='Reset progress'; return; }
+  resetBtn.dataset.armed='1'; t.textContent='Tap again to reset';
+  setTimeout(()=>{ delete resetBtn.dataset.armed; t.textContent='Reset progress'; },3000);
+};
+
+let editing = null;
+function editText(i){
+  editing = i; const m = S.mine[i];
+  $('f-title').value = m.title; $('f-text').value = m.text; $('add-h').textContent='Edit chapter'; $('del-text').hidden=false; $('add-msg').textContent='';
+  openSheet('sheet-add');
+}
+$('add-text').onclick = ()=>{ editing=null; $('add-form').reset(); $('add-h').textContent='Add a chapter'; $('del-text').hidden=true; $('add-msg').textContent=''; openSheet('sheet-add'); };
+$('f-file').onchange = e=>{
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = ()=>{ $('f-text').value = r.result; if(!$('f-title').value) $('f-title').value = f.name.replace(/\.[^.]+$/,''); };
+  r.readAsText(f);
+};
+$('add-form').onsubmit = e=>{
+  e.preventDefault();
+  const title = $('f-title').value.trim(), text = $('f-text').value.replace(/\r\n?/g,'\n').trim();
+  if(!title||!text) return;
+  const units = unitsFromText(text);
+  const outWords = units.reduce((a,u)=>a+u.w,0);
+  if(outWords !== wc(text)){ $('add-msg').textContent = 'This text could not be split without losing words, so it was not saved.'; return; }
+  if(editing!=null) Object.assign(S.mine[editing], {title,text,pos:0,done:0}); else S.mine.push({title,text,pos:0});
+  save(); renderMine(); closeSheets();
+  toast(`${packUnits(units,S.len).length} reels · all ${outWords.toLocaleString()} words kept`);
+};
+const delBtn = $('del-text');
+delBtn.onclick = ()=>{
+  if(delBtn.dataset.armed){ S.mine.splice(editing,1); save(); renderMine(); closeSheets(); toast('Deleted'); delete delBtn.dataset.armed; delBtn.textContent='Delete'; return; }
+  delBtn.dataset.armed='1'; delBtn.textContent='Tap again to delete';
+  setTimeout(()=>{ delete delBtn.dataset.armed; delBtn.textContent='Delete'; },3000);
+};
+
+let tt; function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('on'); clearTimeout(tt); tt=setTimeout(()=>t.classList.remove('on'),2200); }
+
+/* ---------- tabs ---------- */
+document.querySelectorAll('.tabbtn').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.tabbtn').forEach(x=>x.classList.toggle('on',x===b));
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('on', v.id==='v-'+b.dataset.tab));
+  window.scrollTo(0,0);
+});
+document.querySelectorAll('#len button').forEach(b=>b.onclick=()=>{ S.len=+b.dataset.w; save(); renderBook(); renderMine(); });
+
+setFs(S.fs);
+renderMine();
+fetch('tanya.json').then(r=>{ if(!r.ok) throw new Error(r.status); return r.json(); }).then(d=>{ BOOK=d; renderBook(); })
+  .catch(()=>{ $('chapters').innerHTML = '<div class="empty">The Tanya text could not load. Open this page from its published link, or serve the folder with a local web server (browsers block loading files from disk).</div>'; $('hero-kicker').textContent='Text unavailable'; });
 </script>
