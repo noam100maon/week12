@@ -61,7 +61,16 @@
       <button class="gear" id="open-settings" aria-label="Settings"><svg viewBox="0 0 24 24" width="19" height="19"><use href="#i-gear"/></svg></button>
     </div>
 
-    <div class="card focus" style="margin-top:16px">
+    <div class="card" style="margin-top:16px">
+      <div class="week" id="week"></div>
+    </div>
+
+    <div class="daybar" id="daybar" hidden>
+      <span class="t-sub dim" id="daybar-label"></span>
+      <button class="btn sm sec" id="back-today" style="width:auto">Back to today</button>
+    </div>
+
+    <div class="card focus" style="margin-top:10px">
       <div class="focus-top">
         <span class="t-head" id="focus-count">Nothing scheduled</span>
         <span class="focus-pct" id="focus-pct">0%</span>
@@ -81,6 +90,11 @@
     <ul id="goal-list"></ul>
 
     <button class="btn sec" id="add-habit" style="margin-top:14px">Add a habit</button>
+
+    <div class="sec"><h2>Daily check-in</h2>
+      <button class="info" data-info="checkin" aria-label="About the check-in"><svg viewBox="0 0 24 24"><use href="#i-info"/></svg></button>
+    </div>
+    <div class="card" id="checkin-card"></div>
   </section>
 
   <!-- ===================== INSPIRE ===================== -->
@@ -173,11 +187,39 @@
     </div>
     <div class="card pad">
       <p class="t-foot dim">7-day rolling average, identity points</p>
-      <svg class="spark" id="spark" preserveAspectRatio="none" aria-hidden="true"></svg>
+      <div class="chart-wrap" id="chart-wrap">
+        <svg class="spark" id="spark" preserveAspectRatio="none"></svg>
+        <div class="callout" id="callout"><b></b><span></span></div>
+      </div>
       <div style="display:flex;justify-content:space-between;margin-top:6px">
         <span class="t-cap dim2" id="spark-a"></span><span class="t-cap dim2" id="spark-b"></span>
       </div>
     </div>
+
+    <div class="pairs" style="margin-top:10px" id="pairs"></div>
+
+    <div class="sec"><h2>The grid</h2>
+      <button class="info" data-info="grid" aria-label="About the grid"><svg viewBox="0 0 24 24"><use href="#i-info"/></svg></button>
+    </div>
+    <div class="card heat">
+      <div class="heat-grid" id="heat-head"></div>
+      <div class="heat-grid" id="heat" style="margin-top:6px"></div>
+      <div class="heat-key">
+        <span>Less</span>
+        <i class="cell none" style="aspect-ratio:auto"></i><i class="cell l1" style="aspect-ratio:auto"></i><i class="cell l2" style="aspect-ratio:auto"></i><i class="cell l3" style="aspect-ratio:auto"></i><i class="cell l4" style="aspect-ratio:auto"></i>
+        <span>More</span>
+      </div>
+    </div>
+
+    <div class="sec"><h2>Habit insights</h2>
+      <button class="info" data-info="insights" aria-label="About insights"><svg viewBox="0 0 24 24"><use href="#i-info"/></svg></button>
+    </div>
+    <div class="group" id="insights"></div>
+
+    <div class="sec" id="mood-sec"><h2>Mood</h2>
+      <button class="info" data-info="mood" aria-label="About mood"><svg viewBox="0 0 24 24"><use href="#i-info"/></svg></button>
+    </div>
+    <div id="mood-block"></div>
 
     <div class="sec"><h2>Habit breakdown</h2></div>
     <div class="group" id="breakdown"></div>

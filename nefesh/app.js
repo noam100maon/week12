@@ -61,6 +61,10 @@ const INFO = {
   vault:       ['Wisdom vault','Everything you have starred — quotes and books — collected in one place so the good lines do not scroll away.'],
   momentum:    ['System momentum','A single read on the system rather than any one day. 60% is your completion rate over the selected range, 25% is your best current streak measured against three weeks, and 15% is how many of your habits are active at all.'],
   consistency: ['Consistency','The seven-day rolling average of identity points — one point per completion. The rolling window smooths single bad days so you can see the trend underneath them.'],
+  checkin:     ['Daily check-in','One number for how the day felt, one to ten. It is not a habit and it cannot be missed — it is the context that explains a good week or a bad one when you look back.'],
+  grid:        ['The grid','One square per day. The darker the square, the more of that day’s habits you completed. A small × marks a day where something came due and did not get done.'],
+  insights:    ['Habit insights','Each habit measured against itself: its completion rate over the selected range next to the same length of time before it. Right of the line is improving, left is slipping.'],
+  mood:        ['Mood','Your average check-in over the range, and the same number split by whether you closed the day out. Habits and mood usually move together — this is where you can see which way.'],
   votes:       ['Votes cast','Every completion is one vote for the identity behind the habit. The tally is not a score; it is evidence about who you have been lately.'],
 };
 
@@ -74,6 +78,7 @@ const blank = () => ({
   vault: { quotes: [], books: [] },
   ack: [],
   reflections: [],
+  mood: {},
   quoteIndex: null,
 });
 
@@ -110,6 +115,7 @@ function save() {
 
 let state = load();
 let range = 30;
+let cursor = null;          // the day Home is showing; null means today
 
 /* ------------------------------------------------------------------ dates */
 
@@ -331,32 +337,124 @@ $$('[data-info]').forEach(b => b.onclick = () => {
 /* ======================================================== RENDER — HOME === */
 
 function renderHome() {
+  const day = cursor || today;
+  const isToday = day === today;
+
   $('#greet').textContent = state.profile.name
     ? `${greeting()}, ${state.profile.name}` : greeting();
-  $('#home-title').textContent = 'Today';
+  $('#home-title').textContent = isToday ? 'Today' : parseISO(day).toLocaleDateString(undefined, { weekday:'long' });
+  $('#navbar-title').textContent = tab === 'home' ? (isToday ? 'Today' : shortDate(day)) : TITLES[tab];
 
-  const habits = state.habits.filter(h => h.kind !== 'goal' && scheduled(h, today));
-  const goals  = state.habits.filter(h => h.kind === 'goal'  && scheduled(h, today));
+  $('#daybar').hidden = isToday;
+  $('#daybar-label').textContent = prettyDate(day);
+
+  renderWeek(day);
+
+  const habits = state.habits.filter(h => h.kind !== 'goal' && scheduled(h, day));
+  const goals  = state.habits.filter(h => h.kind === 'goal'  && scheduled(h, day));
   const all    = [...habits, ...goals];
-  const done   = all.filter(h => isDone(h, today)).length;
+  const done   = all.filter(h => isDone(h, day)).length;
   const pct    = all.length ? Math.round((done / all.length) * 100) : 0;
 
   $('#focus-count').textContent = all.length
-    ? `${done} of ${all.length} today`
+    ? `${done} of ${all.length}${isToday ? ' today' : ''}`
     : 'Nothing scheduled';
   $('#focus-pct').textContent = pct + '%';
   $('#focus-bar').style.width = pct + '%';
 
-  const risk = all.filter(h => !isDone(h, today) && missedLast(h));
+  const risk = all.filter(h => !isDone(h, day) && missedLast(h, day));
   $('#focus-meta').textContent = !all.length
     ? 'Add one habit. One is a system; ten is a wish.'
     : risk.length ? `Never miss twice — ${risk.map(h => h.name).join(', ')} slipped last time.`
     : done === all.length ? 'Every vote in. The day is closed.'
     : `${state.habits.length} ${state.habits.length === 1 ? 'habit' : 'habits'} · ${goals.length} ${goals.length === 1 ? 'goal' : 'goals'}`;
 
-  paintList($('#habit-list'), habits, 'No habits due today.');
+  paintList($('#habit-list'), habits, 'No habits due on this day.');
   $('#goals-sec').hidden = goals.length === 0;
   paintList($('#goal-list'), goals, null);
+
+  renderCheckin(day);
+}
+
+/** Sunday-to-Saturday strip for the week containing `day`. */
+function renderWeek(day) {
+  const strip = $('#week');
+  strip.textContent = '';
+  const start = shift(day, -weekday(day));
+
+  for (let i = 0; i < 7; i++) {
+    const d = shift(start, i);
+    const due  = state.habits.filter(h => scheduled(h, d));
+    const hit  = due.filter(h => isDone(h, d)).length;
+    const cls  = d > today ? 'future'
+               : !due.length ? 'future'
+               : hit === due.length ? 'full'
+               : hit > 0 ? 'part' : 'miss';
+
+    const b = el('button', 'wday' + (d === day ? ' sel' : ''));
+    b.append(el('span', 'lab', DAYS[i][0]));
+    b.append(el('span', 'pip ' + cls, String(parseISO(d).getDate())));
+    b.setAttribute('aria-label', prettyDate(d));
+    if (d > today) b.disabled = true;
+    else b.onclick = () => { cursor = d === today ? null : d; haptic(6); render(); };
+    strip.append(b);
+  }
+}
+
+$('#back-today').onclick = () => { cursor = null; haptic(6); render(); };
+
+/* ------------------------------------------------------------- check-in */
+
+const MOOD_WORDS = ['','Rough','Rough','Low','Low','Fine','Fine','Good','Good','Great','Great'];
+let moodDraft = null;
+
+function renderCheckin(day) {
+  const card = $('#checkin-card');
+  card.textContent = '';
+  const logged = state.mood[day];
+
+  if (logged) {
+    card.className = 'card checkin-done';
+    const left = el('div');
+    left.append(el('span', 'n', `${logged}/10`));
+    left.append(el('p', 't-foot dim', `${MOOD_WORDS[logged]} — checked in for ${day === today ? 'today' : shortDate(day)}`));
+    const redo = el('button', 'chip', 'Change');
+    redo.style.marginLeft = 'auto';
+    redo.onclick = () => { delete state.mood[day]; moodDraft = logged; save(); haptic(6); renderCheckin(day); };
+    card.append(left, redo);
+    return;
+  }
+
+  card.className = 'card checkin';
+  const v = moodDraft || 0;
+  const R = 56, C = 2 * Math.PI * R;
+
+  const ring = el('div', 'ring');
+  ring.innerHTML =
+    `<svg viewBox="0 0 128 128">
+       <circle class="bg" cx="64" cy="64" r="${R}" stroke-width="9"/>
+       <circle class="fg" cx="64" cy="64" r="${R}" stroke-width="9"
+               stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${(C * (1 - v / 10)).toFixed(1)}"/>
+     </svg>`;
+  const val = el('div', 'val');
+  val.append(el('b', null, v ? String(v) : '–'), el('span', null, v ? MOOD_WORDS[v] : 'How was it?'));
+  ring.append(val);
+
+  const scale = el('div', 'scale');
+  for (let i = 1; i <= 10; i++) {
+    const b = el('button', i === v ? 'on' : '', String(i));
+    b.onclick = () => { moodDraft = i; haptic(6); renderCheckin(day); };
+    scale.append(b);
+  }
+
+  const save_ = el('button', 'btn', 'Save check-in');
+  save_.disabled = !v;
+  save_.onclick = () => {
+    state.mood[day] = v; moodDraft = null; save(); haptic(12);
+    toast('Checked in'); render();
+  };
+
+  card.append(ring, scale, save_);
 }
 
 function paintList(ul, items, emptyText) {
@@ -371,8 +469,9 @@ function paintList(ul, items, emptyText) {
 const openSteps = new Set();   // habits whose step list is expanded
 
 function habitCard(h) {
-  const on = isDone(h, today);
-  const e  = entry(h, today) || {};
+  const day = cursor || today;
+  const on = isDone(h, day);
+  const e  = entry(h, day) || {};
   const li = el('li', 'card habit' + (on ? ' done' : ''));
   li.style.marginTop = '10px';
 
@@ -383,7 +482,7 @@ function habitCard(h) {
   check.setAttribute('aria-label', (on ? 'Mark incomplete: ' : 'Mark complete: ') + h.name);
   check.append(checkMark());
   check.onclick = () => {
-    const nowOn = toggleHabit(h, today);
+    const nowOn = toggleHabit(h, day);
     haptic(nowOn ? 12 : 6);
     if (nowOn && h.identity) toast(`A vote for ${h.identity}`);
     render();
@@ -407,7 +506,7 @@ function habitCard(h) {
   if (h.tiny) {
     const chip = el('button', 'chip ghost', `Low energy → ${h.tiny}`);
     chip.onclick = () => {
-      if (!isDone(h, today)) { toggleHabit(h, today); haptic(12); toast('Counted. Showing up is the habit.'); render(); }
+      if (!isDone(h, day)) { toggleHabit(h, day); haptic(12); toast('Counted. Showing up is the habit.'); render(); }
     };
     acts.append(chip);
   }
@@ -436,7 +535,7 @@ function habitCard(h) {
     c.setAttribute('aria-pressed', String(doneStep));
     c.append(checkMark());
     row.append(c, el('span', 'step-txt', txt));
-    row.onclick = () => { toggleStep(h, today, i); haptic(6); render(); };
+    row.onclick = () => { toggleStep(h, day, i); haptic(6); render(); };
     stepsBox.append(row);
   });
   if (h.steps.length) body.append(stepsBox);
@@ -444,21 +543,21 @@ function habitCard(h) {
   top.append(check, body);
   li.append(top);
 
-  if (!on && missedLast(h)) li.append(frictionBox(h));
+  if (!on && missedLast(h, day)) li.append(frictionBox(h, day));
   return li;
 }
 
-function frictionBox(h) {
+function frictionBox(h, day) {
   const box = el('div', 'friction');
   box.append(el('p', 'friction-q', 'What got in the way?'));
   const row = el('div', 'friction-row');
-  const logged = (entry(h, shift(today, -1)) || {}).miss;
+  const logged = (entry(h, shift(day, -1)) || {}).miss;
   FRICTION.forEach(([code, label]) => {
     const c = el('button', 'chip' + (logged === code ? ' on' : ''), label);
     c.onclick = () => {
-      let day = shift(today, -1);
-      for (let i = 0; i < 90 && !scheduled(h, day); i++) day = shift(day, -1);
-      writeEntry(h, day, { miss: code });
+      let d = shift(day, -1);
+      for (let i = 0; i < 90 && !scheduled(h, d); i++) d = shift(d, -1);
+      writeEntry(h, d, { miss: code });
       haptic(6);
       toast(code === 'big' ? 'Shrink it. Try the low-energy version today.'
           : code === 'timing' ? 'Move the anchor, not the willpower.'
@@ -669,6 +768,7 @@ function renderResults() {
 
   /* consistency */
   const series = rolling(dates);
+  chartSeries = series; chartDates = dates;
   drawSpark(series);
   $('#spark-a').textContent = shortDate(dates[0]);
   $('#spark-b').textContent = shortDate(dates[dates.length - 1]);
@@ -680,6 +780,11 @@ function renderResults() {
   const rounded = Math.round(d * 10) / 10;
   badge.textContent = (rounded > 0 ? '+' : '') + rounded.toFixed(1) + ' pts';
   badge.classList.toggle('up', rounded > 0);
+
+  renderPairs(dates, series);
+  renderHeat();
+  renderInsights(dates);
+  renderMood(dates);
 
   /* breakdown */
   const bd = $('#breakdown');
@@ -729,11 +834,170 @@ function renderResults() {
     : 'Five minutes on Sunday keeps a system honest.';
 }
 
+/* ------------------------------------------------------------ stat pairs */
+
+function renderPairs(dates, series) {
+  const pts = dates.map(pointsOn);
+  const avg = pts.length ? pts.reduce((a, b) => a + b, 0) / pts.length : 0;
+  const above = pts.filter(p => p > avg).length;
+  const below = pts.filter(p => p < avg).length;
+
+  const perfect = dates.filter(d => {
+    const due = state.habits.filter(h => scheduled(h, d));
+    return due.length && due.every(h => isDone(h, d));
+  }).length;
+  const quiet = dates.filter(d => {
+    const due = state.habits.filter(h => scheduled(h, d));
+    return due.length && !due.some(h => isDone(h, d));
+  }).length;
+
+  const box = $('#pairs');
+  box.textContent = '';
+  [[above, 'Days above average'], [below, 'Days below average'],
+   [perfect, 'Days closed out in full'], [quiet, 'Days nothing landed']]
+    .forEach(([n, label]) => {
+      const c = el('div', 'pair');
+      c.append(el('b', null, String(n)), el('span', null, label));
+      box.append(c);
+    });
+}
+
+/* ---------------------------------------------------------------- the grid */
+
+function renderHeat() {
+  const head = $('#heat-head');
+  head.textContent = '';
+  DAYS.forEach(d => head.append(el('div', 'heat-head', d[0])));
+
+  const grid = $('#heat');
+  grid.textContent = '';
+
+  /* twelve weeks back, aligned to Sunday */
+  const end = shift(today, 6 - weekday(today));
+  const start = shift(end, -(12 * 7 - 1));
+
+  for (let d = start; d <= end; d = shift(d, 1)) {
+    const cell = el('div', 'cell');
+    if (d > today) { cell.classList.add('none'); grid.append(cell); continue; }
+
+    const due = state.habits.filter(h => scheduled(h, d));
+    if (!due.length) { cell.classList.add('none'); grid.append(cell); continue; }
+
+    const hit = due.filter(h => isDone(h, d)).length;
+    const r = hit / due.length;
+    cell.classList.add(r === 0 ? 'none' : r <= .25 ? 'l1' : r <= .5 ? 'l2' : r < 1 ? 'l3' : 'l4');
+    if (hit < due.length) cell.classList.add('x');
+    cell.title = `${shortDate(d)} — ${hit}/${due.length}`;
+    grid.append(cell);
+  }
+}
+
+/* ------------------------------------------------------------- insights */
+
+function renderInsights(dates) {
+  const box = $('#insights');
+  box.textContent = '';
+  if (!state.habits.length) { box.append(el('p', 'empty', 'Insights need a habit and a little history.')); return; }
+
+  const span  = dates.length;
+  const prior = rangeDates(0).filter(d => d < dates[0]).slice(-span);
+
+  state.habits.forEach(h => {
+    const now  = windowStats(h, dates);
+    const was  = windowStats(h, prior);
+    const comparable = now.due > 0 && was.due > 0;
+    const pp = comparable ? Math.round((now.rate - was.rate) * 1000) / 10 : 0;
+
+    const row = el('div', 'insight');
+    const top = el('div', 'insight-top');
+    top.append(el('span', 'nm', h.name),
+               el('span', 'pc', now.due ? `${Math.round(now.rate * 100)}%` : '—'));
+
+    const bar = el('div', 'diverge');
+    bar.append(el('span', 'mid'));
+    if (comparable) {
+      const fill = el('i');
+      const width = Math.min(50, Math.abs(pp) / 2);    /* ±100pp spans the full half */
+      if (pp >= 0) { fill.style.left = '50%'; fill.style.width = width + '%'; }
+      else { fill.classList.add('down'); fill.style.left = (50 - width) + '%'; fill.style.width = width + '%'; }
+      bar.append(fill);
+    }
+
+    const foot = el('div', 'insight-foot');
+    foot.append(el('span', null, comparable ? `was ${Math.round(was.rate * 100)}%` : 'no earlier period to compare'),
+                el('span', null, comparable ? (pp > 0 ? '+' : '') + pp.toFixed(1) + ' pts' : '—'));
+
+    row.append(top, bar, foot);
+    box.append(row);
+  });
+}
+
+/* ------------------------------------------------------------------ mood */
+
+function renderMood(dates) {
+  const block = $('#mood-block');
+  block.textContent = '';
+  const vals = dates.map(d => state.mood[d]).filter(Boolean);
+
+  if (vals.length < 2) {
+    $('#mood-sec').hidden = false;
+    block.append(el('p', 'card empty', 'Check in for a couple of days and the trend shows up here.'));
+    return;
+  }
+  $('#mood-sec').hidden = false;
+
+  const mean = a => a.reduce((x, y) => x + y, 0) / a.length;
+  const avg = mean(vals);
+
+  const priorDates = rangeDates(0).filter(d => d < dates[0]).slice(-dates.length);
+  const priorVals = priorDates.map(d => state.mood[d]).filter(Boolean);
+  const trend = priorVals.length ? ((avg - mean(priorVals)) / mean(priorVals)) * 100 : 0;
+
+  /* mood split by whether the day was closed out */
+  const closed = [], open_ = [];
+  dates.forEach(d => {
+    const m = state.mood[d];
+    if (!m) return;
+    const due = state.habits.filter(h => scheduled(h, d));
+    if (!due.length) return;
+    (due.every(h => isDone(h, d)) ? closed : open_).push(m);
+  });
+
+  const pairs = el('div', 'pairs');
+  const add = (n, label) => {
+    const c = el('div', 'pair');
+    c.append(el('b', null, n), el('span', null, label));
+    pairs.append(c);
+  };
+  add(avg.toFixed(1), 'Average mood');
+  add((trend > 0 ? '+' : '') + trend.toFixed(1) + '%', 'Against the period before');
+  if (closed.length) add(mean(closed).toFixed(1), 'On days closed out in full');
+  if (open_.length)  add(mean(open_).toFixed(1),  'On days left unfinished');
+  block.append(pairs);
+
+  if (closed.length && open_.length) {
+    const d = mean(closed) - mean(open_);
+    const note = el('p', 'card pad t-sub dim');
+    note.style.marginTop = '10px';
+    note.textContent = Math.abs(d) < 0.3
+      ? 'Your mood barely moves with the habits. Useful to know — the system is not carrying your day.'
+      : d > 0
+        ? `You rate the day ${d.toFixed(1)} points higher when you finish everything. The habits are paying you back.`
+        : `You rate the day ${Math.abs(d).toFixed(1)} points lower when you finish everything. Worth asking whether the load is too heavy.`;
+    block.append(note);
+  }
+}
+
+let chartSeries = [], chartDates = [], chartGeom = null;
+
 function drawSpark(series) {
   const svg = $('#spark');
   svg.textContent = '';
   const W = 300, H = 76, pad = 4;
   svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  chartGeom = null;
+  hideCallout();
+
   if (series.length < 2) {
     const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
     t.setAttribute('x', W / 2); t.setAttribute('y', H / 2 + 4);
@@ -742,6 +1006,7 @@ function drawSpark(series) {
     svg.append(t);
     return;
   }
+
   const max = Math.max(1, ...series);
   const x = i => pad + (i / (series.length - 1)) * (W - pad * 2);
   const y = v => H - pad - (v / max) * (H - pad * 2);
@@ -757,7 +1022,80 @@ function drawSpark(series) {
   path.setAttribute('vector-effect', 'non-scaling-stroke');
 
   svg.append(area, path);
+  chartGeom = { max, pad, W, H };
 }
+
+/* The marker and callout are HTML so the stretched viewBox cannot distort them. */
+function ensureMarker() {
+  let m = $('#chart-marker');
+  if (!m) {
+    const wrap = $('#chart-wrap');
+    m = document.createElement('div');
+    m.id = 'chart-marker';
+    Object.assign(m.style, {
+      position:'absolute', width:'9px', height:'9px', borderRadius:'50%',
+      background:'var(--ink)', boxShadow:'0 0 0 2.5px var(--card)',
+      transform:'translate(-50%,-50%)', pointerEvents:'none', opacity:'0',
+      transition:'opacity .16s ease',
+    });
+    const rule = document.createElement('div');
+    rule.id = 'chart-rule';
+    Object.assign(rule.style, {
+      position:'absolute', top:'0', bottom:'0', width:'1px', background:'var(--ink-12)',
+      pointerEvents:'none', opacity:'0', transition:'opacity .16s ease',
+    });
+    wrap.append(rule, m);
+  }
+  return m;
+}
+
+function hideCallout() {
+  $('#callout')?.classList.remove('on');
+  const m = document.getElementById('chart-marker');
+  const r = document.getElementById('chart-rule');
+  if (m) m.style.opacity = '0';
+  if (r) r.style.opacity = '0';
+}
+
+function probeChart(clientX) {
+  if (!chartGeom || chartSeries.length < 2) return;
+  const wrap = $('#chart-wrap');
+  const svg = $('#spark');
+  const box = svg.getBoundingClientRect();
+  const frac = Math.min(1, Math.max(0, (clientX - box.left) / box.width));
+
+  /* the path is inset by `pad` in viewBox units on both sides */
+  const inset = chartGeom.pad / chartGeom.W;
+  const t = Math.min(1, Math.max(0, (frac - inset) / (1 - inset * 2)));
+  const i = Math.round(t * (chartSeries.length - 1));
+
+  const px = box.left - wrap.getBoundingClientRect().left
+           + (inset + (i / (chartSeries.length - 1)) * (1 - inset * 2)) * box.width;
+  const py = box.top - wrap.getBoundingClientRect().top
+           + (1 - chartSeries[i] / chartGeom.max) * (box.height - 8) + 4;
+
+  const m = ensureMarker();
+  m.style.left = px + 'px'; m.style.top = py + 'px'; m.style.opacity = '1';
+  const rule = $('#chart-rule');
+  rule.style.left = px + 'px'; rule.style.opacity = '1';
+
+  const c = $('#callout');
+  c.querySelector('b').textContent = chartSeries[i].toFixed(1);
+  c.querySelector('span').textContent = `${shortDate(chartDates[i])} · ${pointsOn(chartDates[i])} that day`;
+  c.style.left = Math.min(Math.max(px, 44), wrap.clientWidth - 44) + 'px';
+  c.style.top = py + 'px';
+  c.classList.add('on');
+}
+
+(() => {
+  const wrap = $('#chart-wrap');
+  const move = e => { e.preventDefault(); probeChart(e.clientX ?? e.touches[0].clientX); };
+  wrap.addEventListener('pointerdown', move);
+  wrap.addEventListener('pointermove', e => { if (e.pressure > 0 || e.buttons) move(e); });
+  wrap.addEventListener('pointerup', hideCallout);
+  wrap.addEventListener('pointercancel', hideCallout);
+  wrap.addEventListener('pointerleave', hideCallout);
+})();
 
 /* range segmented control */
 function moveThumb() {
