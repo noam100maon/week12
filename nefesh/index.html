@@ -41,8 +41,8 @@
       <path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20.2 4.2v4.2H16"/>
     </g>
     <linearGradient id="sparkfill" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#1F4D3A" stop-opacity=".18"/>
-      <stop offset="100%" stop-color="#1F4D3A" stop-opacity="0"/>
+      <stop class="s0" offset="0%"/>
+      <stop class="s1" offset="100%"/>
     </linearGradient>
     <g id="i-medal" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
       <circle cx="12" cy="14.5" r="5.5"/><path d="M12 12.3l.9 1.9 2 .3-1.45 1.4.35 2-1.8-.95-1.8.95.35-2L9.1 14.5l2-.3z"/>
@@ -322,6 +322,19 @@
   <h2>Settings</h2>
   <div class="field"><label for="s-name">Your name</label>
     <input id="s-name" maxlength="24" placeholder="Friend" autocomplete="off"></div>
+
+  <div class="field"><label>Appearance</label>
+    <div class="theme-pick">
+      <button class="swatch" data-theme-pick="forest">
+        <span class="dots"><i style="background:#1F4D3A"></i><i style="background:#F1E9D8"></i><i style="background:#F4F3EE"></i></span>
+        <b>Forest</b><span>Warm paper, deep green</span>
+      </button>
+      <button class="swatch" data-theme-pick="mono">
+        <span class="dots"><i style="background:#0B0B0C"></i><i style="background:#A8A8AC"></i><i style="background:#F2F2F3"></i></span>
+        <b>Mono</b><span>Black, white, nothing else</span>
+      </button>
+    </div>
+  </div>
   <div class="sec"><h2>Data</h2></div>
   <div class="group">
     <button class="row tap" id="s-export"><span class="row-main"><span class="row-title">Export</span>

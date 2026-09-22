@@ -40,9 +40,12 @@ measured against three weeks, 15% how many habits are active at all.
 
 ## Design
 
-Warm paper, deep forest ink, sand for the cards that mark a moment — mostly
-white, with colour used only where it carries meaning: completion, momentum,
-the density of the grid. Metrics follow Apple's HIG: the iOS
+Two themes, switched from Settings and remembered per device. **Forest** is
+warm paper, deep forest ink and sand for the cards that mark a moment, with
+colour used only where it carries meaning: completion, momentum, the density
+of the grid. **Mono** is the same layout in black, white and grey — every
+colour is a token, so the whole interface re-skins from one attribute on
+`<html>`. Metrics follow Apple's HIG: the iOS
 text styles (Large Title 34 / Body 17, 11pt floor), 44pt minimum tap targets,
 a 49pt tab row sitting on the home-indicator safe-area inset, translucent
 bars, and the iOS sheet curve `cubic-bezier(.32,.72,0,1)` on every transition.

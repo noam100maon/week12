@@ -73,7 +73,7 @@ const INFO = {
 
 const blank = () => ({
   v: 2,
-  profile: { name: '' },
+  profile: { name: '', theme: 'forest' },
   habits: [],
   log: {},
   vault: { quotes: [], books: [] },
@@ -116,6 +116,17 @@ function save() {
 
 let state = load();
 let range = 30;
+
+const THEME_BAR = { forest: '#F4F3EE', mono: '#F2F2F3' };
+
+function applyTheme(name) {
+  const t = name === 'mono' ? 'mono' : 'forest';
+  document.documentElement.setAttribute('data-theme', t);
+  document.querySelector('meta[name=theme-color]')?.setAttribute('content', THEME_BAR[t]);
+  document.querySelectorAll('[data-theme-pick]')
+    .forEach(b => b.classList.toggle('on', b.dataset.themePick === t));
+}
+applyTheme(state.profile.theme);
 let cursor = null;          // the day Home is showing; null means today
 
 /* ------------------------------------------------------------------ dates */
@@ -1230,8 +1241,15 @@ $('#reflect-form').addEventListener('submit', e => {
 /* settings */
 $('#open-settings').onclick = () => {
   $('#s-name').value = state.profile.name;
+  applyTheme(state.profile.theme);
   sheet('#sheet-settings');
 };
+
+document.querySelectorAll('[data-theme-pick]').forEach(b => b.onclick = () => {
+  state.profile.theme = b.dataset.themePick;
+  save(); applyTheme(state.profile.theme); haptic(8);
+  toast(state.profile.theme === 'mono' ? 'Mono' : 'Forest');
+});
 $('#s-name').addEventListener('input', e => {
   state.profile.name = e.target.value.trim().slice(0, 24);
   save(); renderHome();
