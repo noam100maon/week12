@@ -1,0 +1,305 @@
+<title>Tanya Reels</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Karla:wght@400;600&display=swap">
+<style>
+:root{
+  --ground:#e9ece4; --surface:#f6f7f2; --ink:#1f2a25; --muted:#5d6b63;
+  --sage:#4f6358; --gold:#a8843f; --line:#cfd5c9; --reel:#4f6358; --reel-ink:#f3efe3;
+  --ok:#3d7a4f; --danger:#a3402f;
+  --display:"Cormorant Garamond",Georgia,"Times New Roman",serif;
+  --body:"Source Serif 4",Georgia,serif;
+  --ui:"Karla",system-ui,-apple-system,sans-serif;
+  --fs:1.25rem;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  color-scheme:dark;--ground:#141b18;--surface:#1c2521;--ink:#e6e9e1;--muted:#9aa89f;
+  --sage:#8fa89a;--gold:#c8a86b;--line:#2d3833;--reel:#233029;--reel-ink:#efe9d8;--ok:#7fbf8f;--danger:#e08a78;}}
+:root[data-theme="dark"]{
+  color-scheme:dark;--ground:#141b18;--surface:#1c2521;--ink:#e6e9e1;--muted:#9aa89f;
+  --sage:#8fa89a;--gold:#c8a86b;--line:#2d3833;--reel:#233029;--reel-ink:#efe9d8;--ok:#7fbf8f;--danger:#e08a78;}
+html,body{height:100%}
+body{background:var(--ground);color:var(--ink);font-family:var(--ui);font-size:15px;margin:0}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+
+/* Library */
+#library{max-width:640px;margin:0 auto;padding:28px 16px 48px;display:flex;flex-direction:column;gap:28px}
+.mast{display:flex;flex-direction:column;gap:4px}
+.eyebrow{font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);font-weight:600}
+h1{font-family:var(--display);font-weight:600;font-size:2.6rem;line-height:1;margin:0;letter-spacing:.04em}
+.mast p{margin:6px 0 0;color:var(--muted);max-width:52ch;line-height:1.5}
+h2{font-family:var(--display);font-weight:600;font-size:1.5rem;margin:0}
+.chapters{display:flex;flex-direction:column;border-top:1px solid var(--line)}
+.ch{display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:center;padding:14px 0;border-bottom:1px solid var(--line)}
+.ch-open{all:unset;cursor:pointer;display:flex;flex-direction:column;gap:4px;min-width:0}
+.ch-open:focus-visible{outline:2px solid var(--gold)}
+.ch-title{font-family:var(--display);font-size:1.35rem;font-weight:600;overflow-wrap:anywhere}
+.ch-meta{font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.bar{height:3px;background:var(--line);border-radius:2px;overflow:hidden;margin-top:4px}
+.bar i{display:block;height:100%;background:var(--gold)}
+.ch-actions{display:flex;gap:6px}
+.ghost{background:none;border:1px solid var(--line);border-radius:6px;padding:6px 10px;font-size:.8rem;color:var(--muted)}
+.ghost.danger{color:var(--danger);border-color:var(--danger)}
+.empty{color:var(--muted);padding:16px 0}
+form{display:flex;flex-direction:column;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px 16px}
+label{font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600;display:flex;flex-direction:column;gap:6px}
+input[type=text],textarea,select{background:var(--ground);border:1px solid var(--line);border-radius:6px;padding:10px;font-size:1rem;letter-spacing:0;text-transform:none;font-weight:400}
+textarea{min-height:180px;resize:vertical;font-family:var(--body);line-height:1.5}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.primary{background:var(--sage);color:var(--surface);border:0;border-radius:6px;padding:11px 18px;font-weight:600}
+.file{font-size:.85rem;color:var(--muted)}
+.hint{font-size:.8rem;color:var(--muted);line-height:1.45;margin:0}
+#formMsg{font-size:.85rem;margin:0}
+
+/* Reader */
+#reader{position:fixed;inset:0;background:var(--ground);display:flex;flex-direction:column}
+.top{display:flex;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top,0px)) 16px 10px;border-bottom:1px solid var(--line)}
+.top .t{flex:1;min-width:0;font-family:var(--display);font-weight:600;font-size:1.15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.count{font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.progress{height:3px;background:var(--line)}
+.progress i{display:block;height:100%;width:0;background:var(--gold);transition:width .2s}
+#reels{flex:1;overflow-y:auto;scroll-snap-type:y mandatory;overscroll-behavior:contain}
+.reel{scroll-snap-align:start;scroll-snap-stop:always;height:100%;box-sizing:border-box;display:flex;padding:16px}
+.card{flex:1;background:var(--reel);color:var(--reel-ink);border-radius:14px;padding:28px 22px 22px;display:flex;flex-direction:column;gap:16px;position:relative;overflow:hidden;
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--gold) 45%,transparent), inset 0 0 0 7px var(--reel), inset 0 0 0 8px color-mix(in srgb,var(--gold) 30%,transparent)}
+.card .num{font-size:.7rem;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);font-weight:600;text-align:center}
+.card .txt{flex:1;overflow-y:auto;display:flex;flex-direction:column;justify-content:center;gap:.8em;font-family:var(--body);font-size:var(--fs);line-height:1.6;max-width:36ch;margin:0 auto;width:100%}
+.card .txt p{margin:0}
+.card .foot{display:flex;justify-content:space-between;font-size:.75rem;color:color-mix(in srgb,var(--reel-ink) 65%,transparent);font-variant-numeric:tabular-nums}
+.card.end .txt{align-items:center;text-align:center;font-family:var(--display);font-size:1.6rem}
+.fs button{background:none;border:1px solid var(--line);border-radius:6px;width:34px;height:30px;color:var(--ink)}
+@media (prefers-reduced-motion:reduce){#reels{scroll-behavior:auto}.progress i{transition:none}}
+</style>
+
+<main id="library">
+  <header class="mast">
+    <span class="eyebrow">Bite-size reading</span>
+    <h1>Tanya Reels</h1>
+    <p>Paste a chapter and it becomes a stack of swipeable reels. Every word stays — breaks fall on paragraph and sentence ends, and each chapter is checked word-for-word against what you pasted.</p>
+  </header>
+
+  <section style="display:flex;flex-direction:column;gap:10px">
+    <h2>Your chapters</h2>
+    <div class="chapters" id="list"></div>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:10px">
+    <h2 id="formTitle">Add a chapter</h2>
+    <form id="addForm">
+      <label for="chTitle">Chapter name
+        <input type="text" id="chTitle" placeholder="e.g. Chapter 1 — The Inbetweener" required>
+      </label>
+      <label for="chText">Chapter text
+        <textarea id="chText" placeholder="Paste the full chapter here" required></textarea>
+      </label>
+      <div class="row">
+        <input type="file" id="chFile" accept=".txt,text/plain" class="file" aria-label="Load a .txt file">
+      </div>
+      <label for="chSize">Reel length
+        <select id="chSize">
+          <option value="40">Short · ~40 words</option>
+          <option value="70" selected>Medium · ~70 words</option>
+          <option value="110">Long · ~110 words</option>
+        </select>
+      </label>
+      <div class="row">
+        <button class="primary" type="submit" id="saveBtn">Make reels</button>
+        <button class="ghost" type="button" id="cancelEdit" hidden>Cancel</button>
+      </div>
+      <p id="formMsg" role="status"></p>
+      <p class="hint">Chapters are saved in this browser only. Tip: paste one chapter at a time so each gets its own progress bar.</p>
+    </form>
+  </section>
+</main>
+
+<section id="reader" hidden aria-label="Reader">
+  <div class="top">
+    <button class="ghost" id="back" aria-label="Back to chapters">←</button>
+    <div class="t" id="rTitle"></div>
+    <span class="count" id="rCount"></span>
+    <span class="fs"><button id="smaller" aria-label="Smaller text">A−</button> <button id="bigger" aria-label="Bigger text">A+</button></span>
+  </div>
+  <div class="progress"><i id="rProg"></i></div>
+  <div id="reels" tabindex="0"></div>
+</section>
+
+<script>
+const KEY = 'tanyaReels.v1';
+const SAMPLE = {
+  id: 'sample',
+  title: 'Sample — how a chapter looks',
+  size: 70,
+  text: `This is example text written for the demo, not a chapter from the book. Paste your own chapter below and it will be split the same way.
+
+The opening of the Tanya asks a simple question with a surprising answer. Most of us assume the world divides into good people and bad people. Rabbi Shneur Zalman proposes a third figure, the beinoni, the "inbetweener," and argues that this is the level a person can actually aim for.
+
+The inbetweener still feels the pull of selfish desire. The feelings do not vanish. What changes is that they never get the final word: thought, speech and action stay in line, one decision at a time.
+
+That is why the book calls itself practical. It does not ask you to become a different person overnight. It asks you to notice the moment of choice, and to choose again, and again, and again.
+
+Swipe up to keep going. When you reach the last reel, the chapter is complete, with nothing left out.`,
+  pos: 0
+};
+
+let store = load();
+let current = null, editing = null;
+
+function load(){
+  try{ const s = JSON.parse(localStorage.getItem(KEY)); if(s && Array.isArray(s.chapters)) return s; }catch(e){}
+  return {chapters:[SAMPLE], fs:1.25};
+}
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(store)); }catch(e){} }
+
+/* ---- Splitting: every reel is an exact slice of the original, so nothing can be cut ---- */
+function split(text, target){
+  const min = Math.round(target*0.6), max = Math.round(target*1.6);
+  // word boundaries (positions where a new word starts)
+  const cands = []; // {pos, pri, words}
+  let words = 0;
+  const re = /\s+/g; let m;
+  const firstWord = text.search(/\S/);
+  if(firstWord < 0) return [];
+  while((m = re.exec(text))){
+    const end = m.index + m[0].length;
+    if(end >= text.length) break;
+    words++;
+    const before = text.slice(Math.max(0,m.index-3), m.index);
+    let pri = 0;
+    if(/\n\s*\n/.test(m[0])) pri = 4;
+    else if(m[0].includes('\n')) pri = 3;
+    else if(/[.!?…]["'”’)\]]*$/.test(before)) pri = 2;
+    else if(/[;:,—–]["'”’)]*$/.test(before)) pri = 1;
+    cands.push({pos:end, pri, words});
+  }
+  const total = words + 1;
+  const chunks = []; let start = 0, startWords = 0, i = 0;
+  while(true){
+    if(total - startWords <= max){ chunks.push(text.slice(start)); break; }
+    let best = null, bestScore = -Infinity;
+    for(let j=i; j<cands.length; j++){
+      const n = cands[j].words - startWords;
+      if(n < min) continue;
+      if(n > max) break;
+      const score = cands[j].pri*100 - Math.abs(n-target);
+      if(score > bestScore){ bestScore = score; best = j; }
+    }
+    if(best === null){ best = i; while(best < cands.length-1 && cands[best].words - startWords < min) best++; }
+    const c = cands[best];
+    // avoid a tiny leftover at the end
+    if(total - c.words < min*0.5 && total - startWords <= max*1.4){ chunks.push(text.slice(start)); break; }
+    chunks.push(text.slice(start, c.pos));
+    start = c.pos; startWords = c.words; i = best+1;
+  }
+  return chunks;
+}
+const wc = s => (s.match(/\S+/g)||[]).length;
+function verify(text, chunks){ return chunks.join('') === text && chunks.reduce((a,c)=>a+wc(c),0) === wc(text); }
+
+/* ---- Library ---- */
+const $ = id => document.getElementById(id);
+function renderList(){
+  const list = $('list'); list.innerHTML = '';
+  if(!store.chapters.length){ list.innerHTML = '<div class="empty">No chapters yet — add one below.</div>'; return; }
+  store.chapters.forEach(ch=>{
+    const reels = split(ch.text, ch.size);
+    const ok = verify(ch.text, reels);
+    const pct = reels.length>1 ? Math.round(ch.pos/(reels.length-1)*100) : 0;
+    const row = document.createElement('div'); row.className='ch';
+    row.innerHTML = `<button class="ch-open"><span class="ch-title"></span>
+      <span class="ch-meta">${reels.length} reels · ${wc(ch.text).toLocaleString()} words · ${ok?'all words kept ✓':'check failed'}${ch.pos?` · reel ${ch.pos+1}`:''}</span>
+      <span class="bar"><i style="width:${pct}%"></i></span></button>
+      <span class="ch-actions"><button class="ghost" data-a="edit">Edit</button><button class="ghost" data-a="del">Delete</button></span>`;
+    row.querySelector('.ch-title').textContent = ch.title;
+    row.querySelector('.ch-open').onclick = ()=>openReader(ch);
+    row.querySelector('[data-a=edit]').onclick = ()=>startEdit(ch);
+    const del = row.querySelector('[data-a=del]');
+    del.onclick = ()=>{
+      if(del.dataset.armed){ store.chapters = store.chapters.filter(c=>c!==ch); save(); renderList(); return; }
+      del.dataset.armed='1'; del.textContent='Tap to confirm'; del.classList.add('danger');
+      setTimeout(()=>{ if(del.isConnected){ delete del.dataset.armed; del.textContent='Delete'; del.classList.remove('danger'); } },3000);
+    };
+    list.appendChild(row);
+  });
+}
+function startEdit(ch){
+  editing = ch; $('chTitle').value = ch.title; $('chText').value = ch.text; $('chSize').value = String(ch.size);
+  $('formTitle').textContent = 'Edit chapter'; $('saveBtn').textContent='Save changes'; $('cancelEdit').hidden=false;
+  $('addForm').scrollIntoView({behavior:'smooth'});
+}
+function resetForm(){
+  editing = null; $('addForm').reset(); $('formTitle').textContent='Add a chapter'; $('saveBtn').textContent='Make reels'; $('cancelEdit').hidden=true;
+}
+$('cancelEdit').onclick = ()=>{ resetForm(); $('formMsg').textContent=''; };
+$('chFile').onchange = e=>{
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = ()=>{ $('chText').value = r.result; if(!$('chTitle').value) $('chTitle').value = f.name.replace(/\.[^.]+$/,''); };
+  r.readAsText(f);
+};
+$('addForm').onsubmit = e=>{
+  e.preventDefault();
+  const text = $('chText').value.replace(/\r\n?/g,'\n').trim();
+  const title = $('chTitle').value.trim();
+  if(!text || !title) return;
+  const size = +$('chSize').value;
+  const reels = split(text, size);
+  if(!verify(text, reels)){ $('formMsg').textContent = 'Could not split this text without losing words — nothing was saved.'; $('formMsg').style.color='var(--danger)'; return; }
+  if(editing){ Object.assign(editing,{title,text,size,pos:Math.min(editing.pos,reels.length-1)}); }
+  else store.chapters.push({id:Date.now().toString(36), title, text, size, pos:0});
+  save(); renderList(); resetForm();
+  $('formMsg').style.color='var(--ok)';
+  $('formMsg').textContent = `Saved “${title}” as ${reels.length} reels — all ${wc(text).toLocaleString()} words kept.`;
+};
+
+/* ---- Reader ---- */
+function paras(s){
+  const frag = document.createDocumentFragment();
+  s.trim().split(/\n\s*\n/).forEach(p=>{ const el=document.createElement('p'); el.dir='auto'; el.textContent=p.replace(/\s*\n\s*/g,' '); frag.appendChild(el); });
+  return frag;
+}
+function openReader(ch){
+  current = ch;
+  const reels = split(ch.text, ch.size);
+  $('rTitle').textContent = ch.title;
+  const box = $('reels'); box.innerHTML='';
+  reels.forEach((r,i)=>{
+    const sec = document.createElement('div'); sec.className='reel';
+    sec.innerHTML = `<article class="card"><div class="num">Reel ${i+1} of ${reels.length}</div><div class="txt"></div>
+      <div class="foot"><span>${wc(r)} words</span><span>${i<reels.length-1?'swipe up ↑':'end of chapter'}</span></div></article>`;
+    sec.querySelector('.txt').appendChild(paras(r));
+    box.appendChild(sec);
+  });
+  const end = document.createElement('div'); end.className='reel';
+  end.innerHTML = `<article class="card end"><div class="num">Chapter complete</div><div class="txt"><p>You read every word.</p>
+    <p style="font-family:var(--ui);font-size:.9rem">${wc(ch.text).toLocaleString()} words across ${reels.length} reels</p>
+    <button class="primary" style="font-family:var(--ui);font-size:.95rem;background:var(--gold);color:var(--reel)">Back to chapters</button></div></article>`;
+  end.querySelector('button').onclick = closeReader;
+  box.appendChild(end);
+  $('library').hidden = true; $('reader').hidden = false;
+  const n = reels.length;
+  const onScroll = ()=>{
+    const idx = Math.round(box.scrollTop / box.clientHeight);
+    const shown = Math.min(idx, n-1);
+    $('rCount').textContent = idx>=n ? `${n}/${n}` : `${shown+1}/${n}`;
+    $('rProg').style.width = (Math.min(idx+1,n)/n*100)+'%';
+    if(current){ current.pos = shown; save(); }
+  };
+  box.onscroll = onScroll;
+  requestAnimationFrame(()=>{ box.scrollTop = ch.pos*box.clientHeight; onScroll(); box.focus(); });
+}
+function closeReader(){ current=null; $('reader').hidden=true; $('library').hidden=false; renderList(); }
+$('back').onclick = closeReader;
+function setFs(v){ store.fs = Math.max(.95, Math.min(1.9, v)); document.documentElement.style.setProperty('--fs', store.fs+'rem'); save(); }
+$('smaller').onclick = ()=>setFs(store.fs-.1);
+$('bigger').onclick = ()=>setFs(store.fs+.1);
+document.addEventListener('keydown', e=>{
+  if($('reader').hidden) return;
+  const box = $('reels');
+  if(['ArrowDown','PageDown',' '].includes(e.key)){ e.preventDefault(); box.scrollBy({top:box.clientHeight}); }
+  if(['ArrowUp','PageUp'].includes(e.key)){ e.preventDefault(); box.scrollBy({top:-box.clientHeight}); }
+  if(e.key==='Escape') closeReader();
+});
+setFs(store.fs||1.25);
+renderList();
+</script>
