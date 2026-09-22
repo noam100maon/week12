@@ -156,13 +156,15 @@
     <div class="sec"><h2>Wisdom vault</h2>
       <button class="info" data-info="vault" aria-label="About the vault"><svg viewBox="0 0 24 24"><use href="#i-info"/></svg></button>
     </div>
-    <div class="group" id="vault">
-      <button class="vault-toggle tap" id="vault-toggle" aria-expanded="false">
-        <span><span class="t-head">Saved</span> <span class="dim t-sub" id="vault-count"></span></span>
-        <svg class="chev" width="9" height="14" viewBox="0 0 24 24" style="color:var(--ink-25)"><use href="#i-chev"/></svg>
-      </button>
-      <div class="vault-body"><div id="vault-body"></div></div>
+    <div class="vault-panel">
+      <div class="panes" aria-hidden="true"><i></i><i></i><i></i></div>
+      <div class="vault-head">
+        <span class="vault-title">My vault</span>
+        <button class="vault-add" id="vault-add" aria-label="Write your own quote">+</button>
+      </div>
+      <ul class="tally" id="vault-tally"></ul>
     </div>
+    <div class="group" id="vault-items" style="margin-top:10px"></div>
   </section>
 
   <!-- ===================== RESULTS ===================== -->
@@ -366,6 +368,22 @@
     <div class="sheet-acts">
       <button type="button" class="btn sec" data-close>Cancel</button>
       <button type="submit" class="btn">Save reflection</button>
+    </div>
+  </form>
+</div>
+
+<div class="sheet" id="sheet-quote">
+  <div class="grabber"></div>
+  <form id="quote-form">
+    <h2>Your own quote</h2>
+    <p class="lead">A line worth keeping — from anywhere, or from you.</p>
+    <div class="field"><label for="qf-text">The line</label>
+      <textarea id="qf-text" maxlength="300" required placeholder="Discipline is choosing between what you want now and what you want most."></textarea></div>
+    <div class="field"><label for="qf-who">Who said it</label>
+      <input id="qf-who" maxlength="60" placeholder="Abraham Lincoln, or leave it blank" autocomplete="off"></div>
+    <div class="sheet-acts">
+      <button type="button" class="btn sec" data-close>Cancel</button>
+      <button type="submit" class="btn">Keep it</button>
     </div>
   </form>
 </div>

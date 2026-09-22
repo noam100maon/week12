@@ -59,7 +59,7 @@ const INFO = {
   models:      ['Mental models','Five ideas that explain why a system beats willpower. Read one when the work feels pointless — that feeling is usually the plateau, not failure.'],
   sim:         ['Implementation simulator','Habit stacking in miniature, and the identity it votes for: pick something you already do without thinking, attach the smallest possible version of what you want to do, and let the old habit carry the new one.'],
   bundles:     ['Identity bundles','A starting kit. Each bundle pairs an identity with the two-minute habit that votes for it, already anchored to a common cue. You can edit everything after importing.'],
-  vault:       ['Wisdom vault','Everything you have starred — quotes and books — collected in one place so the good lines do not scroll away.'],
+  vault:       ['Wisdom vault','Everything you have kept, counted: quotes from the book, lines of your own, mental models and books. Tap a number to read that shelf.'],
   momentum:    ['System momentum','A single read on the system rather than any one day. 60% is your completion rate over the selected range, 25% is your best current streak measured against three weeks, and 15% is how many of your habits are active at all.'],
   consistency: ['Consistency','The seven-day rolling average of identity points — one point per completion. The rolling window smooths single bad days so you can see the trend underneath them.'],
   checkin:     ['Daily check-in','One number for how the day felt, one to ten. It is not a habit and it cannot be missed — it is the context that explains a good week or a bad one when you look back.'],
@@ -76,7 +76,7 @@ const blank = () => ({
   profile: { name: '', theme: 'forest' },
   habits: [],
   log: {},
-  vault: { quotes: [], books: [] },
+  vault: { quotes: [], books: [], models: [], own: [] },
   ack: [],
   reflections: [],
   mood: {},
@@ -103,7 +103,10 @@ function migrate(old) {
 function load() {
   try {
     const raw = localStorage.getItem(KEY);
-    if (raw) return { ...blank(), ...JSON.parse(raw) };
+    if (raw) {
+      const d = JSON.parse(raw);
+      return { ...blank(), ...d, vault: { ...blank().vault, ...(d.vault || {}) } };
+    }
     const old = localStorage.getItem(OLD);
     if (old) return migrate(JSON.parse(old));
   } catch { /* fall through to a clean slate */ }
@@ -626,9 +629,31 @@ function renderInspire() {
 
   const models = $('#models');
   models.textContent = '';
-  MODELS.forEach(([t, d]) => {
+  MODELS.forEach(([t, d], i) => {
     const tile = el('div', 'tile');
-    tile.append(el('h3', null, t), el('p', 'num', d));
+    const head = el('div');
+    head.style.cssText = 'display:flex;align-items:flex-start;justify-content:space-between;gap:12px';
+    head.append(el('h3', null, t));
+
+    const saved = state.vault.models.includes(i);
+    const star = el('button');
+    star.style.cssText = 'flex:none;width:30px;height:30px;margin:-4px -6px 0 0;display:grid;place-items:center';
+    star.setAttribute('aria-label', (saved ? 'Remove from' : 'Save to') + ' the vault');
+    const ico = icon('i-star', 17);
+    ico.setAttribute('fill', saved ? 'currentColor' : 'none');
+    ico.setAttribute('stroke', 'currentColor');
+    ico.setAttribute('stroke-width', '1.6');
+    ico.style.color = saved ? 'var(--accent)' : 'var(--ink-25)';
+    star.append(ico);
+    star.onclick = () => {
+      const k = state.vault.models.indexOf(i);
+      if (k < 0) { state.vault.models.push(i); toast('Saved to the vault'); }
+      else state.vault.models.splice(k, 1);
+      save(); haptic(6); renderInspire();
+    };
+
+    head.append(star);
+    tile.append(head, el('p', 'num', d));
     models.append(tile);
   });
 
@@ -729,34 +754,108 @@ $('#sim-import').onclick = () => {
   render();
 };
 
-function renderVault() {
-  const { quotes, books } = state.vault;
-  const n = quotes.length + books.length;
-  $('#vault-count').textContent = n ? `· ${n}` : '· empty';
-  const body = $('#vault-body');
-  body.textContent = '';
-  if (!n) {
-    body.append(el('p', 'empty', 'Star a quote or a book and it lands here.'));
-    return;
-  }
-  quotes.forEach(i => {
-    const q = QUOTES[i];
-    if (!q) return;
-    const d = el('div', 'saved-quote');
-    d.append(document.createTextNode(`“${q[0]}”`));
-    d.append(el('div', 't-foot dim', '— ' + q[1]));
-    body.append(d);
-  });
-  books.forEach(id => {
-    const b = BOOKS.find(x => x[0] === id);
-    if (!b) return;
-    const row = el('div', 'row saved-book');
-    const main = el('span', 'row-main');
-    main.append(el('span', 'row-title', b[1]), el('span', 'row-sub', b[2]));
-    row.append(main);
-    body.append(row);
-  });
+let vaultTab = 'quotes';
+
+const VAULT_CATS = [
+  ['quotes', 'quotes from the book'],
+  ['own',    'quotes of your own'],
+  ['models', 'mental models kept'],
+  ['books',  'books on the shelf'],
+];
+
+function vaultCount(key) {
+  return key === 'own' ? state.vault.own.length : state.vault[key].length;
 }
+
+function renderVault() {
+  const tally = $('#vault-tally');
+  tally.textContent = '';
+
+  VAULT_CATS.forEach(([key, caption]) => {
+    const row = el('li');
+    const b = el('button', 'tally-row' + (vaultTab === key ? ' on' : ''));
+    b.append(el('span', 'dots', '\u22EE'));
+    b.append(el('span', 'tally-num', String(vaultCount(key)).padStart(2, '0')));
+    b.append(el('span', 'tally-cap', caption));
+    b.onclick = () => { vaultTab = key; haptic(6); renderVault(); };
+    row.append(b);
+    tally.append(row);
+  });
+
+  const box = $('#vault-items');
+  box.textContent = '';
+
+  const empties = {
+    quotes: 'Star a quote at the top of this page and it lands here.',
+    own:    'Nothing of your own yet. The + button keeps a line you like.',
+    models: 'Star a mental model and it lands here.',
+    books:  'Star a book from the reading list and it lands here.',
+  };
+
+  if (vaultTab === 'quotes') {
+    if (!state.vault.quotes.length) return void box.append(el('p', 'empty', empties.quotes));
+    state.vault.quotes.forEach(i => {
+      const q = QUOTES[i];
+      if (q) box.append(vaultQuote(q[0], q[1], () => {
+        state.vault.quotes = state.vault.quotes.filter(x => x !== i);
+      }));
+    });
+  }
+
+  if (vaultTab === 'own') {
+    if (!state.vault.own.length) return void box.append(el('p', 'empty', empties.own));
+    state.vault.own.forEach(q => {
+      box.append(vaultQuote(q.text, q.who || 'you', () => {
+        state.vault.own = state.vault.own.filter(x => x.id !== q.id);
+      }));
+    });
+  }
+
+  if (vaultTab === 'models') {
+    if (!state.vault.models.length) return void box.append(el('p', 'empty', empties.models));
+    state.vault.models.forEach(i => {
+      const m = MODELS[i];
+      if (m) box.append(vaultQuote(m[1], m[0], () => {
+        state.vault.models = state.vault.models.filter(x => x !== i);
+      }));
+    });
+  }
+
+  if (vaultTab === 'books') {
+    if (!state.vault.books.length) return void box.append(el('p', 'empty', empties.books));
+    state.vault.books.forEach(id => {
+      const b = BOOKS.find(x => x[0] === id);
+      if (b) box.append(vaultQuote(b[1], b[2], () => {
+        state.vault.books = state.vault.books.filter(x => x !== id);
+      }));
+    });
+  }
+}
+
+function vaultQuote(line, who, remove) {
+  const d = el('div', 'vault-quote');
+  d.append(el('p', 'line', line), el('p', 'who', '— ' + who));
+  const drop = el('button', 'drop', '\u00D7');
+  drop.setAttribute('aria-label', 'Remove from the vault');
+  drop.onclick = () => { remove(); save(); haptic(6); renderVault(); };
+  d.append(drop);
+  return d;
+}
+
+$('#vault-add').onclick = () => {
+  $('#qf-text').value = ''; $('#qf-who').value = '';
+  sheet('#sheet-quote');
+  setTimeout(() => $('#qf-text').focus(), 320);
+};
+
+$('#quote-form').addEventListener('submit', e => {
+  e.preventDefault();
+  const text = $('#qf-text').value.trim();
+  if (!text) return;
+  state.vault.own.push({ id: uid(), text, who: $('#qf-who').value.trim() });
+  vaultTab = 'own';
+  save(); haptic(12); closeSheet(); renderInspire(); toast('Kept');
+});
 
 $('#q-star').onclick = () => {
   const qi = currentQuote();
@@ -774,13 +873,6 @@ $('#q-next').onclick = () => {
   setTimeout(() => { renderInspire(); card.style.opacity = '1'; }, 130);
 };
 $('#q-text').style.transition = 'opacity .13s ease';
-
-$('#vault-toggle').onclick = () => {
-  const v = $('#vault');
-  const open = v.classList.toggle('vault-open');
-  $('#vault-toggle').setAttribute('aria-expanded', String(open));
-  haptic(6);
-};
 
 /* ===================================================== RENDER — RESULTS === */
 
