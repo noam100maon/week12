@@ -1,7 +1,7 @@
 # Nefesh
 
-A black-and-white habit tracker built on the ideas in *Atomic Habits* by James Clear.
-No build step, no accounts, no network: open `index.html` and it runs.
+A black-and-white habit system built on the ideas in *Atomic Habits*.
+No build step, no dependencies, no accounts: open `index.html` and it runs.
 
 ## Run it
 
@@ -9,33 +9,46 @@ No build step, no accounts, no network: open `index.html` and it runs.
 open nefesh/index.html          # or: npx http-server nefesh
 ```
 
-## What it does
+On iOS, Share → **Add to Home Screen** installs it as a standalone app.
 
-**Today** — the habits scheduled for the current weekday, each with its cue, its
-habit stack and its two-minute version. Tick one and it casts a vote. A
-*never miss twice* banner appears when a habit was missed the last time it was
-due, so the miss does not become the new habit. Arrows step back through
-earlier days to fill in a forgotten check.
+## Three tabs
 
-**Habits** — create and edit habits as implementation intentions. Each one
-carries the four laws: a cue (obvious), an identity it votes for (attractive),
-a two-minute version (easy) and a reward (satisfying). Habits can be *build* or
-*break*, and can run on any subset of weekdays.
+**Home** — today's habits and goals against a single completion bar. Every
+habit carries its anchor ("after I pour my coffee"), its time, an optional
+step list, and a low-energy version that still counts. Miss a habit and the
+next time it comes due it asks *what got in the way?* — too big, bad timing,
+forgot, low energy — so the miss becomes data instead of guilt.
 
-**Identity** — "I am the type of person who…". Attach habits to an identity and
-every completion is counted as a vote for it. Behaviour change starts with who
-you want to be, not what you want to achieve.
+**Inspire** — a quote you can star, five mental models, an implementation
+simulator that stacks an anchor you already have against a micro-action small
+enough to be boring, four identity bundles that import in one tap, a reading
+list, and a wisdom vault holding everything you starred.
 
-**Review** — a thirty-day grid per habit, completion rates, longest run, and the
-four laws as a reference. Days before a habit existed are not counted as misses.
+**Results** — system momentum over 7/30/90/365 days or all time, a seven-day
+rolling consistency curve with its delta against the prior period, per-habit
+completion, votes cast per identity, days rescued by not missing twice,
+milestones, and a weekly reflection.
 
-Data lives in `localStorage` on the device. Export and import JSON from the
-Review tab to move it or back it up.
+Momentum is 60% completion rate over the range, 25% best current streak
+measured against three weeks, 15% how many habits are active at all.
+
+## Design
+
+Grayscale on a grouped-white background. Metrics follow Apple's HIG: the iOS
+text styles (Large Title 34 / Body 17, 11pt floor), 44pt minimum tap targets,
+a 49pt tab row sitting on the home-indicator safe-area inset, translucent
+bars, and the iOS sheet curve `cubic-bezier(.32,.72,0,1)` on every transition.
+`-apple-system` picks up real SF Pro and its Display/Text optical switch.
+True squircles are applied through `corner-shape` where the engine supports
+it (Chromium 139+); tuned `border-radius` carries Safari and Firefox.
+
+State lives in `localStorage`, migrating any data from the previous version.
+Export and import JSON from Settings.
 
 ## Files
 
 | File | Purpose |
 | --- | --- |
-| `index.html` | Markup and the habit dialog |
-| `styles.css` | Grayscale design system |
-| `app.js` | State, streak maths, rendering |
+| `index.html` | Markup, icon sprite, sheets |
+| `styles.css` | Design system |
+| `app.js` | State, habit maths, rendering |
