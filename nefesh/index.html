@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Nefesh</title>
-<meta name="description" content="A quiet, black-and-white habit system built on Atomic Habits.">
-<meta name="theme-color" content="#F2F2F4">
+<meta name="description" content="A quiet habit system built on Atomic Habits.">
+<meta name="theme-color" content="#F4F3EE">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Nefesh">
@@ -40,6 +40,10 @@
     <g id="i-refresh" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
       <path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20.2 4.2v4.2H16"/>
     </g>
+    <linearGradient id="sparkfill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1F4D3A" stop-opacity=".18"/>
+      <stop offset="100%" stop-color="#1F4D3A" stop-opacity="0"/>
+    </linearGradient>
     <g id="i-medal" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
       <circle cx="12" cy="14.5" r="5.5"/><path d="M12 12.3l.9 1.9 2 .3-1.45 1.4.35 2-1.8-.95-1.8.95.35-2L9.1 14.5l2-.3z"/>
       <path d="M8.4 8.6 6.2 3.2h11.6l-2.2 5.4"/>
@@ -71,8 +75,10 @@
     </div>
 
     <div class="card focus" style="margin-top:10px">
-      <div class="focus-top">
-        <span class="t-head" id="focus-count">Nothing scheduled</span>
+      <p class="focus-kicker">Today&rsquo;s focus</p>
+      <h2 class="focus-head" id="focus-head">Nothing scheduled</h2>
+      <div class="focus-top" style="margin-top:14px">
+        <span class="t-foot dim" id="focus-count">0 of 0 today</span>
         <span class="focus-pct" id="focus-pct">0%</span>
       </div>
       <div class="track"><i id="focus-bar" style="width:0%"></i></div>
@@ -121,15 +127,19 @@
       <button class="info" data-info="sim" aria-label="About the simulator"><svg viewBox="0 0 24 24"><use href="#i-info"/></svg></button>
     </div>
     <div class="card pad">
-      <p class="t-sub dim">Tap an anchor you already do, then a micro-action small enough to be boring.</p>
+      <p class="t-sub dim">Tap an anchor you already do, a micro-action small enough to be boring, and the person it makes you.</p>
       <p class="sim-lab">Anchors</p>
       <div class="sim-pool" id="sim-anchors"></div>
       <p class="sim-lab">Micro-actions</p>
       <div class="sim-pool" id="sim-actions"></div>
+      <p class="sim-lab">Identity</p>
+      <div class="sim-pool" id="sim-identities"></div>
       <div class="slots">
         <div class="slot" id="slot-anchor">Anchor</div>
         <div class="slot-op">+</div>
         <div class="slot" id="slot-action">Micro-action</div>
+        <div class="slot-op">=</div>
+        <div class="slot" id="slot-identity">Identity</div>
       </div>
       <p class="sim-out" id="sim-out">Your stack will read back to you here.</p>
       <button class="btn" id="sim-import" style="margin-top:12px" disabled>Import this stack</button>
@@ -224,7 +234,7 @@
     <div class="sec"><h2>Habit breakdown</h2></div>
     <div class="group" id="breakdown"></div>
 
-    <div class="sec"><h2>Votes cast</h2>
+    <div class="sec"><h2>Votes cast &middot; identity portfolio</h2>
       <button class="info" data-info="votes" aria-label="About votes"><svg viewBox="0 0 24 24"><use href="#i-info"/></svg></button>
     </div>
     <div class="portfolio" id="portfolio"></div>

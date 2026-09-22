@@ -33,6 +33,7 @@ const MODELS = [
 ];
 
 const ANCHORS = ['Morning coffee','Brushing teeth','Lunch','Shutting the laptop','Waking up','Getting home','Dinner plates cleared'];
+const SIM_IDENTITIES = ['a Reader','a Runner','a Writer','a Builder','someone calm and present','a Fit Person'];
 const ACTIONS = ['Read 1 page','Do 1 push-up','Write 2 sentences','Take 3 breaths','Sketch 1 idea','Walk to the corner','Drink a glass of water'];
 
 const BUNDLES = [
@@ -56,7 +57,7 @@ const INFO = {
   habits:      ['Daily habits','Each habit is an implementation intention: after a cue you already have, you do something small enough that refusing feels silly. Ticking one casts a vote for the identity attached to it.'],
   goals:       ['Goals','A goal is a one-off outcome you still touch daily. It counts towards today’s total but it is the habit underneath that moves it.'],
   models:      ['Mental models','Five ideas that explain why a system beats willpower. Read one when the work feels pointless — that feeling is usually the plateau, not failure.'],
-  sim:         ['Implementation simulator','Habit stacking in miniature: pick something you already do without thinking, attach the smallest possible version of what you want to do, and let the old habit carry the new one.'],
+  sim:         ['Implementation simulator','Habit stacking in miniature, and the identity it votes for: pick something you already do without thinking, attach the smallest possible version of what you want to do, and let the old habit carry the new one.'],
   bundles:     ['Identity bundles','A starting kit. Each bundle pairs an identity with the two-minute habit that votes for it, already anchored to a common cue. You can edit everything after importing.'],
   vault:       ['Wisdom vault','Everything you have starred — quotes and books — collected in one place so the good lines do not scroll away.'],
   momentum:    ['System momentum','A single read on the system rather than any one day. 60% is your completion rate over the selected range, 25% is your best current streak measured against three weeks, and 15% is how many of your habits are active at all.'],
@@ -341,7 +342,7 @@ function renderHome() {
   const isToday = day === today;
 
   $('#greet').textContent = state.profile.name
-    ? `${greeting()}, ${state.profile.name}` : greeting();
+    ? `Hi, ${state.profile.name}` : greeting();
   $('#home-title').textContent = isToday ? 'Today' : parseISO(day).toLocaleDateString(undefined, { weekday:'long' });
   $('#navbar-title').textContent = tab === 'home' ? (isToday ? 'Today' : shortDate(day)) : TITLES[tab];
 
@@ -356,9 +357,12 @@ function renderHome() {
   const done   = all.filter(h => isDone(h, day)).length;
   const pct    = all.length ? Math.round((done / all.length) * 100) : 0;
 
-  $('#focus-count').textContent = all.length
-    ? `${done} of ${all.length}${isToday ? ' today' : ''}`
+  const nH = habits.length, nG = goals.length;
+  $('#focus-head').textContent = all.length
+    ? [`${nH} ${nH === 1 ? 'habit' : 'habits'}`, nG ? `${nG} ${nG === 1 ? 'goal' : 'goals'}` : null]
+        .filter(Boolean).join(' · ')
     : 'Nothing scheduled';
+  $('#focus-count').textContent = `${done} of ${all.length}${isToday ? ' today' : ''}`;
   $('#focus-pct').textContent = pct + '%';
   $('#focus-bar').style.width = pct + '%';
 
@@ -367,7 +371,7 @@ function renderHome() {
     ? 'Add one habit. One is a system; ten is a wish.'
     : risk.length ? `Never miss twice — ${risk.map(h => h.name).join(', ')} slipped last time.`
     : done === all.length ? 'Every vote in. The day is closed.'
-    : `${state.habits.length} ${state.habits.length === 1 ? 'habit' : 'habits'} · ${goals.length} ${goals.length === 1 ? 'goal' : 'goals'}`;
+    : `${all.length - done} left. Small is fine — showing up is the habit.`;
 
   paintList($('#habit-list'), habits, 'No habits due on this day.');
   $('#goals-sec').hidden = goals.length === 0;
@@ -540,7 +544,20 @@ function habitCard(h) {
   });
   if (h.steps.length) body.append(stepsBox);
 
-  top.append(check, body);
+  if (h.steps.length) {
+    const rail = el('div', 'rail');
+    rail.append(check);
+    h.steps.forEach((txt, i) => {
+      const doneStep = Boolean((e.steps || [])[i]);
+      const pip = el('button', 'pip-step' + (doneStep ? ' on' : ''));
+      pip.setAttribute('aria-label', `${doneStep ? 'Undo' : 'Complete'} step ${i + 1}: ${txt}`);
+      pip.onclick = () => { toggleStep(h, day, i); haptic(6); render(); };
+      rail.append(pip);
+    });
+    top.append(rail, body);
+  } else {
+    top.append(check, body);
+  }
   li.append(top);
 
   if (!on && missedLast(h, day)) li.append(frictionBox(h, day));
@@ -651,7 +668,7 @@ function renderInspire() {
   renderVault();
 }
 
-let sim = { anchor: null, action: null };
+let sim = { anchor: null, action: null, identity: null };
 
 function renderSim() {
   const pool = (node, items, key) => {
@@ -664,12 +681,15 @@ function renderSim() {
   };
   pool($('#sim-anchors'), ANCHORS, 'anchor');
   pool($('#sim-actions'), ACTIONS, 'action');
+  pool($('#sim-identities'), SIM_IDENTITIES, 'identity');
 
-  const a = $('#slot-anchor'), b = $('#slot-action');
+  const a = $('#slot-anchor'), b = $('#slot-action'), c = $('#slot-identity');
   a.textContent = sim.anchor || 'Anchor';
   b.textContent = sim.action || 'Micro-action';
+  c.textContent = sim.identity || 'Identity';
   a.classList.toggle('filled', Boolean(sim.anchor));
   b.classList.toggle('filled', Boolean(sim.action));
+  c.classList.toggle('filled', Boolean(sim.identity));
 
   const out = $('#sim-out');
   if (sim.anchor && sim.action) {
@@ -678,7 +698,8 @@ function renderSim() {
     out.append(el('b', null, sim.anchor.toLowerCase()));
     out.append(document.createTextNode(', I will '));
     out.append(el('b', null, sim.action.toLowerCase()));
-    out.append(document.createTextNode('.'));
+    out.append(document.createTextNode(sim.identity ? ' — because I am ' : '.'));
+    if (sim.identity) { out.append(el('b', null, sim.identity)); out.append(document.createTextNode('.')); }
     $('#sim-import').disabled = false;
   } else {
     out.textContent = 'Your stack will read back to you here.';
@@ -689,11 +710,11 @@ function renderSim() {
 $('#sim-import').onclick = () => {
   if (!sim.anchor || !sim.action) return;
   state.habits.push({
-    id: uid(), name: sim.action, identity: '', anchor: sim.anchor, time: '',
+    id: uid(), name: sim.action, identity: sim.identity || '', anchor: sim.anchor, time: '',
     tiny: sim.action, steps: [], days: [0,1,2,3,4,5,6], kind: 'habit', created: today,
   });
   save(); haptic(12); toast('Stack imported');
-  sim = { anchor: null, action: null };
+  sim = { anchor: null, action: null, identity: null };
   render();
 };
 

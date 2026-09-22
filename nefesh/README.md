@@ -1,6 +1,6 @@
 # Nefesh
 
-A black-and-white habit system built on the ideas in *Atomic Habits*.
+A quiet habit system built on the ideas in *Atomic Habits*.
 No build step, no dependencies, no accounts: open `index.html` and it runs.
 
 ## Run it
@@ -40,7 +40,9 @@ measured against three weeks, 15% how many habits are active at all.
 
 ## Design
 
-Grayscale on a grouped-white background. Metrics follow Apple's HIG: the iOS
+Warm paper, deep forest ink, sand for the cards that mark a moment — mostly
+white, with colour used only where it carries meaning: completion, momentum,
+the density of the grid. Metrics follow Apple's HIG: the iOS
 text styles (Large Title 34 / Body 17, 11pt floor), 44pt minimum tap targets,
 a 49pt tab row sitting on the home-indicator safe-area inset, translucent
 bars, and the iOS sheet curve `cubic-bezier(.32,.72,0,1)` on every transition.
