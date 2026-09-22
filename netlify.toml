@@ -1,0 +1,4 @@
+# Nefesh is a static app with no build step; publish the folder as-is.
+[build]
+  publish = "nefesh"
+  command = ""
