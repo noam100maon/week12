@@ -3,6 +3,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#F2F2F3">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;500&display=swap">
 <style>
 /* Mono — same system as Nefesh: black, white, nothing else. */
 :root{
@@ -15,6 +16,7 @@
   --serif:ui-serif,"New York","Iowan Old Style",Georgia,serif;
   --r-card:18px; --r-ctl:13px; --r-pill:980px;
   --ease:cubic-bezier(.32,.72,0,1); --ease-out:cubic-bezier(.25,.46,.45,.94);
+  --hebrew:"Frank Ruhl Libre","Times New Roman",serif;
   --tabbar:49px; --fs:19px;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
@@ -133,6 +135,18 @@ sup{font-size:.62em;line-height:0}
 .endcard .big{font-size:34px;line-height:41px;font-weight:700;letter-spacing:-.026em}
 .fsb{width:36px;height:32px;border-radius:10px;background:var(--fill);font-size:14px;font-weight:600}
 .empty{padding:22px 16px;color:var(--ink-55);font-size:15px;line-height:20px}
+ .he{direction:rtl;text-align:right;font-family:var(--hebrew);font-size:calc(var(--fs) * 1.08);line-height:1.7;color:var(--ink)}
+.both .he{margin-top:.4em;padding-top:.8em;border-top:.5px solid var(--sep);color:var(--ink-80);font-size:calc(var(--fs) * 1.0)}
+.he .gloss{border-left:0;border-right:2px solid var(--ink-25);padding-left:0;padding-right:12px}
+.gl{font:inherit;font-style:italic;color:inherit;text-decoration:underline dotted var(--ink-40);text-underline-offset:3px;cursor:pointer}
+.ctx .inner{gap:14px}
+.ctx .ch-no{font-family:var(--sans);font-size:13px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-40);display:flex;justify-content:space-between}
+.ctx .ch-no span:last-child{font-family:var(--hebrew);font-size:16px;letter-spacing:0;text-transform:none}
+.ctx h3{font-family:var(--sans);font-size:30px;line-height:36px;font-weight:700;letter-spacing:-.026em}
+.ctx .cx{font-family:var(--serif);font-size:calc(var(--fs) * .95);line-height:1.55;color:var(--ink-80)}
+.terms{display:flex;flex-wrap:wrap;gap:8px}
+.ctx .lbl{font-family:var(--sans);font-size:13px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-40);margin-top:6px}
+.langseg{margin:0 16px 10px}
 .toast{position:fixed;left:50%;bottom:calc(var(--tabbar) + env(safe-area-inset-bottom,0px) + 16px);transform:translate(-50%,20px);z-index:80;background:var(--ink);color:var(--card);padding:10px 16px;border-radius:var(--r-pill);font-size:15px;opacity:0;pointer-events:none;transition:opacity .25s,transform .35s var(--ease)}
 .toast.on{opacity:1;transform:translate(-50%,0)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -167,9 +181,12 @@ sup{font-size:.62em;line-height:0}
       <button data-w="40">Short</button><button data-w="70">Medium</button><button data-w="110">Long</button>
     </div>
 
+    <div class="sec"><h2>Language</h2></div>
+    <div class="seg" id="lang-home"><button data-l="en">English</button><button data-l="both">Both</button><button data-l="he">עברית</button></div>
+
     <div class="sec"><h2>Chapters</h2><span style="flex:1"></span><span class="t-foot" id="book-tally" style="font-size:13px;color:var(--ink-40)"></span></div>
     <div class="group" id="chapters"><div class="empty">Loading the text…</div></div>
-    <p class="fine">English translation © Kehot Publication Society, via <a href="https://www.sefaria.org/Tanya,_Part_I;_Likkutei_Amarim" target="_blank" rel="noopener">Sefaria</a>, CC-BY-NC. The bracketed explanations and footnotes are the translators' commentary. Every word and every note is kept.</p>
+    <p class="fine">English translation © Kehot Publication Society, via <a href="https://www.sefaria.org/Tanya,_Part_I;_Likkutei_Amarim" target="_blank" rel="noopener">Sefaria</a>, CC-BY-NC. Hebrew text © Kehot, via Sefaria, CC-BY-NC. The bracketed explanations and footnotes are the translators' commentary. The chapter introductions and glossary are written for this app and are not part of the book. Every word and every note is kept.</p>
   </section>
 
   <section class="view" id="v-mine">
@@ -195,6 +212,7 @@ sup{font-size:.62em;line-height:0}
     <button class="fsb" id="smaller" aria-label="Smaller text">A−</button>
     <button class="fsb" id="bigger" aria-label="Bigger text">A+</button>
   </div>
+  <div class="seg langseg" id="lang"><button data-l="en">English</button><button data-l="both">Both</button><button data-l="he">עברית</button></div>
   <div class="pbar"><i id="r-bar"></i></div>
   <div id="reels" tabindex="0"></div>
 </section>
@@ -239,7 +257,7 @@ sup{font-size:.62em;line-height:0}
 <script>
 const $ = id => document.getElementById(id);
 const KEY = 'tanyaReels.v2';
-let S = {len:70, fs:19, pos:{}, done:{}, mine:[], last:null};
+let S = {len:70, fs:19, pos:{}, done:{}, mine:[], last:null, lang:'en'};
 try{ Object.assign(S, JSON.parse(localStorage.getItem(KEY))||{}); }catch(e){}
 const save = ()=>{ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} };
 let BOOK = null;
@@ -280,10 +298,59 @@ function unitsFromText(text){
 }
 const esc = s => s.replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
+/* ---------- book reels: context card, then English, both, or Hebrew ---------- */
+function bookReels(ch){
+  const out = [{ctx:true}];
+  if(S.lang === 'he'){
+    // pack whole Hebrew segments
+    let cur = [], w = 0;
+    ch.he.forEach(h=>{
+      const hw = wc(h.replace(/<[^>]+>/g,' '));
+      if(cur.length && w + hw > S.len*1.3){ out.push({he:cur}); cur=[]; w=0; }
+      cur.push(h); w += hw;
+    });
+    if(cur.length) out.push({he:cur});
+    return out;
+  }
+  packUnits(ch.u, S.len).forEach(us=>{
+    const r = {units:us};
+    if(S.lang === 'both'){
+      // Hebrew of each segment appears on the reel where that segment ends, so the English comes first.
+      r.he = [];
+      us.forEach((u,j)=>{ const nx = us[j+1]; if(!nx || nx.s !== u.s) r.he.push(u.s); });
+    }
+    out.push(r);
+  });
+  if(S.lang === 'both'){
+    // a segment whose English ends in a later reel is shown there; drop duplicates across reels
+    const seen = new Set();
+    out.forEach(r=>{ if(r.he){ r.he = r.he.filter(s=>{ const lastReel = out.findLast(x=>x.units && x.units.some(u=>u.s===s)); if(lastReel!==r || seen.has(s)) return false; seen.add(s); return true; }).map(s=>ch.he[s]); } });
+  }
+  return out;
+}
+const GL = () => (BOOK && BOOK.glossary) || {};
+function linkTerms(h){
+  const g = GL();
+  return h.replace(/<i>([^<]{2,30})<\/i>/g, (m,t)=> g[t.trim().toLowerCase()] ? `<button class="gl" data-g="${esc(t.trim().toLowerCase())}">${t}</button>` : m);
+}
+function chapterTerms(ch){
+  const g = GL(), seen = new Map();
+  ch.u.forEach(u=>{ for(const m of u.h.matchAll(/<i>([^<]{2,30})<\/i>/g)){ const t = m[1].trim().toLowerCase(); if(g[t]) seen.set(t,(seen.get(t)||0)+1); } });
+  return [...seen.entries()].sort((a,b)=>b[1]-a[1]).slice(0,8).map(x=>x[0]);
+}
+function showTerm(t){ $('note-title').textContent = t.replace(/\b\w/g,c=>c.toUpperCase()); $('note-body').textContent = GL()[t]||''; openSheet('sheet-note'); }
+function syncLang(){ document.querySelectorAll('#lang button,#lang-home button').forEach(b=>b.classList.toggle('on', b.dataset.l===S.lang)); }
+function setLang(l){
+  if(l===S.lang) return;
+  S.lang = l; save(); syncLang();
+  if(R && R.ch){ const i = BOOK.chapters.indexOf(R.ch); closeReader(); openBook(i); } else renderBook();
+}
+document.querySelectorAll('#lang button,#lang-home button').forEach(b=>b.onclick=()=>setLang(b.dataset.l));
+
 /* ---------- library ---------- */
 function chInfo(i){
   const ch = BOOK.chapters[i];
-  const n = packUnits(ch.u, S.len).length;
+  const n = bookReels(ch).length;
   const pos = S.pos[i]||0;
   const done = !!S.done[i];
   return {ch, n, pos, done, pct: done ? 1 : n>1 ? pos/(n-1) : 0};
@@ -292,7 +359,6 @@ function ring(p){
   const r = 10, c = 2*Math.PI*r;
   return `<svg class="ring" viewBox="0 0 26 26"><circle class="bgc" cx="13" cy="13" r="${r}"/><circle class="fgc" cx="13" cy="13" r="${r}" stroke-dasharray="${c}" stroke-dashoffset="${c*(1-p)}"/></svg>`;
 }
-const firstLine = ch => (ch.u.find(u=>u.w>8)||ch.u[0]).h.replace(/<sup>.*?<\/sup>/g,'').replace(/<[^>]+>/g,'');
 function renderBook(){
   if(!BOOK) return;
   const list = $('chapters'); list.innerHTML = '';
@@ -301,9 +367,8 @@ function renderBook(){
     const info = chInfo(i); if(info.done) doneCount++;
     const b = document.createElement('button'); b.className = 'row';
     b.innerHTML = `${info.done?'<span class="done-dot">✓</span>':ring(info.pct)}
-      <span class="row-main"><span class="row-title">${esc(ch.t)}</span><span class="row-sub"></span></span>
+      <span class="row-main"><span class="row-title">${esc(ch.hd)}</span><span class="row-sub">${esc(ch.t)} · ${esc(ch.ht)}</span></span>
       <span class="num">${info.n} reels</span><svg class="chev" viewBox="0 0 24 24"><use href="#i-chev"/></svg>`;
-    b.querySelector('.row-sub').textContent = firstLine(ch);
     b.onclick = ()=>openBook(i);
     list.appendChild(b);
   });
@@ -312,9 +377,9 @@ function renderBook(){
   let i = S.last ?? BOOK.chapters.findIndex((_,k)=>!S.done[k]);
   if(i < 0) i = 0;
   const info = chInfo(i);
-  $('hero-kicker').textContent = S.last!=null ? 'Continue' : 'Start here';
-  $('hero-title').textContent = info.ch.t;
-  $('hero-line').textContent = firstLine(info.ch);
+  $('hero-title').textContent = info.ch.hd;
+  $('hero-kicker').textContent = (S.last!=null ? 'Continue · ' : 'Start here · ') + info.ch.t;
+  $('hero-line').textContent = info.ch.cx;
   $('hero-bar').style.width = Math.round(info.pct*100)+'%';
   $('hero-meta').textContent = info.done ? 'Finished' : `Reel ${info.pos+1} of ${info.n}`;
   $('hero-pct').textContent = Math.round(info.pct*100)+'%';
@@ -322,6 +387,7 @@ function renderBook(){
   $('hero-go').textContent = info.pos||info.done ? 'Continue' : 'Start reading';
   $('hero-go').onclick = ()=>openBook(i);
   document.querySelectorAll('#len button').forEach(b=>b.classList.toggle('on', +b.dataset.w===S.len));
+  syncLang();
 }
 function renderMine(){
   const list = $('mine'); list.innerHTML = '';
@@ -342,7 +408,7 @@ function renderMine(){
 let R = null;
 function openBook(i){
   const ch = BOOK.chapters[i]; S.last = i; save();
-  openReader({title:ch.t, units:ch.u, notes:ch.n, pos:S.pos[i]||0,
+  openReader({title:ch.t, ch, units:ch.u, notes:ch.n, pos:S.pos[i]||0,
     onPos:p=>{ S.pos[i]=p; save(); }, onDone:()=>{ S.done[i]=1; save(); },
     next: i+1 < BOOK.chapters.length ? ()=>openBook(i+1) : null});
 }
@@ -353,35 +419,58 @@ function openMine(i){
 }
 function openReader(o){
   R = o;
-  const reels = packUnits(o.units, S.len);
+  const reels = o.ch ? bookReels(o.ch) : packUnits(o.units, S.len).map(us=>({units:us}));
   const notes = Object.fromEntries(o.notes);
-  $('r-title').textContent = o.title;
+  $('r-title').textContent = o.ch ? `${o.ch.t} · ${o.ch.hd}` : o.title;
+  $('lang').hidden = !o.ch;
   const box = $('reels'); box.innerHTML = '';
-  reels.forEach((units,k)=>{
-    const words = units.reduce((a,u)=>a+u.w,0);
-    let html = '', open = false;
-    units.forEach((u,j)=>{
-      if(u.p || j===0){ if(open) html += '</p>'; html += `<p dir="auto">`; open = true; } else html += ' ';
-      html += u.h.replace(/<sup>(.*?)<\/sup>/g, (m,n)=> notes[n]!==undefined ? `<button class="fn" data-n="${esc(n)}" aria-label="Footnote ${esc(n)}">${esc(n)}</button>` : m);
-    });
-    if(open) html += '</p>';
-    const fnCount = (html.match(/class="fn"/g)||[]).length;
+  const reelCount = reels.filter(r=>!r.ctx).length;
+  let k = 0;
+  reels.forEach(r=>{
     const d = document.createElement('div'); d.className='reel';
-    d.innerHTML = `<article class="rcard"><div class="rk"><span>${k+1} / ${reels.length}</span><span>${words} words</span></div>
+    if(r.ctx){
+      const terms = chapterTerms(o.ch);
+      d.innerHTML = `<article class="rcard ctx"><div class="rk"><span>Before you read</span><span>${reelCount} reels</span></div>
+        <div class="rtxt"><div class="inner">
+          <div class="ch-no"><span>${esc(o.ch.t)}</span><span dir="rtl">${esc(o.ch.ht)}</span></div>
+          <h3>${esc(o.ch.hd)}</h3><p class="cx">${esc(o.ch.cx)}</p>
+          ${terms.length?`<p class="lbl">Key terms</p><div class="terms">${terms.map(t=>`<button class="chip gl-chip" data-g="${esc(t)}">${esc(t)}</button>`).join('')}</div>`:''}
+        </div></div>
+        <div class="rfoot"><span>Context written for this app</span><span>Swipe up to begin</span></div></article>`;
+      box.appendChild(d); return;
+    }
+    k++;
+    let html = '', words = 0;
+    if(r.units){
+      let open = false;
+      r.units.forEach((u,j)=>{
+        words += u.w;
+        if(u.p || j===0){ if(open) html += '</p>'; html += `<p dir="auto">`; open = true; } else html += ' ';
+        html += linkTerms(u.h).replace(/<sup>(.*?)<\/sup>/g, (m,n)=> notes[n]!==undefined ? `<button class="fn" data-n="${esc(n)}" aria-label="Footnote ${esc(n)}">${esc(n)}</button>` : m);
+      });
+      if(open) html += '</p>';
+    }
+    if(r.he && r.he.length){
+      html += r.he.map(h=>`<p class="he" lang="he">${h}</p>`).join('');
+      if(!r.units) words = r.he.reduce((a,h)=>a+wc(h.replace(/<[^>]+>/g,' ')),0);
+    }
+    const fnCount = (html.match(/class="fn"/g)||[]).length;
+    d.innerHTML = `<article class="rcard${r.units&&r.he&&r.he.length?' both':''}"><div class="rk"><span>${k} / ${reelCount}</span><span>${words} ${r.units?'words':'מילים'}</span></div>
       <div class="rtxt"><div class="inner">${html}</div></div>
-      <div class="rfoot"><span>${fnCount? fnCount+(fnCount>1?' notes — tap a number':' note — tap the number') : ''}</span><span>${k<reels.length-1?'Swipe up':'Last reel'}</span></div></article>`;
+      <div class="rfoot"><span>${fnCount? fnCount+(fnCount>1?' notes · tap a number':' note · tap the number') : ''}</span><span>${k<reelCount?'Swipe up':'Last reel'}</span></div></article>`;
     box.appendChild(d);
   });
   const end = document.createElement('div'); end.className='reel';
   const total = o.units.reduce((a,u)=>a+u.w,0);
   end.innerHTML = `<article class="rcard endcard"><p class="kicker">Complete</p><p class="big">${esc(o.title)}</p>
-    <p class="greet">${total.toLocaleString()} words · ${reels.length} reels · nothing skipped</p>
+    <p class="greet">${total.toLocaleString()} words · ${reelCount} reels · nothing skipped</p>
     <div style="display:flex;flex-direction:column;gap:10px;width:100%;max-width:320px;margin-top:8px">
       ${o.next?'<button class="btn" id="go-next">Next chapter</button>':''}<button class="btn sec" id="go-back">Back</button></div></article>`;
   box.appendChild(end);
   end.querySelector('#go-back').onclick = closeReader;
   if(o.next) end.querySelector('#go-next').onclick = ()=>{ o.next(); };
-  box.onclick = e=>{ const f = e.target.closest('.fn'); if(f) showNote(f.dataset.n, notes[f.dataset.n]); };
+  box.onclick = e=>{ const f = e.target.closest('.fn'); if(f) return showNote(f.dataset.n, notes[f.dataset.n]);
+    const g = e.target.closest('.gl,.gl-chip'); if(g) showTerm(g.dataset.g); };
   $('reader').hidden = false; document.body.style.overflow='hidden';
   const n = reels.length;
   box.onscroll = ()=>{

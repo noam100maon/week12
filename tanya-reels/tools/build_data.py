@@ -1,7 +1,10 @@
 """Build tanya.json from Sefaria's export of the Kehot English Tanya (CC-BY-NC).
 
 Source: https://storage.googleapis.com/sefaria-export/json/Chasidut/Chabad/Tanya/English/Kehot%20Publication%20Society%20English%20Translation.json
-Usage:  python3 build_data.py kehot.json ../tanya.json
+Hebrew: .../Tanya/Hebrew/Kehot%20Publication%20Society.json (same license, aligned segment for segment)
+Usage:  python3 build_data.py kehot.json kehot_he.json context.json ../tanya.json
+
+context.json holds our own chapter headings, short intros and glossary (not part of the translation).
 
 Each chapter becomes a list of "units": sentence groups small enough to pack into reels.
 Nothing is dropped: the script checks that every word and every footnote survives.
@@ -84,38 +87,50 @@ def split_units(html):
     elif units: units[-1] = (units[-1][0] + cur, units[-1][1])
     return units
 
+def clean_he(h):
+    h = re.sub(r'<i data-overlay[^>]*>\s*</i>', '', h)
+    h = h.replace('<small>', '<span class="gloss">').replace('</small>', '</span>')
+    h = re.sub(r'<(?!/?(b|span|br)\b)[^>]+>', '', h)
+    return re.sub(r'\s+', ' ', h).strip()
+
 def build_chapter(segs):
     units, notes = [], []
-    for seg in segs:
+    for si, seg in enumerate(segs):
         body, n = pull_notes(seg)
         notes += n
         for i, (u, par) in enumerate(split_units(clean(body).strip())):
             u = re.sub(r'<(i|span|b)[^>]*>\s*</\1>', '', u).strip()
-            units.append({'h': u, 'w': wc(u), 'p': 1 if (i == 0 or par) else 0})
+            units.append({'h': u, 'w': wc(u), 'p': 1 if (i == 0 or par) else 0, 's': si})
     return units, notes
 
-def main(src, dst):
-    d = json.load(open(src))
-    p = d['text']['Part I; Likkutei Amarim']
-    chapters = []
-    sections = [("Compiler's Foreword", p["Compiler's Foreword"])] + \
-               [('Chapter %d' % (i + 1), c) for i, c in enumerate(p[''])]
-    total_in = total_out = 0
-    for title, segs in sections:
+def he_num(n):
+    ones = 'אבגדהוזחט'; tens = 'יכלמנסעפצ'
+    if n in (15, 16): return 'ט״' + 'וז'[n - 15]
+    r = (tens[n // 10 - 1] if n >= 10 else '') + (ones[n % 10 - 1] if n % 10 else '')
+    return r[:-1] + '״' + r[-1] if len(r) > 1 else r + '׳'
+
+def main(src, src_he, ctx_path, dst):
+    d = json.load(open(src)); dh = json.load(open(src_he)); ctx = json.load(open(ctx_path))
+    p = d['text']['Part I; Likkutei Amarim']; ph = dh['text']['Part I; Likkutei Amarim']
+    sections = [("Compiler's Foreword", "הקדמת המלקט", p["Compiler's Foreword"], ph["Compiler's Foreword"])] + \
+               [('Chapter %d' % (i + 1), 'פרק ' + he_num(i + 1), c, ph[''][i]) for i, c in enumerate(p[''])]
+    assert len(sections) == len(ctx['chapters'])
+    chapters, total = [], 0
+    for (title, he_title, segs, he_segs), cx in zip(sections, ctx['chapters']):
+        assert len(segs) == len(he_segs), title
         units, notes = build_chapter(segs)
-        # verification: words in == words out, notes in == notes out
         src_text = plain(' '.join(clean(pull_notes(s)[0]) for s in segs)).split()
         out_text = plain(' '.join(u['h'] for u in units)).split()
         assert src_text == out_text, (title, 'text changed')
-        src_words, out_words = len(src_text), sum(u['w'] for u in units)
-        src_notes = sum(s.count(MARK) for s in segs)
-        assert src_words == out_words, (title, src_words, out_words)
-        assert src_notes == len(notes), (title, src_notes, len(notes))
-        total_in += src_words; total_out += out_words
-        chapters.append({'t': title, 'u': units, 'n': notes})
+        assert sum(s.count(MARK) for s in segs) == len(notes), (title, 'notes lost')
+        he = [clean_he(x) for x in he_segs]
+        assert all(plain(h).strip() for h in he), (title, 'empty Hebrew segment')
+        total += len(out_text)
+        chapters.append({'t': title, 'ht': he_title, 'hd': cx['h'], 'cx': cx['c'], 'u': units, 'n': notes, 'he': he})
     json.dump({'source': {'title': d['versionTitle'], 'license': d['license'], 'notes': d['versionNotes'],
                           'url': 'https://www.sefaria.org/Tanya,_Part_I;_Likkutei_Amarim'},
-               'chapters': chapters}, open(dst, 'w'), ensure_ascii=False, separators=(',', ':'))
-    print('ok', len(chapters), 'sections,', total_out, 'words, all kept')
+               'glossary': ctx['glossary'], 'chapters': chapters},
+              open(dst, 'w'), ensure_ascii=False, separators=(',', ':'))
+    print('ok', len(chapters), 'sections,', total, 'English words kept, Hebrew aligned')
 
-main(*sys.argv[1:3])
+main(*sys.argv[1:5])
