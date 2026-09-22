@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nefesh</title>
+<meta name="description" content="A black-and-white habit system built on Atomic Habits.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="masthead">
+  <div class="wrap masthead-inner">
+    <div class="brand">
+      <span class="mark" aria-hidden="true"></span>
+      <div>
+        <h1>Nefesh</h1>
+        <p class="tagline">Small votes for the person you want to be.</p>
+      </div>
+    </div>
+    <nav class="tabs" role="tablist">
+      <button class="tab is-active" role="tab" data-view="today">Today</button>
+      <button class="tab" role="tab" data-view="habits">Habits</button>
+      <button class="tab" role="tab" data-view="identity">Identity</button>
+      <button class="tab" role="tab" data-view="review">Review</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- TODAY -->
+  <section class="view is-active" id="view-today">
+    <div class="datebar">
+      <button class="ghost" id="day-prev" aria-label="Previous day">&larr;</button>
+      <div class="datebar-label">
+        <strong id="day-label">Today</strong>
+        <span id="day-sub"></span>
+      </div>
+      <button class="ghost" id="day-next" aria-label="Next day">&rarr;</button>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat"><span class="stat-num" id="s-done">0/0</span><span class="stat-lab">Done today</span></div>
+      <div class="stat"><span class="stat-num" id="s-streak">0</span><span class="stat-lab">Day streak</span></div>
+      <div class="stat"><span class="stat-num" id="s-votes">0</span><span class="stat-lab">Total votes</span></div>
+      <div class="stat"><span class="stat-num" id="s-rate">0%</span><span class="stat-lab">30-day rate</span></div>
+    </div>
+
+    <div id="alerts"></div>
+
+    <ul class="list" id="today-list"></ul>
+
+    <p class="empty" id="today-empty" hidden>
+      No habits scheduled. <button class="linkish" data-goto="habits">Add your first habit &rarr;</button>
+    </p>
+
+    <blockquote class="quote" id="quote"></blockquote>
+  </section>
+
+  <!-- HABITS -->
+  <section class="view" id="view-habits">
+    <div class="section-head">
+      <h2>Habits</h2>
+      <button class="solid" id="new-habit">New habit</button>
+    </div>
+    <p class="lede">Every habit is an implementation intention: <em>I will [behaviour] at [time] in [place]</em>, stacked after something you already do.</p>
+    <ul class="cards" id="habit-list"></ul>
+    <p class="empty" id="habits-empty" hidden>Nothing here yet. Start with one habit that takes under two minutes.</p>
+  </section>
+
+  <!-- IDENTITY -->
+  <section class="view" id="view-identity">
+    <div class="section-head"><h2>Identity</h2></div>
+    <p class="lede">The goal is not to read a book — it is to become a reader. Decide who you want to be, then let each repetition cast a vote.</p>
+    <form class="identity-form" id="identity-form">
+      <label for="identity-input">I am the type of person who&hellip;</label>
+      <div class="row">
+        <input id="identity-input" maxlength="80" placeholder="shows up every morning" autocomplete="off">
+        <button class="solid" type="submit">Add</button>
+      </div>
+    </form>
+    <ul class="cards" id="identity-list"></ul>
+    <p class="empty" id="identity-empty" hidden>No identities yet. Name one, then attach habits to it.</p>
+  </section>
+
+  <!-- REVIEW -->
+  <section class="view" id="view-review">
+    <div class="section-head"><h2>Review</h2></div>
+    <p class="lede">What gets measured gets managed. Thirty days of evidence, habit by habit.</p>
+    <div id="grids"></div>
+
+    <div class="scorecard">
+      <h3>The Four Laws</h3>
+      <ol class="laws">
+        <li><b>Make it obvious.</b> Write the cue: time and place. Stack it after an existing habit.</li>
+        <li><b>Make it attractive.</b> Pair it with something you want to do.</li>
+        <li><b>Make it easy.</b> Shrink it to two minutes. Reduce friction to zero.</li>
+        <li><b>Make it satisfying.</b> Mark it done immediately. Never miss twice.</li>
+      </ol>
+    </div>
+
+    <div class="data-row">
+      <button class="ghost-line" id="export">Export data</button>
+      <button class="ghost-line" id="import">Import data</button>
+      <button class="ghost-line danger" id="reset">Erase everything</button>
+      <input type="file" id="import-file" accept="application/json" hidden>
+    </div>
+  </section>
+</main>
+
+<!-- HABIT DIALOG -->
+<dialog id="habit-dialog">
+  <form method="dialog" id="habit-form">
+    <h3 id="dialog-title">New habit</h3>
+
+    <label class="f">
+      <span>Habit</span>
+      <input name="name" required maxlength="60" placeholder="Read one page" autocomplete="off">
+    </label>
+
+    <div class="f-2">
+      <label class="f">
+        <span>Type</span>
+        <select name="kind">
+          <option value="build">Build</option>
+          <option value="break">Break</option>
+        </select>
+      </label>
+      <label class="f">
+        <span>Identity</span>
+        <select name="identity"><option value="">&mdash;</option></select>
+      </label>
+    </div>
+
+    <label class="f">
+      <span>Cue &mdash; when and where <em>(make it obvious)</em></span>
+      <input name="cue" maxlength="80" placeholder="7:00am, at the kitchen table" autocomplete="off">
+    </label>
+
+    <label class="f">
+      <span>Stack &mdash; after I&hellip; <em>(make it obvious)</em></span>
+      <input name="stack" maxlength="80" placeholder="pour my coffee" autocomplete="off">
+    </label>
+
+    <label class="f">
+      <span>Two-minute version <em>(make it easy)</em></span>
+      <input name="tiny" maxlength="80" placeholder="Open the book and read one line" autocomplete="off">
+    </label>
+
+    <label class="f">
+      <span>Reward <em>(make it satisfying)</em></span>
+      <input name="reward" maxlength="80" placeholder="Ten quiet minutes with the second coffee" autocomplete="off">
+    </label>
+
+    <fieldset class="f days">
+      <legend>Days</legend>
+      <div class="daypick" id="daypick"></div>
+    </fieldset>
+
+    <div class="dialog-actions">
+      <button class="ghost-line" value="cancel" type="submit" formnovalidate>Cancel</button>
+      <button class="solid" value="save" type="submit">Save habit</button>
+    </div>
+  </form>
+</dialog>
+
+<footer class="foot"><div class="wrap">Nefesh &mdash; your data never leaves this device.</div></footer>
+
+<script src="app.js"></script>
+</body>
+</html>
