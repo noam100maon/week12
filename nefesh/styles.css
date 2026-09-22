@@ -53,8 +53,8 @@
   --ease: cubic-bezier(.32,.72,0,1);      /* iOS sheet curve */
   --ease-out: cubic-bezier(.25,.46,.45,.94);
 
-  --shadow: 0 .5px 0 rgba(21,25,27,.05), 0 1px 2px rgba(31,77,58,.05);
-  --shadow-2: 0 6px 22px rgba(31,77,58,.10);
+  --shadow: 0 0 0 .5px rgba(21,25,27,.07);
+  --shadow-2: 0 0 0 .5px rgba(21,25,27,.07);
   --accent-shadow: rgba(31,77,58,.22);
   --accent-glow: rgba(22,56,42,.30);
   --grad-a: var(--accent-2);
@@ -199,7 +199,7 @@ ul,ol{ margin:0; padding:0; list-style:none; }
   min-height:44px; padding:0 20px; border-radius:var(--r-ctl);
   font-size:17px; font-weight:600; letter-spacing:-.022em;
   background:var(--accent); color:#fff; width:100%;
-  box-shadow:0 1px 2px var(--accent-shadow);
+  
   transition:transform .12s var(--ease-out), opacity .12s;
 }
 .btn:active{ transform:scale(.975); background:var(--accent-2); }
@@ -257,7 +257,7 @@ ul,ol{ margin:0; padding:0; list-style:none; }
 /* progress */
 .track{ height:6px; border-radius:var(--r-pill); background:var(--fill-2); overflow:hidden; }
 .track > i{ display:block; height:100%;
-            background:linear-gradient(90deg,var(--accent),var(--accent-2)); border-radius:var(--r-pill);
+            background:var(--accent); border-radius:var(--r-pill);
             transition:width .5s var(--ease); }
 
 /* --- home -------------------------------------------------------------- */
@@ -294,8 +294,7 @@ ul,ol{ margin:0; padding:0; list-style:none; }
 
 /* --- inspire ----------------------------------------------------------- */
 .quote-card{ padding:22px 18px 18px; border-radius:var(--r-card); color:#fff;
-  background:linear-gradient(158deg,var(--grad-a) 0%,var(--grad-b) 58%,var(--grad-c) 100%);
-  box-shadow:var(--shadow-2); }
+  background:var(--accent); }
 .quote-card blockquote{
   margin:0; font-family:var(--serif); font-size:21px; line-height:29px;
   letter-spacing:-.01em; font-weight:400;
@@ -372,7 +371,7 @@ ul,ol{ margin:0; padding:0; list-style:none; }
 .spark{ width:100%; height:76px; display:block; margin-top:14px; overflow:visible; }
 .spark path.line{ fill:none; stroke:var(--accent); stroke-width:1.9;
                   stroke-linecap:round; stroke-linejoin:round; }
-.spark path.area{ fill:url(#sparkfill); stroke:none; }
+.spark path.area{ display:none; }
 #sparkfill .s0{ stop-color:var(--accent); stop-opacity:.18; }
 #sparkfill .s1{ stop-color:var(--accent); stop-opacity:0; }
 .spark .axis{ font-size:11px; fill:var(--ink-25); }
@@ -385,8 +384,7 @@ ul,ol{ margin:0; padding:0; list-style:none; }
 .pf span{ display:block; margin-top:2px; font-size:13px; line-height:17px; color:var(--ink-55); }
 
 .medal{ padding:22px 16px; text-align:center; color:#fff; border-radius:var(--r-card);
-        background:linear-gradient(158deg,var(--grad-a),var(--grad-b) 60%,var(--grad-c));
-        box-shadow:var(--shadow-2); }
+        background:var(--accent); }
 .medal .m-ico{ width:40px; height:40px; margin:0 auto 12px; display:grid; place-items:center;
                border-radius:var(--r-pill); background:rgba(255,255,255,.18); }
 .medal h3{ font-size:20px; font-weight:700; letter-spacing:-.024em; }
@@ -395,8 +393,7 @@ ul,ol{ margin:0; padding:0; list-style:none; }
              padding:0 20px; font-size:15px; display:inline-flex; }
 
 .rescued{ display:flex; align-items:center; gap:13px; padding:15px 16px;
-          background:linear-gradient(140deg,var(--sand),var(--sand-2));
-          box-shadow:0 .5px 0 rgba(91,74,42,.10), 0 1px 2px rgba(91,74,42,.08); }
+          background:var(--sand); box-shadow:0 0 0 .5px rgba(91,74,42,.12); }
 .rescued .n{ color:var(--sand-ink); }
 .rescued p{ color:rgba(91,74,42,.72) !important; }
 .rescued svg{ color:rgba(91,74,42,.55) !important; }
@@ -487,7 +484,7 @@ ul,ol{ margin:0; padding:0; list-style:none; }
   font-size:14px; font-weight:500; white-space:nowrap; max-width:calc(100vw - 32px);
   overflow:hidden; text-overflow:ellipsis;
   transition:opacity .26s var(--ease-out), transform .34s var(--ease);
-  box-shadow:0 8px 26px var(--accent-glow);
+  
 }
 .toast.on{ opacity:1; transform:translate(-50%,0); }
 
@@ -528,7 +525,7 @@ ul,ol{ margin:0; padding:0; list-style:none; }
 
 /* --- daily check-in ---------------------------------------------------- */
 .checkin{ padding:18px 16px; text-align:center; }
-.ring{ width:128px; height:128px; margin:4px auto 0; position:relative; }
+.ring{ width:104px; height:104px; margin:4px auto 0; position:relative; }
 .ring svg{ width:100%; height:100%; transform:rotate(-90deg); }
 .ring circle{ fill:none; stroke-linecap:round; }
 .ring .bg{ stroke:var(--fill-2); }
@@ -590,7 +587,7 @@ ul,ol{ margin:0; padding:0; list-style:none; }
   position:absolute; z-index:2; pointer-events:none; transform:translate(-50%,-116%);
   background:var(--accent); color:#fff; border-radius:10px; padding:7px 10px; min-width:76px;
   opacity:0; transition:opacity .16s var(--ease-out);
-  box-shadow:0 4px 14px var(--accent-glow);
+  
 }
 .callout.on{ opacity:1; }
 .callout b{ display:block; font-size:15px; line-height:19px; font-weight:700;
@@ -662,8 +659,8 @@ ul,ol{ margin:0; padding:0; list-style:none; }
   --sand-2:     #DEDEE1;
   --sand-ink:   #3A3A3C;
 
-  --shadow:     0 .5px 0 rgba(0,0,0,.05), 0 1px 2px rgba(0,0,0,.05);
-  --shadow-2:   0 6px 22px rgba(0,0,0,.12);
+  --shadow:     0 0 0 .5px rgba(0,0,0,.08);
+  --shadow-2:   0 0 0 .5px rgba(0,0,0,.08);
   --accent-shadow: rgba(0,0,0,.20);
   --accent-glow:   rgba(0,0,0,.26);
 
@@ -699,84 +696,34 @@ ul,ol{ margin:0; padding:0; list-style:none; }
 .swatch span{ display:block; margin-top:1px; font-size:12px; line-height:16px; color:var(--ink-55); }
 
 /* ==========================================================================
-   The vault — layered panes, outlined numerals, typewriter captions
+   The vault — a plain index
    ========================================================================== */
 
-.vault-panel{
-  position:relative; overflow:hidden; border-radius:var(--r-card);
-  padding:18px 18px 8px; isolation:isolate;
-  background:var(--vault-bg);
-  box-shadow:var(--shadow);
-}
-.panes{ position:absolute; inset:0; z-index:-1; }
-.panes i{ position:absolute; display:block; }
-.panes i:nth-child(1){
-  inset:-30% -40% auto -10%; height:150%;
-  background:var(--pane-1);
-  clip-path:polygon(0 0, 100% 18%, 100% 52%, 0 30%);
-}
-.panes i:nth-child(2){
-  inset:-10% -30% auto 0; height:150%;
-  background:var(--pane-2);
-  clip-path:polygon(0 12%, 100% 0, 100% 40%, 0 58%);
-}
-.panes i:nth-child(3){
-  inset:auto -20% -40% -20%; height:120%;
-  background:var(--pane-3);
-  clip-path:polygon(0 42%, 100% 20%, 100% 100%, 0 100%);
-}
-
-.vault-head{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
-.vault-title{
-  font-family:var(--mono); font-size:15px; font-weight:600; letter-spacing:-.01em;
-}
-.vault-add{
-  width:34px; height:34px; flex:none; display:grid; place-items:center;
-  border-radius:var(--r-pill); font-size:20px; line-height:1; font-weight:400;
-  color:var(--ink-80); background:rgba(255,255,255,.55);
-  box-shadow:inset 0 0 0 1px var(--ink-12);
-  transition:transform .14s var(--ease), background .18s;
-}
-.vault-add:active{ transform:scale(.88); background:rgba(255,255,255,.85); }
-
-.tally{ margin-top:12px; }
 .tally-row{
   display:flex; align-items:center; gap:14px; width:100%; text-align:left;
-  padding:7px 0 9px; position:relative;
+  min-height:48px; padding:11px 16px; position:relative;
+  transition:background .14s;
 }
-.tally-row .dots{
-  width:12px; flex:none; color:var(--ink-25); font-size:13px; line-height:1;
-  letter-spacing:.06em; opacity:0; transition:opacity .22s;
+.tally-row + .tally-row:before,
+.tally-add:before{
+  content:""; position:absolute; left:16px; right:0; top:0; height:.5px; background:var(--sep);
 }
-.tally-row.on .dots{ opacity:1; }
+.tally-row:active{ background:var(--fill); }
+.tally-cap{ flex:1; font-size:17px; line-height:22px; letter-spacing:-.022em; color:var(--ink-55);
+            transition:color .18s; }
+.tally-row.on .tally-cap{ color:var(--ink); font-weight:600; }
 .tally-num{
-  font-size:40px; line-height:42px; font-weight:800; letter-spacing:-.03em;
-  font-variant-numeric:tabular-nums; flex:none; min-width:74px;
-  color:transparent; -webkit-text-stroke:1.4px var(--ink-40);
-  transition:color .28s var(--ease-out), -webkit-text-stroke-color .28s var(--ease-out),
-             transform .28s var(--ease);
+  font-size:17px; line-height:22px; font-weight:600; font-variant-numeric:tabular-nums;
+  color:var(--ink-25); transition:color .18s;
 }
-.tally-row.on .tally-num{
-  color:var(--ink); -webkit-text-stroke-color:transparent; transform:scale(1.06);
-  transform-origin:left center;
-}
-.tally-cap{
-  font-family:var(--mono); font-size:11.5px; line-height:15px; letter-spacing:.01em;
-  color:var(--ink-55); transition:color .22s;
-}
-.tally-row.on .tally-cap{ color:var(--ink-80); font-weight:600; }
-.tally-row:active .tally-num{ transform:scale(.97); }
+.tally-row.on .tally-num{ color:var(--accent); }
 
-/* @supports guards the stroke: without it, ghost rows fall back to a tint */
-@supports not (-webkit-text-stroke: 1px black){
-  .tally-num{ color:var(--ink-25); }
-  .tally-row.on .tally-num{ color:var(--ink); }
-}
+.tally-add{ position:relative; }
+.tally-add .row-title{ color:var(--accent); }
 
 .vault-quote{ padding:15px 50px 15px 16px; position:relative; }
 .vault-quote .line{ font-family:var(--serif); font-size:16px; line-height:23px; }
-.vault-quote .who{ margin-top:5px; font-family:var(--mono); font-size:11px;
-                   letter-spacing:.02em; color:var(--ink-40); }
+.vault-quote .who{ margin-top:5px; font-size:12px; color:var(--ink-40); }
 .vault-quote + .vault-quote:before{
   content:""; position:absolute; left:16px; right:0; top:0; height:.5px; background:var(--sep);
 }

@@ -772,64 +772,50 @@ function renderVault() {
   tally.textContent = '';
 
   VAULT_CATS.forEach(([key, caption]) => {
-    const row = el('li');
     const b = el('button', 'tally-row' + (vaultTab === key ? ' on' : ''));
-    b.append(el('span', 'dots', '\u22EE'));
-    b.append(el('span', 'tally-num', String(vaultCount(key)).padStart(2, '0')));
     b.append(el('span', 'tally-cap', caption));
+    b.append(el('span', 'tally-num', String(vaultCount(key))));
     b.onclick = () => { vaultTab = key; haptic(6); renderVault(); };
-    row.append(b);
-    tally.append(row);
+    tally.append(b);
   });
+
+  const add = el('button', 'row tap tally-add');
+  const addMain = el('span', 'row-main');
+  addMain.append(el('span', 'row-title', 'Write your own'));
+  add.append(addMain, icon('i-chev', 13, 'chev'));
+  add.onclick = () => {
+    $('#qf-text').value = ''; $('#qf-who').value = '';
+    sheet('#sheet-quote');
+    setTimeout(() => $('#qf-text').focus(), 320);
+  };
+  tally.append(add);
 
   const box = $('#vault-items');
   box.textContent = '';
 
   const empties = {
     quotes: 'Star a quote at the top of this page and it lands here.',
-    own:    'Nothing of your own yet. The + button keeps a line you like.',
+    own:    'Nothing of your own yet.',
     models: 'Star a mental model and it lands here.',
     books:  'Star a book from the reading list and it lands here.',
   };
 
-  if (vaultTab === 'quotes') {
-    if (!state.vault.quotes.length) return void box.append(el('p', 'empty', empties.quotes));
-    state.vault.quotes.forEach(i => {
-      const q = QUOTES[i];
-      if (q) box.append(vaultQuote(q[0], q[1], () => {
-        state.vault.quotes = state.vault.quotes.filter(x => x !== i);
-      }));
-    });
-  }
+  const shelves = {
+    quotes: () => state.vault.quotes.map(i => QUOTES[i] && [QUOTES[i][0], QUOTES[i][1],
+                    () => { state.vault.quotes = state.vault.quotes.filter(x => x !== i); }]),
+    own:    () => state.vault.own.map(q => [q.text, q.who || 'you',
+                    () => { state.vault.own = state.vault.own.filter(x => x.id !== q.id); }]),
+    models: () => state.vault.models.map(i => MODELS[i] && [MODELS[i][1], MODELS[i][0],
+                    () => { state.vault.models = state.vault.models.filter(x => x !== i); }]),
+    books:  () => state.vault.books.map(id => {
+                    const b = BOOKS.find(x => x[0] === id);
+                    return b && [b[1], b[2], () => { state.vault.books = state.vault.books.filter(x => x !== id); }];
+                  }),
+  };
 
-  if (vaultTab === 'own') {
-    if (!state.vault.own.length) return void box.append(el('p', 'empty', empties.own));
-    state.vault.own.forEach(q => {
-      box.append(vaultQuote(q.text, q.who || 'you', () => {
-        state.vault.own = state.vault.own.filter(x => x.id !== q.id);
-      }));
-    });
-  }
-
-  if (vaultTab === 'models') {
-    if (!state.vault.models.length) return void box.append(el('p', 'empty', empties.models));
-    state.vault.models.forEach(i => {
-      const m = MODELS[i];
-      if (m) box.append(vaultQuote(m[1], m[0], () => {
-        state.vault.models = state.vault.models.filter(x => x !== i);
-      }));
-    });
-  }
-
-  if (vaultTab === 'books') {
-    if (!state.vault.books.length) return void box.append(el('p', 'empty', empties.books));
-    state.vault.books.forEach(id => {
-      const b = BOOKS.find(x => x[0] === id);
-      if (b) box.append(vaultQuote(b[1], b[2], () => {
-        state.vault.books = state.vault.books.filter(x => x !== id);
-      }));
-    });
-  }
+  const items = shelves[vaultTab]().filter(Boolean);
+  if (!items.length) { box.append(el('p', 'empty', empties[vaultTab])); return; }
+  items.forEach(([line, who, remove]) => box.append(vaultQuote(line, who, remove)));
 }
 
 function vaultQuote(line, who, remove) {
@@ -841,12 +827,6 @@ function vaultQuote(line, who, remove) {
   d.append(drop);
   return d;
 }
-
-$('#vault-add').onclick = () => {
-  $('#qf-text').value = ''; $('#qf-who').value = '';
-  sheet('#sheet-quote');
-  setTimeout(() => $('#qf-text').focus(), 320);
-};
 
 $('#quote-form').addEventListener('submit', e => {
   e.preventDefault();

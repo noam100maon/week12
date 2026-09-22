@@ -43,7 +43,8 @@ measured against three weeks, 15% how many habits are active at all.
 Two themes, switched from Settings and remembered per device. **Forest** is
 warm paper, deep forest ink and sand for the cards that mark a moment, with
 colour used only where it carries meaning: completion, momentum, the density
-of the grid. **Mono** is the same layout in black, white and grey — every
+of the grid. Surfaces are flat and separated by hairlines rather than
+shadows, and there are no gradients anywhere. **Mono** is the same layout in black, white and grey — every
 colour is a token, so the whole interface re-skins from one attribute on
 `<html>`. Metrics follow Apple's HIG: the iOS
 text styles (Large Title 34 / Body 17, 11pt floor), 44pt minimum tap targets,
