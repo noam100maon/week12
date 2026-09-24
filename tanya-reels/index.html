@@ -202,6 +202,41 @@ sup{font-size:.62em;line-height:0}
 .field select{background:var(--fill);border:0;border-radius:10px;padding:11px 12px;font-size:17px;width:100%}
 .field textarea.he-in{direction:rtl;text-align:right;font-family:var(--hebrew)}
 .src{font-size:13px;color:var(--ink-55)}
+/* this week */
+.week-card{margin-top:16px;padding:14px 12px 12px}
+.wk-top{display:flex;align-items:center;justify-content:space-between;padding:0 4px 10px}
+.wk-t{font-size:15px;font-weight:600}
+.streak{display:inline-flex;align-items:center;gap:3px;color:var(--c3);font-size:14px}
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
+.day{display:flex;flex-direction:column;align-items:center;gap:6px}
+.day .dr{width:38px;height:38px;position:relative;display:grid;place-items:center;font-size:12px;font-weight:500;color:var(--ink-55)}
+.day .dr svg{position:absolute;inset:0}
+.day.today .dr{color:#fff}
+.day.today .dr::before{content:"";position:absolute;inset:5px;border-radius:50%;background:var(--accent)}
+.day .dr span{position:relative}
+.day .dot{width:5px;height:5px;border-radius:50%;background:transparent}
+.day.hit .dot{background:var(--c2)}
+.day.future .dr{color:var(--ink-25)}
+.wk-goal{font-size:12px;color:var(--ink-40);text-align:center;margin-top:8px}
+/* stat tiles */
+.stats{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:12px -16px 0;padding:0 16px}
+.stats::-webkit-scrollbar{display:none}
+.tile{flex:none;min-width:104px;background:var(--card);border-radius:14px;box-shadow:var(--shadow);padding:10px 12px;display:flex;flex-direction:column;gap:3px}
+.tile .tl{font-size:12px;color:var(--ink-55)}
+.tile .tv{font-size:19px;font-weight:600;font-variant-numeric:tabular-nums;display:flex;align-items:baseline;gap:4px}
+.tile .tv small{font-size:12px;font-weight:500;color:var(--ink-40)}
+/* today's tasks */
+.tasks{display:flex;flex-direction:column;gap:10px}
+.task{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--card);border-radius:16px;box-shadow:var(--shadow);padding:12px 14px}
+.task:active{transform:scale(.985)}
+.task .tk-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.tag{align-self:flex-start;font-size:11px;font-weight:600;color:#fff;background:var(--c,var(--accent));border-radius:5px;padding:2px 7px}
+.task .tk-s{font-size:13px;color:var(--ink-55)}
+.task .tk-t{font-size:17px;font-weight:600;line-height:22px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.task .tk-m{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-55);font-variant-numeric:tabular-nums}
+.task .tk-m .track{flex:1;max-width:140px}
+.task .chev{color:var(--c,var(--accent))}
+.task.done-task{opacity:.6}
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
@@ -222,15 +257,24 @@ sup{font-size:.62em;line-height:0}
       <button class="gear theme-btn" aria-label="Switch to dark mode"><svg viewBox="0 0 24 24" width="19" height="19"><use href="#i-moon"/></svg></button>
     </div>
 
-    <div class="card here" id="here">
+    <div class="card week-card">
+      <div class="wk-top"><span class="wk-t">This week</span><span class="streak" id="streak" title="Days in a row"><svg viewBox="0 0 24 24" width="15" height="15"><use href="#i-flame"/></svg><b id="streak-n">0</b></span></div>
+      <div class="week" id="week"></div>
+      <p class="wk-goal" id="wk-goal">Daily goal: 5 reels</p>
+    </div>
+
+    <div class="stats" id="stats"></div>
+
+    <div class="sec"><h2>Today</h2><span style="flex:1"></span><span id="today-n" style="font-size:13px;color:var(--ink-40)"></span></div>
+    <div class="tasks" id="tasks"></div>
+
+    <div class="card here" id="here" hidden>
       <p class="kicker"><i></i><span id="here-kicker">Loading the text…</span></p>
-      <h2 id="here-title">The Book for Inbetweeners</h2>
-      <p class="where" id="here-where"></p>
+      <h2 id="here-title"></h2><p class="where" id="here-where"></p>
       <div class="track"><i id="here-bar" style="width:0%"></i></div>
       <button class="btn" id="here-go" disabled>Start reading</button>
     </div>
-
-    <div class="overall"><span id="overall-n">0 of 120</span><div class="track"><i id="overall-bar" style="width:0%"></i></div><span id="overall-pct">0%</span></div>
+    <div class="overall" hidden><span id="overall-n"></span><div class="track"><i id="overall-bar"></i></div><span id="overall-pct"></span></div>
 
     <div class="sec"><h2>Road map</h2></div>
     <div class="map" id="map"></div>
@@ -328,7 +372,8 @@ const $ = id => document.getElementById(id);
 const KEY = 'tanyaReels.v4';
 const LEN = 70;                       // every reel is medium length
 // S.at[key]  = the passage you were on in that section (an anchor, see below); S.done[key] = finished
-let S = {fs:19, at:{}, done:{}, last:null, lastS:null, open:{}, sichot:[], t:0};
+let S = {fs:19, at:{}, done:{}, last:null, lastS:null, open:{}, sichot:[], log:{}, t:0};
+const GOAL = 5;                       // reels a day
 try{
   const cur = JSON.parse(localStorage.getItem(KEY));
   if(cur) Object.assign(S, cur);
@@ -465,7 +510,70 @@ function currentIndex(){
   const first = BOOK.chapters.findIndex(c=>!S.done[c.id]);
   return first < 0 ? 0 : first;
 }
+/* ---------- this week, stats and today ---------- */
+const dayKey = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+function logReel(r, ch){
+  const k = dayKey(new Date()), e = S.log[k] || (S.log[k] = {r:0, w:0});
+  e.r++; e.w += r.units ? r.units.reduce((a,u)=>a+u.w,0) : r.he.reduce((a,si)=>a+wc(plainTxt(ch.he[si])),0);
+  save();
+}
+function streak(){
+  let n = 0; const d = new Date();
+  if(!(S.log[dayKey(d)]||{}).r) d.setDate(d.getDate()-1);       // today not started yet: count up to yesterday
+  while((S.log[dayKey(d)]||{}).r){ n++; d.setDate(d.getDate()-1); }
+  return n;
+}
+function dayRing(p, color){ const r = 16, c = 2*Math.PI*r;
+  return `<svg viewBox="0 0 38 38"><circle cx="19" cy="19" r="${r}" fill="none" stroke="var(--fill-2)" stroke-width="3"/>${p>0?`<circle cx="19" cy="19" r="${r}" fill="none" stroke="${color}" stroke-width="3" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${c*(1-Math.min(1,p))}" transform="rotate(-90 19 19)"/>`:''}</svg>`; }
+function renderDash(){
+  const now = new Date(), today = dayKey(now), start = new Date(now); start.setDate(now.getDate() - now.getDay());
+  const names = ['Su','Mo','Tu','We','Th','Fr','Sh'], cols = ['--c1','--c4','--c3','--c1','--c3','--c4','--c2'];
+  $('week').innerHTML = names.map((nm,i)=>{
+    const d = new Date(start); d.setDate(start.getDate()+i); const k = dayKey(d), e = S.log[k]||{r:0};
+    const cls = ['day', k===today?'today':'', d>now && k!==today?'future':'', e.r>=GOAL?'hit':''].join(' ');
+    return `<div class="${cls}" title="${e.r} reels"><div class="dr">${dayRing(e.r/GOAL, `var(${cols[i]})`)}<span>${nm}</span></div><i class="dot"></i></div>`;
+  }).join('');
+  $('streak-n').textContent = streak();
+  const te = S.log[today]||{r:0,w:0};
+  $('wk-goal').textContent = te.r >= GOAL ? `Daily goal reached · ${te.r} reels today` : `Daily goal: ${GOAL} reels · ${te.r} so far today`;
+  const weekR = names.reduce((a,_,i)=>{ const d = new Date(start); d.setDate(start.getDate()+i); return a + ((S.log[dayKey(d)]||{}).r||0); },0);
+  const totalW = Object.values(S.log).reduce((a,e)=>a+(e.w||0),0);
+  const secDone = BOOK ? BOOK.chapters.filter(c=>S.done[c.id]).length : 0;
+  const tiles = [['Today', te.r, 'reels'], ['This week', weekR, 'reels'], ['Streak', streak(), streak()===1?'day':'days'],
+    ['Tanya', secDone, `/ ${BOOK ? BOOK.chapters.length : 120}`], ['Words read', totalW.toLocaleString(), '']];
+  $('stats').innerHTML = tiles.map(([l,v,u])=>`<div class="tile"><span class="tl">${l}</span><span class="tv">${v}${u?`<small>${u}</small>`:''}</span></div>`).join('');
+
+  // today's tasks
+  const tasks = [];
+  if(BOOK){
+    const cur = currentIndex(), ch = BOOK.chapters[cur], pr = progress(ch), p = partOf(ch);
+    tasks.push({tag:'Tanya', c:`var(--c${ch.p+1})`, sub: pr.started ? 'Continue where you left off' : 'Next stop on the road map',
+      t: ch.hd, meta: `Part ${p.n} · ${ch.t}`, pct: pr.pct, pl: pr.started ? `reel ${pr.reelNo} of ${pr.n}` : reelsTxt(pr.n), go: ()=>openBook(cur)});
+  }
+  const sList = allSichot();
+  const lastS = sList.find(x=>x.id===S.lastS && !S.done['s-'+x.id]);
+  const nextS = lastS || sList.find(x=>!S.done['s-'+x.id]);
+  if(nextS){ const sec = sichaSection(nextS), pr = progress(sec);
+    tasks.push({tag:'Sicha', c: colorOf(sec), sub: `${nextS.parsha}${nextS.overview ? ' · overview' : ''}`, t: nextS.title,
+      meta:'', pct: pr.pct, pl: pr.started ? `reel ${pr.reelNo} of ${pr.n}` : reelsTxt(pr.n), go: ()=>openSicha(nextS.id)}); }
+  tasks.push({tag:'Goal', c:'var(--c2)', sub:'Daily goal', t: te.r >= GOAL ? 'Done for today' : `Read ${GOAL} reels`, meta:'',
+    pct: te.r/GOAL, pl: `${Math.min(te.r,GOAL)}/${GOAL} reels`, done: te.r >= GOAL, go: tasks[0] ? tasks[0].go : null});
+  $('today-n').textContent = `${tasks.filter(t=>t.done || t.pct>=1).length}/${tasks.length} done`;
+  const box = $('tasks'); box.innerHTML = '';
+  tasks.forEach(t=>{
+    const b = document.createElement('button'); b.className = 'task' + (t.done ? ' done-task' : ''); b.style.setProperty('--c', t.c);
+    b.innerHTML = `<span class="tk-main"><span class="tag">${esc(t.tag)}</span><span class="tk-s"></span><span class="tk-t"></span>
+      <span class="tk-m"><span class="track"><i style="width:${Math.round(Math.min(1,t.pct)*100)}%"></i></span><span>${esc(t.pl)}</span></span></span>
+      <svg class="chev" viewBox="0 0 24 24" width="8" height="13"><use href="#i-chev"/></svg>`;
+    b.querySelector('.tk-s').textContent = t.meta ? `${t.sub} · ${t.meta}` : t.sub;
+    b.querySelector('.tk-t').textContent = t.t;
+    if(t.go) b.onclick = t.go;
+    box.appendChild(b);
+  });
+}
+
 function renderMap(){
+  renderDash();
   if(!BOOK) return;
   const cur = currentIndex(), curCh = BOOK.chapters[cur], info = progress(curCh), p = partOf(curCh);
   $('here-kicker').textContent = info.started ? 'You are here' : S.last ? 'Next stop' : 'Start here';
@@ -650,11 +758,12 @@ function openReader(ch, next){
     const f = e.target.closest('.fn'); if(f) return showNote(f.dataset.n, notes[f.dataset.n]);
     const g = e.target.closest('.gl,.gl-chip'); if(g) showTerm(g.dataset.g); };
   $('reader').hidden = false; document.body.style.overflow='hidden';
-  const n = reels.length; let ready = false;
+  const n = reels.length; let ready = false; const seen = new Set();
   box.onscroll = ()=>{
     const idx = Math.round(box.scrollTop / box.clientHeight);
     $('r-bar').style.width = (Math.min(idx+1,n)/n*100)+'%';
     if(!ready) return;                                  // don't overwrite your place while restoring it
+    if(idx > 0 && idx < n && !seen.has(idx)){ seen.add(idx); logReel(reels[idx], ch); }
     if(idx >= n){ if(!S.done[ch.id]){ S.done[ch.id] = 1; save(); } }
     else { const a = reelAnchor(reels[idx], ch); if(S.at[ch.id] !== a){ S.at[ch.id] = a; save(); } }
   };
@@ -829,7 +938,7 @@ const remoteReady = (async ()=>{
     return remote;
   }catch(e){ return null; }
 })();
-const snapshot = () => ({at:S.at, done:S.done, last:S.last, lastS:S.lastS, open:S.open, fs:S.fs, t:S.t});
+const snapshot = () => ({log:S.log, at:S.at, done:S.done, last:S.last, lastS:S.lastS, open:S.open, fs:S.fs, t:S.t});
 async function pushRemote(){ const r = remote || await remoteReady; if(!r) return; try{ await r.progress.set(snapshot()); }catch(e){} }
 async function pushItem(x){ const r = remote || await remoteReady; if(!r) return; try{ await r.items.doc(x.id).set({...x}); }catch(e){} }
 async function pullRemote(){
@@ -844,7 +953,7 @@ async function pullRemote(){
     S.sichot.forEach(x=>{ const t = theirs.get(x.id); if(!t || (x.t||0) > (t.t||0)) pushItem(x); });
     S.sichot = S.sichot.filter(x=>!x.deleted);
     if(snap.exists && (snap.data().t||0) > (S.t||0)){
-      const d = snap.data(); Object.assign(S, {at:d.at||{}, done:d.done||{}, last:d.last??null, lastS:d.lastS??null, open:d.open||{}, fs:d.fs||S.fs, t:d.t}); changed = true;
+      const d = snap.data(); Object.assign(S, {log:d.log||S.log||{}, at:d.at||{}, done:d.done||{}, last:d.last??null, lastS:d.lastS??null, open:d.open||{}, fs:d.fs||S.fs, t:d.t}); changed = true;
     } else pushRemote();
     if(changed){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} setFs(S.fs); if($('reader').hidden){ renderMap(); renderSichot(); } }
   }catch(e){}
