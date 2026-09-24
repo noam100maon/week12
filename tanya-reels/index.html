@@ -7,12 +7,13 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,500;0,7..72,600;1,7..72,400&family=Frank+Ruhl+Libre:wght@400;500&family=Noto+Rashi+Hebrew:wght@400;500&display=swap">
 <style>
 
-/* Mono — same system as Nefesh: black, white, nothing else. */
+/* Mono base from Nefesh, with techelet blue and one color per part of the book. */
 :root{
   --ink:#0B0B0C; --ink-80:rgba(11,11,12,.80); --ink-55:rgba(11,11,12,.56); --ink-40:rgba(11,11,12,.42);
   --ink-25:rgba(11,11,12,.26); --ink-12:rgba(11,11,12,.13);
-  --bg:#F2F2F3; --card:#FFFFFF; --fill:rgba(11,11,12,.06); --fill-2:rgba(11,11,12,.12); --sep:rgba(11,11,12,.10);
-  --accent:#0B0B0C; --on-accent:#FFFFFF; --accent-tint:#ECECEE;
+  --bg:#F3F4F8; --card:#FFFFFF; --fill:rgba(11,11,12,.06); --fill-2:rgba(11,11,12,.12); --sep:rgba(11,11,12,.10);
+  --accent:#2750D6; --on-accent:#FFFFFF; --accent-tint:#E7ECFB;
+  --c1:#2750D6; --c2:#0E8C7C; --c3:#D4602A; --c4:#7B4FD1; --c5:#B8862B; --c6:#C23F5E; --c7:#6B7280;
   --shadow:0 0 0 .5px rgba(0,0,0,.08);
   --sans:"Rubik",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
   --serif:"Literata","Iowan Old Style",Georgia,serif;
@@ -26,14 +27,16 @@
   color-scheme:dark;
   --ink:#F5F5F7; --ink-80:rgba(245,245,247,.80); --ink-55:rgba(245,245,247,.58); --ink-40:rgba(245,245,247,.42);
   --ink-25:rgba(245,245,247,.26); --ink-12:rgba(245,245,247,.13);
-  --bg:#000000; --card:#1C1C1E; --fill:rgba(245,245,247,.08); --fill-2:rgba(245,245,247,.15); --sep:rgba(245,245,247,.12);
-  --accent:#F5F5F7; --on-accent:#0B0B0C; --accent-tint:#2C2C2E; --shadow:0 0 0 .5px rgba(255,255,255,.06);}}
+  --bg:#0E1015; --card:#1A1D24; --fill:rgba(245,245,247,.08); --fill-2:rgba(245,245,247,.15); --sep:rgba(245,245,247,.12);
+  --accent:#7C9BFF; --on-accent:#0E1015; --accent-tint:#232A3D; --shadow:0 0 0 .5px rgba(255,255,255,.06);
+  --c1:#7C9BFF; --c2:#3CC4B0; --c3:#F08A57; --c4:#A98BF0; --c5:#E0B35A; --c6:#F0708F; --c7:#9CA3AF;}}
 :root[data-theme="dark"]{
   color-scheme:dark;
   --ink:#F5F5F7; --ink-80:rgba(245,245,247,.80); --ink-55:rgba(245,245,247,.58); --ink-40:rgba(245,245,247,.42);
   --ink-25:rgba(245,245,247,.26); --ink-12:rgba(245,245,247,.13);
-  --bg:#000000; --card:#1C1C1E; --fill:rgba(245,245,247,.08); --fill-2:rgba(245,245,247,.15); --sep:rgba(245,245,247,.12);
-  --accent:#F5F5F7; --on-accent:#0B0B0C; --accent-tint:#2C2C2E; --shadow:0 0 0 .5px rgba(255,255,255,.06);}
+  --bg:#0E1015; --card:#1A1D24; --fill:rgba(245,245,247,.08); --fill-2:rgba(245,245,247,.15); --sep:rgba(245,245,247,.12);
+  --accent:#7C9BFF; --on-accent:#0E1015; --accent-tint:#232A3D; --shadow:0 0 0 .5px rgba(255,255,255,.06);
+  --c1:#7C9BFF; --c2:#3CC4B0; --c3:#F08A57; --c4:#A98BF0; --c5:#E0B35A; --c6:#F0708F; --c7:#9CA3AF;}
 
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 [hidden]{display:none!important}
@@ -78,7 +81,7 @@ h1,h2,h3,p{margin:0}
 .hero h2{font-size:28px;line-height:34px;font-weight:600;letter-spacing:-.015em}
 .hero .line{font-family:var(--serif);font-size:16px;line-height:23px;color:var(--ink-80);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .track{height:4px;border-radius:4px;background:var(--fill-2);overflow:hidden}
-.track i{display:block;height:100%;background:var(--ink);border-radius:4px}
+.track i{display:block;height:100%;background:var(--c,var(--accent));border-radius:4px}
 .meta{display:flex;justify-content:space-between;font-size:13px;color:var(--ink-55);font-variant-numeric:tabular-nums}
 
 
@@ -87,7 +90,7 @@ h1,h2,h3,p{margin:0}
 .tabbar-inner{max-width:600px;margin:0 auto;height:var(--tabbar);display:grid;grid-template-columns:1fr 1fr}
 .tabbtn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--ink-40);font-size:10px;font-weight:500;letter-spacing:.01em}
 .tabbtn svg{width:24px;height:24px}
-.tabbtn.on{color:var(--ink)}
+.tabbtn.on{color:var(--accent)}
 
 /* sheets */
 .scrim{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.32);opacity:0;pointer-events:none;transition:opacity .3s var(--ease)}
@@ -111,18 +114,18 @@ h1,h2,h3,p{margin:0}
 .rtop{display:flex;align-items:center;gap:10px;padding:8px 16px 8px}
 .rtop .t{flex:1;min-width:0;text-align:center;font-size:17px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pbar{height:3px;margin:0 16px 8px;border-radius:2px;background:var(--fill-2);overflow:hidden}
-.pbar i{display:block;height:100%;background:var(--ink);width:0;transition:width .2s}
+.pbar i{display:block;height:100%;background:var(--c,var(--accent));width:0;transition:width .2s}
 #reels{flex:1;overflow-y:auto;scroll-snap-type:y mandatory;overscroll-behavior:contain;scrollbar-width:none}
 #reels::-webkit-scrollbar{display:none}
 .reel{scroll-snap-align:start;scroll-snap-stop:always;height:100%;padding:4px 16px calc(12px + env(safe-area-inset-bottom,0px));display:flex}
 .rcard{flex:1;min-height:0;background:var(--card);border-radius:22px;box-shadow:var(--shadow);display:flex;flex-direction:column;padding:22px 22px 16px}
-.rcard .rk{display:flex;justify-content:space-between;font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-40);font-variant-numeric:tabular-nums}
+.rcard .rk{color:var(--c,var(--accent))!important;display:flex;justify-content:space-between;font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-40);font-variant-numeric:tabular-nums}
 .rtxt{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;padding:16px 0}
 .rtxt .inner{margin:auto 0;display:flex;flex-direction:column;gap:.75em;font-family:var(--serif);font-size:var(--fs);line-height:1.6;letter-spacing:0;max-width:34em;font-optical-sizing:auto}
 .rtxt p{margin:0}
 .gloss{display:block;font-size:.86em;line-height:1.5;color:var(--ink-80);border-left:2px solid var(--ink-25);padding-left:12px;margin:.3em 0}
 sup{font-size:.62em;line-height:0}
-.fn{font-family:var(--sans);font-weight:700;background:var(--fill-2);border-radius:6px;padding:1px 5px;margin-left:1px;cursor:pointer;vertical-align:super;font-size:.58em;line-height:1}
+.fn{font-family:var(--sans);font-weight:700;color:var(--c,var(--accent));background:color-mix(in srgb,var(--c,var(--accent)) 14%,transparent);border-radius:6px;padding:1px 5px;margin-left:1px;cursor:pointer;vertical-align:super;font-size:.58em;line-height:1}
 .rfoot{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px;color:var(--ink-40);font-variant-numeric:tabular-nums}
 .chip{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:0 13px;border-radius:var(--r-pill);background:var(--fill);color:var(--ink-80);font-size:14px}
 .chip:active{transform:scale(.95)}
@@ -140,8 +143,12 @@ sup{font-size:.62em;line-height:0}
 .wd-mean{font-size:22px;line-height:28px;font-weight:700;letter-spacing:-.02em;margin-top:14px}
 .wd-row{margin-top:12px;font-family:var(--serif);font-size:17px;line-height:25px}
 .wd-row b{display:block;font-family:var(--sans);font-size:13px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-40);margin-bottom:2px}
-.gl{font:inherit;font-style:italic;color:inherit;text-decoration:underline dotted var(--ink-40);text-underline-offset:3px;cursor:pointer}
+.gl{font:inherit;font-style:italic;color:inherit;text-decoration:underline dotted var(--c,var(--accent));text-underline-offset:3px;cursor:pointer}
 .ctx .inner{gap:14px}
+.rcard.ctx{background:color-mix(in srgb,var(--c,var(--accent)) 9%,var(--card))}
+.ctx .ch-no{color:var(--c,var(--accent))!important}
+.hw:hover,.hw.on{background:color-mix(in srgb,var(--c,var(--accent)) 20%,transparent)!important}
+.overview-tag{display:inline-block;font-family:var(--sans);font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--c,var(--accent));background:color-mix(in srgb,var(--c,var(--accent)) 12%,transparent);border-radius:var(--r-pill);padding:3px 8px}
 .ctx .ch-no{font-family:var(--sans);font-size:13px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-40);display:flex;justify-content:space-between}
 .ctx .ch-no span:last-child{font-family:var(--hebrew);font-size:16px;letter-spacing:0;text-transform:none}
 .ctx h3{font-family:var(--sans);font-size:30px;line-height:36px;font-weight:600;letter-spacing:-.015em}
@@ -154,7 +161,8 @@ sup{font-size:.62em;line-height:0}
 /* ---------- road map ---------- */
 .here{padding:18px 16px 16px;display:flex;flex-direction:column;gap:10px;margin-top:16px}
 .here .kicker{display:flex;align-items:center;gap:8px}
-.here .kicker i{width:8px;height:8px;border-radius:50%;background:var(--ink);box-shadow:0 0 0 4px var(--fill-2)}
+.here .kicker i{width:8px;height:8px;border-radius:50%;background:var(--c,var(--accent));box-shadow:0 0 0 4px color-mix(in srgb,var(--c,var(--accent)) 22%,transparent)}
+.here .kicker{color:var(--c,var(--accent))}
 .here h2{font-size:26px;line-height:31px;font-weight:600;letter-spacing:-.015em}
 .here .where{font-size:15px;color:var(--ink-55)}
 .overall{display:flex;align-items:center;gap:12px;margin-top:14px;font-size:13px;color:var(--ink-55);font-variant-numeric:tabular-nums}
@@ -162,9 +170,9 @@ sup{font-size:.62em;line-height:0}
 .map{display:flex;flex-direction:column;margin-top:8px}
 .ms{display:flex;align-items:center;gap:14px;width:100%;text-align:left;padding:12px 0}
 .ms .badge{width:42px;height:42px;flex:none;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:15px;
-  background:var(--card);box-shadow:inset 0 0 0 2px var(--fill-2);position:relative;font-variant-numeric:tabular-nums}
+  background:color-mix(in srgb,var(--c,var(--accent)) 12%,var(--card));color:var(--c,var(--accent));position:relative;font-variant-numeric:tabular-nums}
 .ms .badge svg{position:absolute;inset:0}
-.ms.done .badge{background:var(--ink);color:var(--card);box-shadow:none}
+.ms.done .badge{background:var(--c,var(--accent));color:#fff}
 .ms .ms-main{flex:1;min-width:0}
 .ms .ms-t{display:block;font-size:17px;font-weight:600;line-height:22px}
 .ms .ms-s{display:flex;gap:8px;font-size:13px;color:var(--ink-40);line-height:18px;margin-top:1px;white-space:nowrap}
@@ -178,17 +186,17 @@ sup{font-size:.62em;line-height:0}
 .stops .about{border-left:2px solid var(--fill-2);padding:2px 0 12px 22px;font-size:14px;line-height:19px;color:var(--ink-55)}
 .stop{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border-left:2px solid var(--fill-2);padding:9px 0 9px 22px;position:relative}
 .stop::before{content:"";position:absolute;left:-7px;top:50%;margin-top:-6px;width:12px;height:12px;border-radius:50%;background:var(--bg);box-shadow:inset 0 0 0 2px var(--ink-25)}
-.stop.done{border-left-color:var(--ink)}
-.stop.done::before{background:var(--ink);box-shadow:none}
-.stop.started::before{box-shadow:inset 0 0 0 2px var(--ink);background:linear-gradient(90deg,var(--ink) 50%,var(--bg) 50%)}
-.stop.now::before{width:16px;height:16px;left:-9px;margin-top:-8px;background:var(--ink);box-shadow:0 0 0 4px var(--fill-2)}
+.stop.done{border-left-color:var(--c,var(--accent))}
+.stop.done::before{background:var(--c,var(--accent));box-shadow:none}
+.stop.started::before{box-shadow:inset 0 0 0 2px var(--c,var(--accent));background:linear-gradient(90deg,var(--c,var(--accent)) 50%,var(--bg) 50%)}
+.stop.now::before{width:16px;height:16px;left:-9px;margin-top:-8px;background:var(--c,var(--accent));box-shadow:0 0 0 5px color-mix(in srgb,var(--c,var(--accent)) 25%,transparent)}
 .stop.empty-stop .st-t{color:var(--ink-40)}
 .stop:active{background:var(--fill)}
 .stop .st-main{flex:1;min-width:0}
 .stop .st-t{display:block;font-size:16px;line-height:21px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .stop .st-s{display:block;font-size:13px;line-height:18px;color:var(--ink-40);font-variant-numeric:tabular-nums}
-.pill{flex:none;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;background:var(--ink);color:var(--card);border-radius:var(--r-pill);padding:3px 8px}
-.pill.soft{background:var(--fill-2);color:var(--ink-80)}
+.pill{flex:none;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;background:var(--c,var(--accent));color:#fff;border-radius:var(--r-pill);padding:3px 8px}
+.pill.soft{background:color-mix(in srgb,var(--c,var(--accent)) 12%,transparent);color:var(--c,var(--accent))}
 .links{display:flex;flex-direction:column}
 .links a{color:var(--ink);text-decoration:none}
 .field select{background:var(--fill);border:0;border-radius:10px;padding:11px 12px;font-size:17px;width:100%}
@@ -247,7 +255,7 @@ sup{font-size:.62em;line-height:0}
     </div>
 
     <button class="btn" id="add-sicha" style="margin-top:16px"><svg viewBox="0 0 24 24" width="18" height="18"><use href="#i-plus"/></svg>Add a sicha</button>
-    <p class="fine">The Rebbe's sichot aren't free to include in the app, so you paste each one yourself, in English and in the Hebrew or Yiddish original. It becomes bilingual reels here, and nothing gets cut. Free places to read them:</p>
+    <p class="fine">The Rebbe's sichot themselves are under copyright, so they can't be built in. The road map starts with short overviews of well-known themes, written for this app and paired with the Hebrew verse each one centres on. Add the full sichot you're learning, in English and the Hebrew or Yiddish original, and they become bilingual reels with nothing cut. Free places to read them:</p>
     <div class="group links" style="margin-top:10px">
       <a class="row" href="https://www.chabad.org/therebbe/article_cdo/aid/68159/jewish/Likkutei-Sichot-in-English.htm" target="_blank" rel="noopener"><span class="row-main"><span class="row-title">Likkutei Sichot in English</span><span class="row-sub">Chabad.org</span></span><svg class="chev" viewBox="0 0 24 24"><use href="#i-chev"/></svg></a>
       <a class="row" href="https://shop.sie.org/" target="_blank" rel="noopener"><span class="row-main"><span class="row-title">Sichos In English</span><span class="row-sub">sie.org · free translations</span></span><svg class="chev" viewBox="0 0 24 24"><use href="#i-chev"/></svg></a>
@@ -314,6 +322,7 @@ sup{font-size:.62em;line-height:0}
 
 <div class="toast" id="toast"></div>
 
+<script src="overviews.js"></script>
 <script>
 const $ = id => document.getElementById(id);
 const KEY = 'tanyaReels.v4';
@@ -445,8 +454,9 @@ function showTerm(t){ $('note-title').textContent = t.replace(/\b\w/g,c=>c.toUpp
 
 /* ---------- road map (Tanya) ---------- */
 function ring(p){ const r = 19, c = 2*Math.PI*r;
-  return `<svg viewBox="0 0 42 42"><circle cx="21" cy="21" r="${r}" fill="none" stroke="var(--ink)" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${c*(1-p)}" transform="rotate(-90 21 21)"/></svg>`; }
+  return `<svg viewBox="0 0 42 42"><circle cx="21" cy="21" r="${r}" fill="none" stroke="var(--c,var(--accent))" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${c*(1-p)}" transform="rotate(-90 21 21)"/></svg>`; }
 const partOf = ch => BOOK.parts[ch.p];
+const colorOf = ch => ch.sicha ? `var(--c${(PARSHA[ch.sicha.parsha]||PARSHA.Other).b+1})` : `var(--c${ch.p+1})`;
 function currentIndex(){
   let i = BOOK.chapters.findIndex(c=>c.id===S.last);
   if(i >= 0 && !S.done[BOOK.chapters[i].id]) return i;
@@ -465,6 +475,7 @@ function renderMap(){
   $('here-go').disabled = false;
   $('here-go').textContent = info.started ? `Continue from reel ${info.reelNo}` : 'Start reading';
   $('here-go').onclick = ()=>openBook(cur);
+  $('here').style.setProperty('--c', `var(--c${curCh.p+1})`);
   const total = BOOK.chapters.length, doneAll = BOOK.chapters.filter(c=>S.done[c.id]).length;
   $('overall-n').textContent = `${doneAll} of ${total} sections`;
   $('overall-bar').style.width = (doneAll/total*100)+'%';
@@ -476,7 +487,7 @@ function renderMap(){
     const chs = BOOK.chapters.map((c,i)=>[c,i]).filter(([c])=>c.p===pi);
     const d = chs.filter(([c])=>S.done[c.id]).length, open = !!S.open[pi];
     const ms = document.createElement('button');
-    ms.className = 'ms' + (d === chs.length ? ' done' : ''); ms.setAttribute('aria-expanded', open);
+    ms.className = 'ms' + (d === chs.length ? ' done' : ''); ms.setAttribute('aria-expanded', open); ms.style.setProperty('--c', `var(--c${pi+1})`);
     ms.innerHTML = `<span class="badge">${d === chs.length ? '✓' : esc(part.n)}${d && d < chs.length ? ring(d/chs.length) : ''}</span>
       <span class="ms-main"><span class="ms-t">${esc(part.name)}</span>
       <span class="ms-s"><span>${esc(part.en)} · ${d}/${chs.length}</span><span class="he-n" dir="rtl">${esc(part.he)}</span></span></span>
@@ -484,7 +495,7 @@ function renderMap(){
     ms.onclick = ()=>{ S.open[pi] = !open; save(); renderMap(); };
     map.appendChild(ms);
     if(!open) return;
-    const stops = document.createElement('div'); stops.className = 'stops';
+    const stops = document.createElement('div'); stops.className = 'stops'; stops.style.setProperty('--c', `var(--c${pi+1})`);
     stops.innerHTML = `<p class="about">${esc(part.c)}</p>`;
     // finished stops before where you are fold into one row, so "You are here" is in view
     let lead = 0; while(lead < chs.length && S.done[chs[lead][0].id] && chs[lead][1] < cur) lead++;
@@ -510,8 +521,11 @@ function renderMap(){
 }
 
 /* ---------- road map (sichot) ---------- */
+// built-in overviews (our own words, see overviews.js) plus the sichot you paste
+const OV = (window.OVERVIEWS||[]).map((o,i)=>({id:'o'+i, parsha:o.parsha, title:o.title, source:o.src, en:o.en, he:o.he, t:1, overview:1}));
+const allSichot = () => [...OV, ...S.sichot.filter(x=>!x.deleted)];
 function renderSichot(){
-  const items = S.sichot.filter(x=>!x.deleted);
+  const items = allSichot();
   $('s-tally').textContent = items.length ? `${items.filter(x=>S.done['s-'+x.id]).length} of ${items.length} read` : '';
   // continue card
   const last = items.find(x=>x.id===S.lastS);
@@ -524,6 +538,7 @@ function renderSichot(){
     $('s-here-bar').style.width = Math.round(pr.pct*100)+'%';
     $('s-here-go').textContent = pr.started ? `Continue from reel ${pr.reelNo}` : pr.done ? 'Read again' : 'Start reading';
     $('s-here-go').onclick = ()=>openSicha(last.id);
+    $('s-here').style.setProperty('--c', colorOf(sec));
   }
   const map = $('s-map'); map.innerHTML = '';
   BOOKS.forEach(([bn,bh,ps],bi)=>{
@@ -533,14 +548,14 @@ function renderSichot(){
     if(S.open[key] === undefined) S.open[key] = inBook.length > 0 && bi === (last ? (PARSHA[last.parsha]||PARSHA.Other).b : 0);
     const open = !!S.open[key];
     const ms = document.createElement('button');
-    ms.className = 'ms' + (inBook.length && d === inBook.length ? ' done' : ''); ms.setAttribute('aria-expanded', open);
+    ms.className = 'ms' + (inBook.length && d === inBook.length ? ' done' : ''); ms.setAttribute('aria-expanded', open); ms.style.setProperty('--c', `var(--c${bi+1})`);
     ms.innerHTML = `<span class="badge">${inBook.length && d === inBook.length ? '✓' : inBook.length}</span>
       <span class="ms-main"><span class="ms-t">${esc(bn)}</span><span class="ms-s"><span>${inBook.length ? `${d}/${inBook.length} read` : 'No sichot yet'}</span><span class="he-n" dir="rtl">${esc(bh)}</span></span></span>
       <svg class="chev" viewBox="0 0 24 24" width="8" height="13"><use href="#i-chev"/></svg>`;
     ms.onclick = ()=>{ S.open[key] = !open; save(); renderSichot(); };
     map.appendChild(ms);
     if(!open) return;
-    const stops = document.createElement('div'); stops.className = 'stops';
+    const stops = document.createElement('div'); stops.className = 'stops'; stops.style.setProperty('--c', `var(--c${bi+1})`);
     ps.forEach(([pn,ph])=>{
       const mine = inBook.filter(x=>x.parsha===pn);
       if(!mine.length){
@@ -554,7 +569,7 @@ function renderSichot(){
         const st = document.createElement('button');
         st.className = 'stop' + (pr.done ? ' done' : '') + (pr.started ? ' started' : '') + (now ? ' now' : '');
         st.innerHTML = `<span class="st-main"><span class="st-t"></span><span class="st-s">${esc(pn)} · <span dir="rtl">${esc(ph)}</span> · ${pr.started ? `reel ${pr.reelNo} of ${pr.n}` : pr.done ? 'read' : reelsTxt(pr.n)}</span></span>
-          ${now ? '<span class="pill">You are here</span>' : '<span class="pill soft" data-edit>Edit</span>'}`;
+          ${now ? '<span class="pill">You are here</span>' : x.overview ? '<span class="pill soft">Overview</span>' : '<span class="pill soft" data-edit>Edit</span>'}`;
         st.querySelector('.st-t').textContent = x.title;
         st.onclick = e=>{ if(e.target.closest('[data-edit]')) editSicha(x.id); else openSicha(x.id); };
         stops.appendChild(st);
@@ -572,12 +587,13 @@ function openBook(i){
   openReader(ch, nx ? {label: nx.p !== ch.p ? `On to Part ${BOOK.parts[nx.p].n}` : 'Next stop', go: ()=>openBook(i+1)} : null);
 }
 function openSicha(id){
-  const x = S.sichot.find(s=>s.id===id); if(!x) return;
+  const x = allSichot().find(s=>s.id===id); if(!x) return;
   S.lastS = id; save();
   openReader(sichaSection(x), null);
 }
 function openReader(ch, next){
   R = ch;
+  $('reader').style.setProperty('--c', colorOf(ch));
   const reels = reelsOf(ch), notes = Object.fromEntries(ch.n), isBook = !ch.sicha;
   $('r-title').textContent = isBook ? `Part ${partOf(ch).n} · ${ch.t}` : ch.t;
   const box = $('reels'); box.innerHTML = '';
@@ -587,14 +603,15 @@ function openReader(ch, next){
     if(r.ctx){
       const terms = chapterTerms(ch);
       const about = isBook ? (ch.own ? ch.cx : `<span class="lbl" style="display:block">About Part ${esc(partOf(ch).n)} · ${esc(partOf(ch).en)}</span>${esc(ch.cx)}`)
-                           : esc([ch.sicha.parsha, ch.sicha.source].filter(Boolean).join(' · '));
+                           : (ch.sicha.overview ? '<span class="overview-tag">Overview · written for this app</span><br>' : '') + esc([ch.sicha.parsha, ch.sicha.source].filter(Boolean).join(' · '))
+                             + (ch.sicha.overview ? '<br><br>This is a short summary of a well-known theme in our own words, not the Rebbe\'s words or a translation. The Hebrew is the verse or source it centres on. Use the links in the Sichot tab to read the sichot themselves.' : '');
       d.innerHTML = `<article class="rcard ctx"><div class="rk"><span>Before you read</span><span>${reelsTxt(reelCount)}</span></div>
         <div class="rtxt"><div class="inner">
           <div class="ch-no"><span>${esc(isBook ? `Part ${partOf(ch).n} · ${ch.t}` : 'Sicha')}</span><span dir="rtl">${esc(ch.ht)}</span></div>
           <h3></h3><p class="cx">${isBook && ch.own ? esc(about) : about}</p>
           ${terms.length?`<p class="lbl">Key terms</p><div class="terms">${terms.map(t=>`<button class="chip gl-chip" data-g="${esc(t)}">${esc(t)}</button>`).join('')}</div>`:''}
         </div></div>
-        <div class="rfoot"><span>${isBook ? 'Context written for this app' : 'Your sicha'}</span><span>Swipe up to begin</span></div></article>`;
+        <div class="rfoot"><span>${isBook ? 'Context written for this app' : ch.sicha.overview ? 'Overview' : 'Your sicha'}</span><span>Swipe up to begin</span></div></article>`;
       d.querySelector('h3').textContent = ch.hd;
       box.appendChild(d); return;
     }
@@ -674,7 +691,7 @@ function applyTheme(t, stamp=true){
   document.querySelector('meta[name=theme-color]')?.setAttribute('content', dark ? '#000000' : '#F2F2F3');
 }
 let savedTheme = null; try{ savedTheme = localStorage.getItem('tanyaReels.theme'); }catch(e){}
-if(savedTheme) applyTheme(savedTheme); else applyTheme(curTheme(), false);   // follow the system until you choose
+applyTheme(savedTheme || 'light');   // light by default; the moon button switches
 document.querySelectorAll('.theme-btn').forEach(b=>b.onclick = ()=>{ const t = curTheme() === 'dark' ? 'light' : 'dark'; applyTheme(t); try{ localStorage.setItem('tanyaReels.theme', t); }catch(e){} });
 
 /* ---------- adding sichot ---------- */
