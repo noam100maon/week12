@@ -3,7 +3,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#F2F2F3">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;500&display=swap">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,500;0,7..72,600;1,7..72,400&family=Frank+Ruhl+Libre:wght@400;500&family=Noto+Rashi+Hebrew:wght@400;500&display=swap">
 <style>
 
 /* Mono — same system as Nefesh: black, white, nothing else. */
@@ -13,11 +14,12 @@
   --bg:#F2F2F3; --card:#FFFFFF; --fill:rgba(11,11,12,.06); --fill-2:rgba(11,11,12,.12); --sep:rgba(11,11,12,.10);
   --accent:#0B0B0C; --on-accent:#FFFFFF; --accent-tint:#ECECEE;
   --shadow:0 0 0 .5px rgba(0,0,0,.08);
-  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
-  --serif:ui-serif,"New York","Iowan Old Style",Georgia,serif;
+  --sans:"Rubik",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+  --serif:"Literata","Iowan Old Style",Georgia,serif;
   --r-card:18px; --r-ctl:13px; --r-pill:980px;
   --ease:cubic-bezier(.32,.72,0,1); --ease-out:cubic-bezier(.25,.46,.45,.94);
   --hebrew:"Frank Ruhl Libre","Times New Roman",serif;
+  --rashi:"Noto Rashi Hebrew","Frank Ruhl Libre",serif;
   --tabbar:49px; --fs:19px;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
@@ -36,7 +38,7 @@
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 [hidden]{display:none!important}
 html,body{height:100%}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:17px;line-height:22px;letter-spacing:-.022em;-webkit-font-smoothing:antialiased}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:22px;letter-spacing:0;-webkit-font-smoothing:antialiased}
 button,input,select,textarea{font:inherit;color:inherit;letter-spacing:inherit}
 button{background:none;border:0;padding:0;cursor:pointer}
 h1,h2,h3,p{margin:0}
@@ -46,7 +48,7 @@ h1,h2,h3,p{margin:0}
 .view{display:none}.view.on{display:block}
 .topbar{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:14px 0 2px}
 .greet{color:var(--ink-55);font-size:15px;line-height:20px}
-.t-large{font-size:34px;line-height:41px;font-weight:700;letter-spacing:-.026em}
+.t-large{font-size:34px;line-height:41px;font-weight:600;letter-spacing:-.015em}
 .gear{width:36px;height:36px;flex:none;display:grid;place-items:center;border-radius:var(--r-pill);background:var(--fill);color:var(--ink)}
 .gear:active{transform:scale(.92)}
 .sec{margin:26px 0 8px;display:flex;align-items:center;gap:6px}
@@ -73,7 +75,7 @@ h1,h2,h3,p{margin:0}
 
 .hero{padding:18px 16px 16px;display:flex;flex-direction:column;gap:12px}
 .kicker{font-size:13px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-40)}
-.hero h2{font-size:28px;line-height:34px;font-weight:700;letter-spacing:-.026em}
+.hero h2{font-size:28px;line-height:34px;font-weight:600;letter-spacing:-.015em}
 .hero .line{font-family:var(--serif);font-size:16px;line-height:23px;color:var(--ink-80);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .track{height:4px;border-radius:4px;background:var(--fill-2);overflow:hidden}
 .track i{display:block;height:100%;background:var(--ink);border-radius:4px}
@@ -93,7 +95,7 @@ h1,h2,h3,p{margin:0}
 .sheet{position:fixed;left:0;right:0;bottom:0;z-index:61;max-width:600px;margin:0 auto;max-height:88%;overflow-y:auto;background:var(--card);border-radius:20px 20px 0 0;padding:8px 16px calc(20px + env(safe-area-inset-bottom,0px));transform:translateY(105%);transition:transform .42s var(--ease)}
 .sheet.on{transform:none}
 .grabber{width:36px;height:5px;border-radius:3px;background:var(--ink-25);margin:0 auto 14px}
-.sheet h2{font-size:22px;line-height:28px;font-weight:700;letter-spacing:-.026em}
+.sheet h2{font-size:22px;line-height:28px;font-weight:600;letter-spacing:-.015em}
 .sheet .lead{margin-top:6px;color:var(--ink-55);font-size:15px;line-height:20px}
 .sheet .note-body{margin-top:12px;font-family:var(--serif);font-size:17px;line-height:25px}
 .field{display:flex;flex-direction:column;gap:6px;margin-top:16px}
@@ -116,7 +118,7 @@ h1,h2,h3,p{margin:0}
 .rcard{flex:1;min-height:0;background:var(--card);border-radius:22px;box-shadow:var(--shadow);display:flex;flex-direction:column;padding:22px 22px 16px}
 .rcard .rk{display:flex;justify-content:space-between;font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-40);font-variant-numeric:tabular-nums}
 .rtxt{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;padding:16px 0}
-.rtxt .inner{margin:auto 0;display:flex;flex-direction:column;gap:.75em;font-family:var(--serif);font-size:var(--fs);line-height:1.55;letter-spacing:-.005em;max-width:34em}
+.rtxt .inner{margin:auto 0;display:flex;flex-direction:column;gap:.75em;font-family:var(--serif);font-size:var(--fs);line-height:1.6;letter-spacing:0;max-width:34em;font-optical-sizing:auto}
 .rtxt p{margin:0}
 .gloss{display:block;font-size:.86em;line-height:1.5;color:var(--ink-80);border-left:2px solid var(--ink-25);padding-left:12px;margin:.3em 0}
 sup{font-size:.62em;line-height:0}
@@ -125,12 +127,12 @@ sup{font-size:.62em;line-height:0}
 .chip{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:0 13px;border-radius:var(--r-pill);background:var(--fill);color:var(--ink-80);font-size:14px}
 .chip:active{transform:scale(.95)}
 .endcard{align-items:center;justify-content:center;text-align:center;gap:14px}
-.endcard .big{font-size:34px;line-height:41px;font-weight:700;letter-spacing:-.026em}
+.endcard .big{font-size:34px;line-height:41px;font-weight:600;letter-spacing:-.015em}
 .fsb{width:36px;height:32px;border-radius:10px;background:var(--fill);font-size:14px;font-weight:600}
 .empty{padding:22px 16px;color:var(--ink-55);font-size:15px;line-height:20px}
  .he{direction:rtl;text-align:right;font-family:var(--hebrew);font-size:calc(var(--fs) * 1.08);line-height:1.7;color:var(--ink)}
 .both .he{margin-top:.4em;padding-top:.8em;border-top:.5px solid var(--sep);color:var(--ink-80);font-size:calc(var(--fs) * 1.0)}
-.he .gloss{border-left:0;border-right:2px solid var(--ink-25);padding-left:0;padding-right:12px}
+.he .gloss{border-left:0;border-right:2px solid var(--ink-25);padding-left:0;padding-right:12px;font-family:var(--rashi);font-size:.9em}
 .hw{cursor:pointer;border-radius:4px;transition:background .15s}
 .hw:hover,.hw.on{background:var(--fill-2)}
 .wd-he{font-family:var(--hebrew);font-size:40px;line-height:1.3;direction:rtl;text-align:right;margin-top:4px}
@@ -142,7 +144,7 @@ sup{font-size:.62em;line-height:0}
 .ctx .inner{gap:14px}
 .ctx .ch-no{font-family:var(--sans);font-size:13px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-40);display:flex;justify-content:space-between}
 .ctx .ch-no span:last-child{font-family:var(--hebrew);font-size:16px;letter-spacing:0;text-transform:none}
-.ctx h3{font-family:var(--sans);font-size:30px;line-height:36px;font-weight:700;letter-spacing:-.026em}
+.ctx h3{font-family:var(--sans);font-size:30px;line-height:36px;font-weight:600;letter-spacing:-.015em}
 .ctx .cx{font-family:var(--serif);font-size:calc(var(--fs) * .95);line-height:1.55;color:var(--ink-80)}
 .terms{display:flex;flex-wrap:wrap;gap:8px}
 .ctx .lbl{font-family:var(--sans);font-size:13px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-40);margin-top:6px}
@@ -153,7 +155,7 @@ sup{font-size:.62em;line-height:0}
 .here{padding:18px 16px 16px;display:flex;flex-direction:column;gap:10px;margin-top:16px}
 .here .kicker{display:flex;align-items:center;gap:8px}
 .here .kicker i{width:8px;height:8px;border-radius:50%;background:var(--ink);box-shadow:0 0 0 4px var(--fill-2)}
-.here h2{font-size:26px;line-height:31px;font-weight:700;letter-spacing:-.026em}
+.here h2{font-size:26px;line-height:31px;font-weight:600;letter-spacing:-.015em}
 .here .where{font-size:15px;color:var(--ink-55)}
 .overall{display:flex;align-items:center;gap:12px;margin-top:14px;font-size:13px;color:var(--ink-55);font-variant-numeric:tabular-nums}
 .overall .track{flex:1}
@@ -165,7 +167,10 @@ sup{font-size:.62em;line-height:0}
 .ms.done .badge{background:var(--ink);color:var(--card);box-shadow:none}
 .ms .ms-main{flex:1;min-width:0}
 .ms .ms-t{display:block;font-size:17px;font-weight:600;line-height:22px}
-.ms .ms-s{display:flex;gap:8px;font-size:13px;color:var(--ink-40);line-height:18px;margin-top:1px}
+.ms .ms-s{display:flex;gap:8px;font-size:13px;color:var(--ink-40);line-height:18px;margin-top:1px;white-space:nowrap}
+.ms .ms-s span:first-child{overflow:hidden;text-overflow:ellipsis;min-width:0}
+.ms .ms-s .he-n{flex:none;margin-left:auto}
+.t-large .he-mark{font-family:var(--hebrew);font-weight:500;font-size:.8em;color:var(--ink-40);margin-left:10px}
 .ms .ms-s .he-n{font-family:var(--hebrew);font-size:15px}
 .ms .chev{transition:transform .25s var(--ease)}
 .ms[aria-expanded="true"] .chev{transform:rotate(90deg)}
@@ -194,7 +199,8 @@ sup{font-size:.62em;line-height:0}
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
   <g id="i-book" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5C6.5 4.3 9.5 4.3 12 6c2.5-1.7 5.5-1.7 8-.5v13c-2.5-1.2-5.5-1.2-8 .5-2.5-1.7-5.5-1.7-8-.5z"/><path d="M12 6v13"/></g>
   <g id="i-flame" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5c.5 3-3.5 5-3.5 9a3.5 3.5 0 0 0 7 0c0-1.6-.8-2.8-1.5-3.6.1 1.3-.6 2.3-1.4 2.6.6-2.8-.2-5.8-.6-8z"/><path d="M6.5 13.5a5.5 5.5 0 0 0 11 0"/><path d="M12 20.5v1"/></g>
-  <g id="i-gear" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="3.1"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/></g>
+  <g id="i-sun" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></g>
+  <g id="i-moon" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 14.5A7.5 7.5 0 0 1 9.5 4.5a7.5 7.5 0 1 0 10 10z"/></g>
   <g id="i-chev" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 4.5 16 12l-7.5 7.5"/></g>
   <g id="i-x" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></g>
   <g id="i-plus" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></g>
@@ -204,8 +210,8 @@ sup{font-size:.62em;line-height:0}
   <!-- ===================== TANYA ROAD MAP ===================== -->
   <section class="view on" id="v-book">
     <div class="topbar">
-      <div><p class="greet">Rabbi Shneur Zalman of Liadi</p><h1 class="t-large">Tanya</h1></div>
-      <button class="gear" id="open-settings" aria-label="Settings"><svg viewBox="0 0 24 24" width="19" height="19"><use href="#i-gear"/></svg></button>
+      <div><p class="greet">Rabbi Shneur Zalman of Liadi</p><h1 class="t-large">Tanya<span class="he-mark" lang="he">תניא</span></h1></div>
+      <button class="gear theme-btn" aria-label="Switch to dark mode"><svg viewBox="0 0 24 24" width="19" height="19"><use href="#i-moon"/></svg></button>
     </div>
 
     <div class="card here" id="here">
@@ -222,12 +228,14 @@ sup{font-size:.62em;line-height:0}
     <div class="map" id="map"></div>
 
     <p class="fine">English translation, notes and Hebrew © Kehot Publication Society, via <a href="https://www.sefaria.org/Tanya" target="_blank" rel="noopener">Sefaria</a>, CC-BY-NC. The bracketed explanations and footnotes are the translators' commentary. The chapter introductions, part introductions and glossary are written for this app and are not part of the book. Every word and every note is kept.</p>
+    <p class="fine">Tap a Hebrew word to translate it, a small number for a footnote, or an underlined term for its meaning. <span id="sync-note">Your place is saved on this device.</span></p>
   </section>
 
   <!-- ===================== SICHOT ROAD MAP ===================== -->
   <section class="view" id="v-sichot">
     <div class="topbar">
       <div><p class="greet">Through the year, parsha by parsha</p><h1 class="t-large">Sichot of the Rebbe</h1></div>
+      <button class="gear theme-btn" aria-label="Switch to dark mode"><svg viewBox="0 0 24 24" width="19" height="19"><use href="#i-moon"/></svg></button>
     </div>
 
     <div class="card here" id="s-here" hidden>
@@ -302,20 +310,6 @@ sup{font-size:.62em;line-height:0}
     <div class="sheet-acts"><button type="button" class="btn sec" data-close>Cancel</button><button type="submit" class="btn">Save sicha</button></div>
     <button type="button" class="btn sec" id="del-sicha" style="margin-top:10px" hidden>Delete</button>
   </form>
-</div>
-
-<div class="sheet" id="sheet-settings" role="dialog" aria-label="Settings">
-  <div class="grabber"></div>
-  <h2>Settings</h2>
-  <div class="sec"><h2>Your place</h2></div>
-  <p class="fine" style="margin-top:0" id="sync-note">Your place is saved on this device.</p>
-  <div class="group" style="margin-top:10px">
-    <button class="row" id="s-reset"><span class="row-main"><span class="row-title">Start the Tanya over</span><span class="row-sub">Clears your Tanya progress. Sichot stay.</span></span></button>
-  </div>
-  <div class="sec"><h2>About</h2></div>
-  <p class="fine" style="margin-top:0">Every reel is about 70 words, with the English and the Hebrew together. Tap a Hebrew word to translate it, a small number for a footnote, or an underlined term for its meaning.</p>
-  <p class="fine">Tanya, all five parts, by Rabbi Shneur Zalman of Liadi. English translation, notes and Hebrew text © Kehot Publication Society, published on Sefaria under CC-BY-NC for non-commercial use.</p>
-  <div style="margin-top:20px"><button class="btn" data-close>Done</button></div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -671,19 +665,17 @@ function closeSheets(){ $('scrim').classList.remove('on'); document.querySelecto
 $('scrim').onclick = closeSheets;
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick = closeSheets);
 function showNote(n, html){ $('note-title').textContent = 'Note '+n; $('note-body').innerHTML = html; openSheet('sheet-note'); }
-$('open-settings').onclick = ()=>openSheet('sheet-settings');
-const resetBtn = $('s-reset');
-resetBtn.onclick = ()=>{
-  const t = resetBtn.querySelector('.row-title');
-  if(resetBtn.dataset.armed){
-    Object.keys(S.at).forEach(k=>{ if(!k.startsWith('s-')) delete S.at[k]; });
-    Object.keys(S.done).forEach(k=>{ if(!k.startsWith('s-')) delete S.done[k]; });
-    S.last = null; save(); renderMap(); closeSheets(); toast('Tanya progress cleared');
-    delete resetBtn.dataset.armed; t.textContent='Start the Tanya over'; return;
-  }
-  resetBtn.dataset.armed='1'; t.textContent='Tap again to clear';
-  setTimeout(()=>{ delete resetBtn.dataset.armed; t.textContent='Start the Tanya over'; },3000);
-};
+/* ---------- light / dark ---------- */
+function curTheme(){ return document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); }
+function applyTheme(t, stamp=true){
+  if(stamp) document.documentElement.dataset.theme = t;
+  const dark = t === 'dark';
+  document.querySelectorAll('.theme-btn').forEach(b=>{ b.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode'); b.querySelector('use').setAttribute('href', dark ? '#i-sun' : '#i-moon'); });
+  document.querySelector('meta[name=theme-color]')?.setAttribute('content', dark ? '#000000' : '#F2F2F3');
+}
+let savedTheme = null; try{ savedTheme = localStorage.getItem('tanyaReels.theme'); }catch(e){}
+if(savedTheme) applyTheme(savedTheme); else applyTheme(curTheme(), false);   // follow the system until you choose
+document.querySelectorAll('.theme-btn').forEach(b=>b.onclick = ()=>{ const t = curTheme() === 'dark' ? 'light' : 'dark'; applyTheme(t); try{ localStorage.setItem('tanyaReels.theme', t); }catch(e){} });
 
 /* ---------- adding sichot ---------- */
 const sel = $('f-parsha');
