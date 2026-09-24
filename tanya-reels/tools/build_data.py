@@ -20,6 +20,8 @@ def take_balanced_i(s, start):
     depth, i = 1, start
     while depth:
         o, c = s.find('<i', i), s.find('</i>', i)
+        if c == -1:
+            return len(s)  # unclosed footnote runs to the end of the segment
         if o != -1 and o < c:
             depth += 1; i = o + 2
         else:
@@ -109,28 +111,57 @@ def he_num(n):
     r = (tens[n // 10 - 1] if n >= 10 else '') + (ones[n % 10 - 1] if n % 10 else '')
     return r[:-1] + '״' + r[-1] if len(r) > 1 else r + '׳'
 
+HEADINGS = {'2.0': 'Introduction: Chinuch Katan', '2.1': 'Creation is renewed every moment',
+            '3.1': 'What teshuvah really is'}
+
+def first_line(units, limit=70):
+    t = ' '.join(' '.join(plain(re.sub(r'<sup>.*?</sup>', '', u['h'])).split()) for u in units[:4])
+    t = re.sub(r'\b[A-Z][A-Z’\-]+\.?(\s+[A-Z][A-Z’\-]+\.?)+\s*', '', t)   # drop all-caps titles and numbers
+    t = re.sub(r'\b[A-Z][A-Z\-]{2,}\.\s*', '', t)                   # "ONE." "TWENTY-TWO."
+    t = re.sub(r'\s+([,.;:”])', r'\1', t).strip()
+    m = re.match(r'(.{25,%d}?[.!?;”])(\s|$)' % limit, t)
+    return m.group(1) if m else (t[:limit].rsplit(' ', 1)[0].rstrip(',;:') + '…')
+
 def main(src, src_he, ctx_path, dst):
     d = json.load(open(src)); dh = json.load(open(src_he)); ctx = json.load(open(ctx_path))
-    p = d['text']['Part I; Likkutei Amarim']; ph = dh['text']['Part I; Likkutei Amarim']
-    sections = [("Compiler's Foreword", "הקדמת המלקט", p["Compiler's Foreword"], ph["Compiler's Foreword"])] + \
-               [('Chapter %d' % (i + 1), 'פרק ' + he_num(i + 1), c, ph[''][i]) for i, c in enumerate(p[''])]
-    assert len(sections) == len(ctx['chapters'])
+    sections = []   # (part_index, id, title, he_title, segs, he_segs, heading, context)
+    for pi, part in enumerate(ctx['parts']):
+        p = d['text'][part['key']]; ph = dh['text'][part['key']]
+        if pi == 0:
+            sections.append((pi, "Compiler's Foreword", "הקדמת המלקט", p["Compiler's Foreword"], ph["Compiler's Foreword"]))
+        elif pi == 1:
+            sections.append((pi, 'Chinuch Katan', 'חינוך קטן', p['Chinukh Katan'], ph['Chinukh Katan']))
+        body, hbody = (p[''], ph['']) if isinstance(p, dict) else (p, ph)
+        for i, c in enumerate(body):
+            sections.append((pi, '%s %d' % (part['label'], i + 1), part['hlabel'] + ' ' + he_num(i + 1), c, hbody[i]))
+    part1 = [x for x in sections if x[0] == 0]
+    assert len(part1) == len(ctx['chapters'])
     chapters, total = [], 0
-    for (title, he_title, segs, he_segs), cx in zip(sections, ctx['chapters']):
+    for k, (pi, title, he_title, segs, he_segs) in enumerate(sections):
         assert len(segs) == len(he_segs), title
         units, notes = build_chapter(segs)
         src_text = plain(' '.join(clean(pull_notes(s)[0]) for s in segs)).split()
         out_text = plain(' '.join(u['h'] for u in units)).split()
-        assert src_text == out_text, (title, 'text changed')
-        assert sum(s.count(MARK) for s in segs) == len(notes), (title, 'notes lost')
+        assert src_text == out_text, (pi, title, 'text changed')
+        assert sum(len(re.findall(re.escape(MARK) + r'[^<]*</sup>' + re.escape(FOOT), s)) for s in segs) == len(notes), (pi, title, 'notes lost')
         he = [clean_he(x) for x in he_segs]
-        assert all(plain(h).strip() for h in he), (title, 'empty Hebrew segment')
+        assert all(plain(h).strip() for h in he), (pi, title, 'empty Hebrew segment')
         total += len(out_text)
-        chapters.append({'t': title, 'ht': he_title, 'hd': cx['h'], 'cx': cx['c'], 'u': units, 'n': notes, 'he': he})
+        if pi == 0:
+            cx = ctx['chapters'][k]; hd, cxt, own = cx['h'], cx['c'], 1
+        else:
+            hd, cxt, own = None, ctx['parts'][pi]['c'], 0
+        cid = '%d.%s' % (pi + 1, title.split()[-1] if title[-1].isdigit() else '0')
+        hd = hd or HEADINGS.get(cid) or first_line(units)
+        chapters.append({'id': cid,
+                         'p': pi, 't': title, 'ht': he_title, 'hd': hd, 'cx': cxt, 'own': own,
+                         'u': units, 'n': notes, 'he': he})
+    ids = [c['id'] for c in chapters]; assert len(set(ids)) == len(ids)
+    parts = [{k: v for k, v in p.items() if k != 'key'} for p in ctx['parts']]
     json.dump({'source': {'title': d['versionTitle'], 'license': d['license'], 'notes': d['versionNotes'],
-                          'url': 'https://www.sefaria.org/Tanya,_Part_I;_Likkutei_Amarim'},
-               'glossary': ctx['glossary'], 'chapters': chapters},
+                          'url': 'https://www.sefaria.org/Tanya'},
+               'parts': parts, 'glossary': ctx['glossary'], 'chapters': chapters},
               open(dst, 'w'), ensure_ascii=False, separators=(',', ':'))
-    print('ok', len(chapters), 'sections,', total, 'English words kept, Hebrew aligned')
+    print('ok', len(chapters), 'sections in', len(parts), 'parts,', total, 'English words kept, Hebrew aligned')
 
 main(*sys.argv[1:5])

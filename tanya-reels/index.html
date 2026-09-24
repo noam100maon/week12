@@ -154,6 +154,15 @@ sup{font-size:.62em;line-height:0}
 .terms{display:flex;flex-wrap:wrap;gap:8px}
 .ctx .lbl{font-family:var(--sans);font-size:13px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-40);margin-top:6px}
 .langseg{margin:0 16px 10px}
+.parts{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:0 16px 2px}
+.parts::-webkit-scrollbar{display:none}
+.parts .chip{flex:none;min-height:34px;font-weight:600;font-size:14px}
+.parts .chip.on{background:var(--ink);color:var(--card)}
+.part-about{padding:14px 16px;display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
+.part-about .pa-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.part-about b{font-size:17px}
+.part-about .pa-he{font-family:var(--hebrew);font-size:17px;color:var(--ink-55)}
+.part-about p{font-size:14px;line-height:19px;color:var(--ink-55)}
 .toast{position:fixed;left:50%;bottom:calc(var(--tabbar) + env(safe-area-inset-bottom,0px) + 16px);transform:translate(-50%,20px);z-index:80;background:var(--ink);color:var(--card);padding:10px 16px;border-radius:var(--r-pill);font-size:15px;opacity:0;pointer-events:none;transition:opacity .25s,transform .35s var(--ease)}
 .toast.on{opacity:1;transform:translate(-50%,0)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -170,7 +179,7 @@ sup{font-size:.62em;line-height:0}
 <div class="app">
   <section class="view on" id="v-book">
     <div class="topbar">
-      <div><p class="greet">Likkutei Amarim · Part One</p><h1 class="t-large">Tanya</h1></div>
+      <div><p class="greet">Rabbi Shneur Zalman of Liadi</p><h1 class="t-large">Tanya</h1></div>
       <button class="gear" id="open-settings" aria-label="Settings"><svg viewBox="0 0 24 24" width="19" height="19"><use href="#i-gear"/></svg></button>
     </div>
 
@@ -191,9 +200,11 @@ sup{font-size:.62em;line-height:0}
     <div class="sec"><h2>Language</h2></div>
     <div class="seg" id="lang-home"><button data-l="en">English</button><button data-l="both">Both</button><button data-l="he">עברית</button></div>
 
-    <div class="sec"><h2>Chapters</h2><span style="flex:1"></span><span class="t-foot" id="book-tally" style="font-size:13px;color:var(--ink-40)"></span></div>
+    <div class="sec"><h2>Parts</h2><span style="flex:1"></span><span id="book-tally" style="font-size:13px;color:var(--ink-40)"></span></div>
+    <div class="parts" id="parts"></div>
+    <div class="card part-about" id="part-about" style="margin-top:10px"></div>
     <div class="group" id="chapters"><div class="empty">Loading the text…</div></div>
-    <p class="fine">English translation © Kehot Publication Society, via <a href="https://www.sefaria.org/Tanya,_Part_I;_Likkutei_Amarim" target="_blank" rel="noopener">Sefaria</a>, CC-BY-NC. Hebrew text © Kehot, via Sefaria, CC-BY-NC. The bracketed explanations and footnotes are the translators' commentary. The chapter introductions and glossary are written for this app and are not part of the book. Every word and every note is kept.</p>
+    <p class="fine">English translation © Kehot Publication Society, via <a href="https://www.sefaria.org/Tanya" target="_blank" rel="noopener">Sefaria</a>, CC-BY-NC. Hebrew text © Kehot, via Sefaria, CC-BY-NC. The bracketed explanations and footnotes are the translators' commentary. The chapter introductions, part introductions and glossary are written for this app and are not part of the book. Every word and every note is kept.</p>
   </section>
 
   <section class="view" id="v-mine">
@@ -263,10 +274,11 @@ sup{font-size:.62em;line-height:0}
   <h2>Settings</h2>
   <div class="sec"><h2>Reading</h2></div>
   <div class="group">
-    <button class="row" id="s-reset"><span class="row-main"><span class="row-title">Reset progress</span><span class="row-sub">Start every Tanya chapter from the top</span></span></button>
+    <button class="row" id="s-reset"><span class="row-main"><span class="row-title">Reset progress</span><span class="row-sub">Start every Tanya section from the top</span></span></button>
   </div>
   <div class="sec"><h2>About the text</h2></div>
-  <p class="fine" style="margin-top:0" id="about">Tanya, Part I (Likkutei Amarim) by Rabbi Shneur Zalman of Liadi. English translation and notes © Kehot Publication Society, published on Sefaria under CC-BY-NC for non-commercial use. Everything you read and save stays on this device.</p>
+  <p class="fine" style="margin-top:0" id="sync-note">Your place is saved on this device.</p>
+  <p class="fine" id="about">Tanya, all five parts, by Rabbi Shneur Zalman of Liadi. English translation, notes and Hebrew text © Kehot Publication Society, published on Sefaria under CC-BY-NC for non-commercial use.</p>
   <div style="margin-top:20px"><button class="btn" data-close>Done</button></div>
 </div>
 
@@ -274,10 +286,13 @@ sup{font-size:.62em;line-height:0}
 
 <script>
 const $ = id => document.getElementById(id);
-const KEY = 'tanyaReels.v2';
-let S = {len:70, fs:19, pos:{}, done:{}, mine:[], last:null, lang:'en'};
-try{ Object.assign(S, JSON.parse(localStorage.getItem(KEY))||{}); }catch(e){}
-const save = ()=>{ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} };
+const KEY = 'tanyaReels.v3';
+let S = {len:70, fs:19, at:{}, done:{}, mine:[], last:null, lang:'en', part:0, t:0};
+try{ Object.assign(S, JSON.parse(localStorage.getItem(KEY)) || (({pos,done,mine,len,fs,lang})=>({pos,done:{},mine:mine||[],len:len||70,fs:fs||19,lang:lang||'en'}))(JSON.parse(localStorage.getItem('tanyaReels.v2'))||{})); }catch(e){}
+// Your place is kept as the passage you were on (a unit index), not a reel number,
+// so it survives changing reel length or language. Saved locally and, inside Claude, to your account.
+let syncTimer = null;
+const save = ()=>{ S.t = Date.now(); try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} clearTimeout(syncTimer); syncTimer = setTimeout(pushRemote, 1200); };
 let BOOK = null;
 
 /* ---------- reels ---------- */
@@ -366,43 +381,75 @@ function setLang(l){
 document.querySelectorAll('#lang button,#lang-home button').forEach(b=>b.onclick=()=>setLang(b.dataset.l));
 
 /* ---------- library ---------- */
+// anchor <-> reel: an anchor is the index in ch.u of the first unit on a reel (-1 = the context card)
+function reelAnchor(r, units){
+  if(r.ctx) return -1;
+  if(r.units) return units.indexOf(r.units[0]);
+  if(r.he) { const i = units.findIndex(u=>u.s===r.he[0]); return i < 0 ? 0 : i; }
+  return 0;
+}
+function anchorToReel(reels, units, a){
+  if(a == null || a < 0) return 0;
+  const u = units[Math.min(a, units.length-1)]; if(!u) return 0;
+  const i = reels.findIndex(r=> r.units ? r.units.includes(u) : r.he ? r.he.includes(u.s) : false);
+  return i < 0 ? 0 : i;
+}
 function chInfo(i){
   const ch = BOOK.chapters[i];
-  const n = bookReels(ch).length;
-  const pos = S.pos[i]||0;
-  const done = !!S.done[i];
-  return {ch, n, pos, done, pct: done ? 1 : n>1 ? pos/(n-1) : 0};
+  const reels = bookReels(ch), n = reels.filter(r=>!r.ctx).length;
+  const a = S.at[ch.id];
+  const done = !!S.done[ch.id];
+  const ri = anchorToReel(reels, ch.u, a);
+  const reelNo = Math.max(1, ri);                 // reel 0 is the context card
+  const pct = done ? 1 : a == null || a < 0 ? 0 : Math.min(.99, (a+1)/ch.u.length);
+  return {ch, n, done, reelNo, started: a != null, pct};
 }
+const partOf = ch => BOOK.parts[ch.p];
 function ring(p){
   const r = 10, c = 2*Math.PI*r;
   return `<svg class="ring" viewBox="0 0 26 26"><circle class="bgc" cx="13" cy="13" r="${r}"/><circle class="fgc" cx="13" cy="13" r="${r}" stroke-dasharray="${c}" stroke-dashoffset="${c*(1-p)}"/></svg>`;
 }
 function renderBook(){
   if(!BOOK) return;
+  const P = BOOK.parts;
+  S.part = Math.min(S.part||0, P.length-1);
+  const chips = $('parts'); chips.innerHTML = '';
+  P.forEach((p,pi)=>{
+    const b = document.createElement('button'); b.className = 'chip' + (pi===S.part?' on':'');
+    b.textContent = `${p.n} · ${p.name}`;
+    b.onclick = ()=>{ S.part = pi; save(); renderBook(); };
+    chips.appendChild(b);
+  });
+  const part = P[S.part];
+  $('part-about').innerHTML = `<div class="pa-top"><b>Part ${esc(part.n)} · ${esc(part.en)}</b><span class="pa-he" dir="rtl">${esc(part.he)}</span></div><p>${esc(part.c)}</p>`;
   const list = $('chapters'); list.innerHTML = '';
-  let doneCount = 0;
+  let doneCount = 0, inPart = 0;
   BOOK.chapters.forEach((ch,i)=>{
+    if(ch.p !== S.part) return;
+    inPart++;
     const info = chInfo(i); if(info.done) doneCount++;
     const b = document.createElement('button'); b.className = 'row';
     b.innerHTML = `${info.done?'<span class="done-dot">✓</span>':ring(info.pct)}
-      <span class="row-main"><span class="row-title">${esc(ch.hd)}</span><span class="row-sub">${esc(ch.t)} · ${esc(ch.ht)}</span></span>
-      <span class="num">${info.n} reels</span><svg class="chev" viewBox="0 0 24 24"><use href="#i-chev"/></svg>`;
+      <span class="row-main"><span class="row-title"></span><span class="row-sub">${esc(ch.t)} · ${esc(ch.ht)}</span></span>
+      <span class="num">${info.started && !info.done ? `${info.reelNo}/${info.n}` : `${info.n} reels`}</span><svg class="chev" viewBox="0 0 24 24"><use href="#i-chev"/></svg>`;
+    b.querySelector('.row-title').textContent = ch.hd;
     b.onclick = ()=>openBook(i);
     list.appendChild(b);
   });
-  $('book-tally').textContent = `${doneCount} of ${BOOK.chapters.length} read`;
-  // hero: resume where you left off
-  let i = S.last ?? BOOK.chapters.findIndex((_,k)=>!S.done[k]);
-  if(i < 0) i = 0;
-  const info = chInfo(i);
+  $('book-tally').textContent = `${doneCount} of ${inPart} read`;
+  // hero: resume exactly where you left off
+  let i = BOOK.chapters.findIndex(c=>c.id===S.last);
+  const resuming = i >= 0;
+  if(!resuming) i = Math.max(0, BOOK.chapters.findIndex(c=>!S.done[c.id]));
+  const info = chInfo(i), p = partOf(info.ch);
   $('hero-title').textContent = info.ch.hd;
-  $('hero-kicker').textContent = (S.last!=null ? 'Continue · ' : 'Start here · ') + info.ch.t;
-  $('hero-line').textContent = info.ch.cx;
+  $('hero-kicker').textContent = `${resuming ? 'Continue' : 'Start here'} · Part ${p.n} · ${info.ch.t}`;
+  $('hero-line').textContent = info.ch.own ? info.ch.cx : p.en;
   $('hero-bar').style.width = Math.round(info.pct*100)+'%';
-  $('hero-meta').textContent = info.done ? 'Finished' : `Reel ${info.pos+1} of ${info.n}`;
+  $('hero-meta').textContent = info.done ? 'Finished' : info.started ? `You were on reel ${info.reelNo} of ${info.n}` : `${info.n} reels`;
   $('hero-pct').textContent = Math.round(info.pct*100)+'%';
   $('hero-go').disabled = false;
-  $('hero-go').textContent = info.pos||info.done ? 'Continue' : 'Start reading';
+  $('hero-go').textContent = info.started && !info.done ? `Continue from reel ${info.reelNo}` : info.done ? 'Read again' : 'Start reading';
   $('hero-go').onclick = ()=>openBook(i);
   document.querySelectorAll('#len button').forEach(b=>b.classList.toggle('on', +b.dataset.w===S.len));
   syncLang();
@@ -411,10 +458,11 @@ function renderMine(){
   const list = $('mine'); list.innerHTML = '';
   if(!S.mine.length){ list.innerHTML = '<div class="empty">Nothing yet. Add a chapter from your copy of the book.</div>'; return; }
   S.mine.forEach((m,i)=>{
-    const n = packUnits(unitsFromText(m.text), S.len).length;
-    const p = m.done ? 1 : n>1 ? (m.pos||0)/(n-1) : 0;
+    const units = unitsFromText(m.text), reels = packUnits(units, S.len).map(us=>({units:us}));
+    const n = reels.length, ri = anchorToReel(reels, units, m.at);
+    const p = m.done ? 1 : m.at > 0 ? Math.min(.99, (m.at+1)/units.length) : 0;
     const b = document.createElement('div'); b.className='row'; b.style.cursor='pointer';
-    b.innerHTML = `${m.done?'<span class="done-dot">✓</span>':ring(p)}<span class="row-main"><span class="row-title"></span><span class="row-sub">${n} reels · ${wc(m.text).toLocaleString()} words</span></span>
+    b.innerHTML = `${m.done?'<span class="done-dot">✓</span>':ring(p)}<span class="row-main"><span class="row-title"></span><span class="row-sub">${m.at > 0 && !m.done ? `On reel ${ri+1} of ${n}` : `${n} reels`} · ${wc(m.text).toLocaleString()} words</span></span>
       <button class="btn sm sec" style="min-height:30px">Edit</button><svg class="chev" viewBox="0 0 24 24"><use href="#i-chev"/></svg>`;
     b.querySelector('.row-title').textContent = m.title;
     b.onclick = e=>{ if(e.target.closest('button')) editText(i); else openMine(i); };
@@ -425,21 +473,22 @@ function renderMine(){
 /* ---------- reader ---------- */
 let R = null;
 function openBook(i){
-  const ch = BOOK.chapters[i]; S.last = i; save();
-  openReader({title:ch.t, ch, units:ch.u, notes:ch.n, pos:S.pos[i]||0,
-    onPos:p=>{ S.pos[i]=p; save(); }, onDone:()=>{ S.done[i]=1; save(); },
-    next: i+1 < BOOK.chapters.length ? ()=>openBook(i+1) : null});
+  const ch = BOOK.chapters[i]; S.last = ch.id; S.part = ch.p; save();
+  const nx = BOOK.chapters[i+1];
+  openReader({title:ch.t, ch, units:ch.u, notes:ch.n, at:S.at[ch.id],
+    onAt:a=>{ if(S.at[ch.id]!==a){ S.at[ch.id]=a; save(); } }, onDone:()=>{ if(!S.done[ch.id]){ S.done[ch.id]=1; save(); } },
+    next: nx ? ()=>openBook(i+1) : null, nextLabel: nx && nx.p !== ch.p ? `Start Part ${BOOK.parts[nx.p].n}` : 'Next chapter'});
 }
 function openMine(i){
   const m = S.mine[i];
-  openReader({title:m.title, units:unitsFromText(m.text), notes:[], pos:m.pos||0,
-    onPos:p=>{ m.pos=p; save(); }, onDone:()=>{ m.done=1; save(); }, next:null});
+  openReader({title:m.title, units:unitsFromText(m.text), notes:[], at:m.at,
+    onAt:a=>{ if(m.at!==a){ m.at=a; save(); } }, onDone:()=>{ if(!m.done){ m.done=1; save(); } }, next:null});
 }
 function openReader(o){
   R = o;
   const reels = o.ch ? bookReels(o.ch) : packUnits(o.units, S.len).map(us=>({units:us}));
   const notes = Object.fromEntries(o.notes);
-  $('r-title').textContent = o.ch ? `${o.ch.t} · ${o.ch.hd}` : o.title;
+  $('r-title').textContent = o.ch ? `Part ${partOf(o.ch).n} · ${o.ch.t}` : o.title;
   $('lang').hidden = !o.ch;
   const box = $('reels'); box.innerHTML = '';
   const reelCount = reels.filter(r=>!r.ctx).length;
@@ -451,7 +500,7 @@ function openReader(o){
       d.innerHTML = `<article class="rcard ctx"><div class="rk"><span>Before you read</span><span>${reelCount} reels</span></div>
         <div class="rtxt"><div class="inner">
           <div class="ch-no"><span>${esc(o.ch.t)}</span><span dir="rtl">${esc(o.ch.ht)}</span></div>
-          <h3>${esc(o.ch.hd)}</h3><p class="cx">${esc(o.ch.cx)}</p>
+          <h3>${esc(o.ch.hd)}</h3>${o.ch.own ? '' : `<p class="lbl">About Part ${esc(partOf(o.ch).n)} · ${esc(partOf(o.ch).en)}</p>`}<p class="cx">${esc(o.ch.cx)}</p>
           ${terms.length?`<p class="lbl">Key terms</p><div class="terms">${terms.map(t=>`<button class="chip gl-chip" data-g="${esc(t)}">${esc(t)}</button>`).join('')}</div>`:''}
         </div></div>
         <div class="rfoot"><span>Context written for this app</span><span>Swipe up to begin</span></div></article>`;
@@ -483,7 +532,7 @@ function openReader(o){
   end.innerHTML = `<article class="rcard endcard"><p class="kicker">Complete</p><p class="big">${esc(o.title)}</p>
     <p class="greet">${total.toLocaleString()} words · ${reelCount} reels · nothing skipped</p>
     <div style="display:flex;flex-direction:column;gap:10px;width:100%;max-width:320px;margin-top:8px">
-      ${o.next?'<button class="btn" id="go-next">Next chapter</button>':''}<button class="btn sec" id="go-back">Back</button></div></article>`;
+      ${o.next?`<button class="btn" id="go-next">${esc(o.nextLabel||'Next chapter')}</button>`:''}<button class="btn sec" id="go-back">Back</button></div></article>`;
   box.appendChild(end);
   end.querySelector('#go-back').onclick = closeReader;
   if(o.next) end.querySelector('#go-next').onclick = ()=>{ o.next(); };
@@ -493,14 +542,18 @@ function openReader(o){
     const g = e.target.closest('.gl,.gl-chip'); if(g) showTerm(g.dataset.g); };
   $('reader').hidden = false; document.body.style.overflow='hidden';
   const n = reels.length;
+  let ready = false;
   box.onscroll = ()=>{
     const idx = Math.round(box.scrollTop / box.clientHeight);
     $('r-bar').style.width = (Math.min(idx+1,n)/n*100)+'%';
-    if(idx >= n){ o.onDone(); } else o.onPos(idx);
+    if(!ready) return;                                  // don't overwrite your place while restoring it
+    if(idx >= n) o.onDone(); else o.onAt(reelAnchor(reels[idx], o.units));
   };
-  requestAnimationFrame(()=>{ box.scrollTop = Math.min(o.pos, n-1)*box.clientHeight; box.onscroll(); box.focus(); });
+  const start = anchorToReel(reels, o.units, o.at);
+  requestAnimationFrame(()=>{ box.scrollTop = start*box.clientHeight; box.onscroll(); ready = true; box.focus();
+    if(start > 0){ const k = reels[start].ctx ? 0 : reels.slice(0,start+1).filter(r=>!r.ctx).length; toast(`Back where you left off · reel ${k}`); } });
 }
-function closeReader(){ $('reader').hidden = true; document.body.style.overflow=''; R=null; renderBook(); renderMine(); }
+function closeReader(){ $('toast').classList.remove('on'); $('reader').hidden = true; document.body.style.overflow=''; R=null; renderBook(); renderMine(); }
 $('close').onclick = closeReader;
 function setFs(v){ S.fs = Math.max(15, Math.min(28, v)); document.documentElement.style.setProperty('--fs', S.fs+'px'); save(); }
 $('smaller').onclick = ()=>setFs(S.fs-1);
@@ -551,11 +604,11 @@ async function lookupWord(el){
   $('wd-he').textContent = word; $('wd-tr').textContent = ''; $('wd-rows').innerHTML = '';
   $('wd-mean').textContent = 'Translating…';
   openSheet('sheet-word');
-  const key = ch.t + '|' + si + '|' + noNikud(word);
+  const key = ch.id + '|' + si + '|' + noNikud(word);
   if(wordCache[key]) return showWord(wordCache[key]);
   if(!sampleFn){ $('wd-mean').textContent = 'Word translation needs this page open in Claude. It isn’t available here.'; return; }
   wordCtl?.abort(); wordCtl = new AbortController();
-  const prompt = `You are helping someone read the Tanya (Likkutei Amarim, ${ch.t}) in the original Hebrew.
+  const prompt = `You are helping someone read the Tanya (${partOf(ch).name}, ${ch.t}) in the original Hebrew.
 Translate the single tapped word as it is used in this passage.
 
 Tapped word: ${word}
@@ -591,7 +644,7 @@ $('open-settings').onclick = ()=>openSheet('sheet-settings');
 const resetBtn = $('s-reset');
 resetBtn.onclick = ()=>{
   const t = resetBtn.querySelector('.row-title');
-  if(resetBtn.dataset.armed){ S.pos={}; S.done={}; S.last=null; save(); renderBook(); closeSheets(); toast('Progress reset'); delete resetBtn.dataset.armed; t.textContent='Reset progress'; return; }
+  if(resetBtn.dataset.armed){ S.at={}; S.done={}; S.last=null; save(); renderBook(); closeSheets(); toast('Progress reset'); delete resetBtn.dataset.armed; t.textContent='Reset progress'; return; }
   resetBtn.dataset.armed='1'; t.textContent='Tap again to reset';
   setTimeout(()=>{ delete resetBtn.dataset.armed; t.textContent='Reset progress'; },3000);
 };
@@ -616,7 +669,7 @@ $('add-form').onsubmit = e=>{
   const units = unitsFromText(text);
   const outWords = units.reduce((a,u)=>a+u.w,0);
   if(outWords !== wc(text)){ $('add-msg').textContent = 'This text could not be split without losing words, so it was not saved.'; return; }
-  if(editing!=null) Object.assign(S.mine[editing], {title,text,pos:0,done:0}); else S.mine.push({title,text,pos:0});
+  if(editing!=null) Object.assign(S.mine[editing], {title,text,at:null,done:0}); else S.mine.push({title,text,at:null});
   save(); renderMine(); closeSheets();
   toast(`${packUnits(units,S.len).length} reels · all ${outWords.toLocaleString()} words kept`);
 };
@@ -637,8 +690,60 @@ document.querySelectorAll('.tabbtn').forEach(b=>b.onclick=()=>{
 });
 document.querySelectorAll('#len button').forEach(b=>b.onclick=()=>{ S.len=+b.dataset.w; save(); renderBook(); renderMine(); });
 
+/* ---------- saving your place ---------- */
+function migrate(){
+  // v1 saved a reel number per Part I chapter index; turn it into a passage anchor
+  let old = null; try{ old = JSON.parse(localStorage.getItem('tanyaReels.v2')); }catch(e){}
+  if(old && old.pos && !S.migrated){
+    Object.entries(old.pos).forEach(([i,r])=>{
+      const ch = BOOK.chapters[+i]; if(!ch || S.at[ch.id] != null) return;
+      const reels = bookReels(ch); if(reels[r]) S.at[ch.id] = reelAnchor(reels[r], ch.u);
+    });
+    Object.keys(old.done||{}).forEach(i=>{ const ch = BOOK.chapters[+i]; if(ch) S.done[ch.id] = 1; });
+    if(typeof old.last === 'number' && BOOK.chapters[old.last]) S.last = BOOK.chapters[old.last].id;
+    delete S.pos; S.migrated = 1; save();
+  }
+  (S.mine||[]).forEach(m=>{
+    if(m.at !== undefined || m.pos == null) return;
+    const units = unitsFromText(m.text), reels = packUnits(units, S.len);
+    m.at = reels[m.pos] ? units.indexOf(reels[m.pos][0]) : null; delete m.pos; save();
+  });
+}
+let progressDoc = null;
+async function connectRemote(){
+  try{
+    const [db, user] = await Promise.all([window.claude?.use?.('db'), window.claude?.use?.('user')]);
+    if(!db || !user) return null;
+    const id = await user.id(); if(!id) return null;
+    progressDoc = db.doc('data/users/' + id + '/progress');
+    $('sync-note').textContent = 'Your place is saved on this device and to your Claude account, so it follows you to other devices.';
+    return progressDoc;
+  }catch(e){ return null; }
+}
+const remoteReady = connectRemote();
+const snapshot = () => ({at:S.at, done:S.done, last:S.last, part:S.part, len:S.len, lang:S.lang, fs:S.fs, t:S.t,
+  mine:(S.mine||[]).map(m=>({title:m.title, at:m.at ?? null, done:m.done?1:0}))});
+async function pushRemote(){
+  const doc = progressDoc || await remoteReady; if(!doc) return;
+  try{ await doc.set(snapshot()); }catch(e){ progressDoc = null; }
+}
+async function pullRemote(){
+  const doc = await remoteReady; if(!doc) return;
+  try{
+    const snap = await doc.get(); if(!snap.exists) return pushRemote();
+    const r = snap.data();
+    if((r.t||0) <= (S.t||0)) return pushRemote();      // this device is newer
+    Object.assign(S, {at:r.at||{}, done:r.done||{}, last:r.last??null, part:r.part||0, len:r.len||S.len, lang:r.lang||S.lang, fs:r.fs||S.fs, t:r.t});
+    (r.mine||[]).forEach(rm=>{ const m = S.mine.find(x=>x.title===rm.title); if(m){ m.at = rm.at; m.done = rm.done; } });
+    try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){}
+    setFs(S.fs); if($('reader').hidden){ renderBook(); renderMine(); }
+  }catch(e){}
+}
+addEventListener('pagehide', ()=>{ clearTimeout(syncTimer); pushRemote(); });
+document.addEventListener('visibilitychange', ()=>{ if(document.hidden){ clearTimeout(syncTimer); pushRemote(); } });
+
 setFs(S.fs);
 renderMine();
-fetch('tanya.json').then(r=>{ if(!r.ok) throw new Error(r.status); return r.json(); }).then(d=>{ BOOK=d; renderBook(); })
+fetch('tanya.json').then(r=>{ if(!r.ok) throw new Error(r.status); return r.json(); }).then(d=>{ BOOK=d; migrate(); renderBook(); pullRemote(); })
   .catch(()=>{ $('chapters').innerHTML = '<div class="empty">The Tanya text could not load. Open this page from its published link, or serve the folder with a local web server (browsers block loading files from disk).</div>'; $('hero-kicker').textContent='Text unavailable'; });
 </script>
