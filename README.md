@@ -24,6 +24,7 @@ that opens straight from disk; regenerate it with `tools/build_single.sh`.
 | FIRE button (drag while holding to aim) · optional auto-fire | Left click |
 | Hero ability button | E / right click |
 | Reload button | R |
+| First-person toggle (eye button) | V |
 | Pause button | Esc |
 
 ### Features
