@@ -157,8 +157,8 @@ export class Input {
     window.addEventListener('mouseup', (e) => { if (e.button === 0) this.mouseDown = false; });
     window.addEventListener('mousemove', (e) => {
       if (!this.enabled || document.pointerLockElement !== this.canvas) return;
-      this.lookDX += e.movementX * 0.55;
-      this.lookDY += e.movementY * 0.55;
+      this.lookDX += e.movementX;
+      this.lookDY += e.movementY;
     });
     document.addEventListener('pointerlockchange', () => {
       if (!document.pointerLockElement) {

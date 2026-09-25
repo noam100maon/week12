@@ -105,17 +105,13 @@ void main(){
 
 const STORM_VERT = `varying vec2 vUv; varying vec3 vW; void main(){ vUv = uv; vec4 w = modelMatrix * vec4(position,1.0); vW = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }`;
 const STORM_FRAG = `
-uniform float time; varying vec2 vUv; varying vec3 vW;
-float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
-float noise(vec2 p){ vec2 i = floor(p), f = fract(p); vec2 u = f*f*(3.0-2.0*f);
-  return mix(mix(hash(i), hash(i+vec2(1,0)), u.x), mix(hash(i+vec2(0,1)), hash(i+vec2(1,1)), u.x), u.y); }
-float fbm(vec2 p){ float v = 0.0, a = 0.5; for (int i = 0; i < 4; i++){ v += a * noise(p); p *= 2.1; a *= 0.5; } return v; }
+uniform float time; uniform sampler2D noiseTex; varying vec2 vUv; varying vec3 vW;
 void main(){
-  vec2 p = vec2(vUv.x * 40.0, vUv.y * 6.0);
-  float n = fbm(p + vec2(time * 0.25, -time * 0.15));
-  float n2 = fbm(p * 1.7 - vec2(time * 0.4, time * 0.1));
-  vec3 col = mix(vec3(0.22, 0.05, 0.42), vec3(0.72, 0.3, 1.0), n * n2 * 1.6);
-  float bolt = step(0.985, noise(vec2(vUv.x * 60.0, floor(time * 3.0))));
+  vec2 p = vec2(vUv.x * 12.0, vUv.y * 1.8);
+  float n = texture2D(noiseTex, p + vec2(time * 0.03, -time * 0.02)).r * 0.6 + texture2D(noiseTex, p * 2.3 - vec2(time * 0.05, 0.0)).r * 0.4;
+  float n2 = texture2D(noiseTex, p * 1.3 + vec2(-time * 0.04, time * 0.015)).r;
+  vec3 col = mix(vec3(0.22, 0.05, 0.42), vec3(0.72, 0.3, 1.0), clamp(n * n2 * 1.8, 0.0, 1.0));
+  float bolt = step(0.93, texture2D(noiseTex, vec2(vUv.x * 5.0, floor(time * 3.0) * 0.137)).r);
   col += vec3(0.8, 0.6, 1.0) * bolt * smoothstep(0.2, 0.8, vUv.y) * n2;
   float a = (0.55 + 0.4 * n) * smoothstep(0.0, 0.08, vUv.y) * (1.0 - smoothstep(0.75, 1.0, vUv.y));
   gl_FragColor = vec4(max(col, 0.0), clamp(a, 0.0, 1.0));
@@ -218,7 +214,14 @@ export function buildWorld(scene, opts) {
   }
 
   // ---------------- storm wall
-  const stormMat = new THREE.ShaderMaterial({ uniforms: { time: { value: 0 } }, vertexShader: STORM_VERT, fragmentShader: STORM_FRAG, transparent: true, side: THREE.DoubleSide, depthWrite: false, fog: false });
+  // tileable value noise: a small random texture sampled with bilinear filtering
+  const nd = new Uint8Array(64 * 64 * 4);
+  for (let i = 0; i < 64 * 64; i++) { const v = Math.random() * 255; nd[i * 4] = nd[i * 4 + 1] = nd[i * 4 + 2] = v; nd[i * 4 + 3] = 255; }
+  const noiseTex = new THREE.DataTexture(nd, 64, 64);
+  noiseTex.wrapS = noiseTex.wrapT = THREE.RepeatWrapping;
+  noiseTex.magFilter = noiseTex.minFilter = THREE.LinearFilter;
+  noiseTex.needsUpdate = true;
+  const stormMat = new THREE.ShaderMaterial({ uniforms: { time: { value: 0 }, noiseTex: { value: noiseTex } }, vertexShader: STORM_VERT, fragmentShader: STORM_FRAG, transparent: true, side: THREE.DoubleSide, depthWrite: false, fog: false });
   const storm = new THREE.Mesh(new THREE.CylinderGeometry(140, 130, 60, 64, 1, true), stormMat);
   storm.position.y = 24;
   storm.renderOrder = -1;
@@ -312,6 +315,7 @@ export function buildWorld(scene, opts) {
     const r = 40 + (i % 2) * 9;
     if (laneBlocked(a, r, 12)) return;
     const h = cloneStatic(name, { size: rnd(10, 13) });
+    h.traverse(o => { if (o.isMesh) o.castShadow = opts.quality === 'high'; });
     h.position.set(Math.cos(a) * r, 0, Math.sin(a) * r);
     h.rotation.y = Math.atan2(-h.position.x, -h.position.z);
     scene.add(h);
@@ -326,8 +330,8 @@ export function buildWorld(scene, opts) {
       let mat = p.material;
       if (extra?.tint) { mat = mat.clone(); mat.color.setHex(extra.tint); }
       const m = new THREE.InstancedMesh(p.geometry, mat, count);
-      m.castShadow = !!opts.shadows && !!extra?.shadow;
-      m.receiveShadow = !!opts.shadows;
+      m.castShadow = !!opts.shadows && !!extra?.shadow && opts.quality === 'high';
+      m.receiveShadow = !!opts.shadows && !extra?.noReceive;
       return m;
     });
     const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3();
@@ -354,7 +358,7 @@ export function buildWorld(scene, opts) {
   placeInstanced('formation-large-rock', 14, [2, 4.5], [30, 110], 6, 3, 0.35, { shadow: true, wide: true });
   placeInstanced('formation-rock', 16, [1, 2.5], [24, 110], 6, 2, 0.3, { shadow: true, wide: true });
   placeInstanced('formation-stone', 12, [1, 2.2], [24, 110], 6, 2, 0.3, { shadow: true, wide: true });
-  placeInstanced('grass', opts.low ? 250 : 600, [0.22, 0.45], [12, 95], 3, 0, 0, { tint: 0x9fd46a });
+  placeInstanced('grass', opts.low ? 200 : 450, [0.22, 0.45], [12, 90], 3, 0, 0, { tint: 0x9fd46a, noReceive: true });
 
   // ---------------- shield dome (storm shield)
   const domeMat = new THREE.ShaderMaterial({ uniforms: { time: { value: 0 }, hit: { value: 0 } }, vertexShader: DOME_VERT, fragmentShader: DOME_FRAG, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide });

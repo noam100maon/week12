@@ -38,11 +38,12 @@ function qualityProfile(q) {
   if (q === 'auto') q = input.isTouch ? 'medium' : 'high';
   const dpr = window.devicePixelRatio || 1;
   if (q === 'low') return { name: 'low', pr: Math.min(dpr, 1), aa: false, shadows: false, shadowSize: 512, bloom: false, samples: 0 };
-  if (q === 'medium') return { name: 'medium', pr: Math.min(dpr, 1.5), aa: true, shadows: true, shadowSize: 1024, bloom: true, samples: 2 };
-  return { name: 'high', pr: Math.min(dpr, 2), aa: true, shadows: true, shadowSize: 2048, bloom: true, samples: 4 };
+  if (q === 'medium') return { name: 'medium', pr: Math.min(dpr, 1.25), aa: true, shadows: true, shadowSize: 1024, bloom: true, samples: 0 };
+  return { name: 'high', pr: Math.min(dpr, 1.5), aa: true, shadows: true, shadowSize: 2048, bloom: true, samples: 2 };
 }
 const Q = qualityProfile(save.settings.quality);
-let pixelRatio = Q.pr;
+// 'auto' starts light and sharpens itself when the frame rate allows
+let pixelRatio = save.settings.quality === 'auto' ? Math.min(Q.pr, 1) : Q.pr;
 setShadowMode(Q.shadows);
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: Q.aa && !Q.bloom, powerPreference: 'high-performance' });
@@ -51,7 +52,7 @@ renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.0;
 renderer.shadowMap.enabled = Q.shadows;
-renderer.shadowMap.type = Q.name === 'high' ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap;
+renderer.shadowMap.type = THREE.PCFShadowMap;
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(62, 1, 0.1, 700);
@@ -429,7 +430,7 @@ function updatePlayer(dt) {
   const ch = player.char;
   if (!player.alive) { ch.pose(dt, 0, -1); ch.updateFlash(dt, 0); return; }
   input.update();
-  const sens = save.settings.sens * (input.isTouch ? 0.0055 : 0.0032);
+  const sens = save.settings.sens * (input.isTouch ? 0.0055 : 0.0036);
   player.yaw -= input.lookDX * sens;
   player.pitch = clamp(player.pitch - input.lookDY * sens, -0.8, 0.6);
   input.lookDX = input.lookDY = 0;
@@ -1873,6 +1874,7 @@ function failWave(reason) {
 }
 
 function showResults() {
+  $('lockHint').classList.add('hidden');
   for (const c of G.coins) { save.coins += c.value; G.runCoins += c.value; scene.remove(c.mesh); }
   G.coins.length = 0;
   writeSave(true);
@@ -2028,6 +2030,7 @@ function updateHud(force) {
   } else $('bossWrap').classList.add('hidden');
   updateOffscreen();
   drawMinimap();
+  if (!input.isTouch) $('lockHint').classList.toggle('hidden', !!document.pointerLockElement || G.phase === 'results' || G.phase === 'failed');
 }
 
 const arrows = [];
@@ -2301,9 +2304,10 @@ function frame() {
 }
 
 function dynamicResolution(dt) {
-  if (save.settings.quality !== 'auto' || G.state !== 'playing') return;
+  if (save.settings.quality !== 'auto' || G.state === 'loading' || G.state === 'paused') return;
   G.dynT += dt; G.dynFrames++;
-  if (G.dynT < 3) return;
+  if (G.dynT < (G.dynChecks > 3 ? 3 : 1.5)) return;
+  G.dynChecks = (G.dynChecks || 0) + 1;
   const fps = G.dynFrames / G.dynT;
   G.dynT = 0; G.dynFrames = 0;
   if (fps < 45 && pixelRatio > 0.7) { pixelRatio = Math.max(0.7, pixelRatio - 0.15); resize(); G.slowStreak = 0; }
@@ -2312,7 +2316,7 @@ function dynamicResolution(dt) {
     G.slowStreak = (G.slowStreak || 0) + 1;
     if (G.slowStreak >= 2 && composer) { composer = null; G.slowStreak = 0; }
     else if (G.slowStreak >= 2 && renderer.shadowMap.enabled) { renderer.shadowMap.enabled = false; world.sun.castShadow = false; scene.traverse(o => { if (o.material) o.material.needsUpdate = true; }); G.slowStreak = 0; }
-  } else if (fps > 58 && pixelRatio < Q.pr && (G.upT = (G.upT || 0) + 1) >= 3) { G.upT = 0; pixelRatio = Math.min(Q.pr, pixelRatio + 0.1); resize(); }
+  } else if (fps > 57 && pixelRatio < Q.pr && (G.upT = (G.upT || 0) + 1) >= 2) { G.upT = 0; pixelRatio = Math.min(Q.pr, pixelRatio + 0.125); resize(); }
 }
 
 // ---------------------------------------------------------------- boot
@@ -2334,7 +2338,7 @@ async function boot() {
     showFatal('Could not load the game files. ' + (err && err.message ? err.message : ''));
     return;
   }
-  world = buildWorld(scene, { shadows: Q.shadows, shadowSize: Q.shadowSize, low: Q.name === 'low' });
+  world = buildWorld(scene, { shadows: Q.shadows, shadowSize: Q.shadowSize, low: Q.name === 'low', quality: Q.name });
   world.onHouseChange = () => {
     houseBox.min.set(-world.houseHalf.x + 0.2, 0, -world.houseHalf.z + 0.2);
     houseBox.max.set(world.houseHalf.x - 0.2, world.houseHeight || 7, world.houseHalf.z - 0.2);
