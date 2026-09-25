@@ -52,7 +52,7 @@ that opens straight from disk; regenerate it with `tools/build_single.sh`.
 - **Edit Base mode:** 14 pieces (walls including thorn walls, spike/freeze/flame traps, healing pads, turret towers,
   tesla coils, mortars, flak cannons, laser towers and sniper towers). Tap a piece to **upgrade it with coins up to
   level 10**. Enemies and bosses break every kind of building, and broken buildings stay broken until you fall.
-- **Warnings:** portal beams, red lane arrows, "next enemy from" text, off-screen arrows and a minimap show where
+- **Enemies pour out of the storm from every side.** Red beams at the storm edge, "next enemy from" text, off-screen arrows and a minimap show where
   enemies come from and will come from next; the base screen previews the next wave.
 - No coin upgrades to grind: the house grows on its own with the wave (bungalow → fortified home), and walls,
   traps and turrets scale with the wave too.

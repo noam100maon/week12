@@ -9,7 +9,9 @@ import { Sfx } from './audio.js';
 import { Input } from './input.js';
 import { Particles, Tracers, DamageNumbers, Bolts, Rings } from './fx.js';
 import { loadModels, setShadowMode, KenneyChar, RobotChar, DroneChar, PetChar, ShipChar, GunshipChar, makeGun, cloneStatic, renderThumbs } from './assets.js';
-import { buildWorld, WORLD_R, COMPASS } from './world.js';
+import { buildWorld, WORLD_R, SPAWN_R } from './world.js';
+const COMPASS8 = ['E', 'SE', 'S', 'SW', 'W', 'NW', 'N', 'NE'];
+const compassOf = (a) => COMPASS8[Math.round((((a % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2)) / (Math.PI / 4)) % 8];
 import { Structures, BuildMode, pieceById } from './build.js';
 import {
   WEAPONS, weaponById, weaponStats, HEROES, heroById, heroStats, PETS, petById, petStats, PET_PERK_NAMES, houseTier, houseMaxHp, ENEMIES, BUILD_PIECES, pieceLevelMult, upgradeCost, sellValue, MAX_BUILD_LEVEL,
@@ -1590,18 +1592,21 @@ function makeEnemyChar(def) {
 }
 
 let shieldGeo = null;
-function spawnEnemy(type, portalIndex, at = null, elite = false) {
+// Enemies step out of the storm wall at the given angle (random if none).
+function spawnEnemy(type, angle, at = null, elite = false) {
   const def = ENEMIES[type];
   const n = curWave();
-  const portal = world.portals[portalIndex] || world.portals[0];
   const char = makeEnemyChar(def);
   let pos;
   if (at) pos = at.clone();
   else {
-    const side = (Math.random() - 0.5) * 3.5;
-    pos = new THREE.Vector3(
-      portal.pos.x - Math.cos(portal.angle) * 1.5 + Math.cos(portal.angle + Math.PI / 2) * side, 0,
-      portal.pos.z - Math.sin(portal.angle) * 1.5 + Math.sin(portal.angle + Math.PI / 2) * side);
+    const a = typeof angle === 'number' && angle > 0.0001 ? angle + (Math.random() - 0.5) * 0.05 : Math.random() * TAU;
+    const r = SPAWN_R - Math.random() * 2;
+    pos = new THREE.Vector3(Math.cos(a) * r, 0, Math.sin(a) * r);
+    // the storm spits them out: lightning + purple smoke
+    const top = new THREE.Vector3(pos.x, 26, pos.z);
+    bolts.spawn(top, new THREE.Vector3(pos.x, 0.3, pos.z), 0xc080ff, 0.25, 2.2);
+    for (let i = 0; i < 6; i++) smoke.emit(pos.x + (Math.random() - 0.5) * 2, 0.5 + Math.random() * 2, pos.z + (Math.random() - 0.5) * 2, (Math.random() - 0.5) * 2, 1, (Math.random() - 0.5) * 2, 1.2, 1.4, COL.purple, 0, 1.2, 2.2);
   }
   if (def.fly) pos.y = def.fly;
   char.root.position.copy(pos);
@@ -1981,12 +1986,30 @@ function updateEnemies(dt) {
 
     let moveSpeed = 0;
     if (!attackTarget) {
-      const spd = e.speed * slow * dt;
-      const nx = e.pos.x + dx / dist * spd, nz = e.pos.z + dz / dist * spd;
+      // they hurry across the open ground after leaving the storm
+      const far = Math.hypot(e.pos.x, e.pos.z);
+      const spd = e.speed * slow * dt * (far > 45 && !e.def.boss ? 1.6 : 1);
+      let ux = dx / dist, uz = dz / dist;
+      if (!e.def.fly) {
+        // steer around big obstacles (neighbour houses, rocks) instead of pushing into them
+        for (const o of world.obstacles) {
+          if (o.r < 1.2) continue;
+          const ox = o.x - e.pos.x, oz = o.z - e.pos.z;
+          const along = ox * ux + oz * uz;
+          if (along < 0 || along > o.r + 4) continue;
+          const side = ox * uz - oz * ux;
+          if (Math.abs(side) > o.r + e.radius + 0.6) continue;
+          const sgn = side > 0 ? 1 : -1;
+          const tx2 = ux * 0.35 + (-uz) * sgn, tz2 = uz * 0.35 + ux * sgn, tl = Math.hypot(tx2, tz2);
+          ux = tx2 / tl; uz = tz2 / tl;
+          break;
+        }
+      }
+      const nx = e.pos.x + ux * spd, nz = e.pos.z + uz * spd;
       const wall = e.def.fly || e.def.leap ? null : structures.wallAt(nx, nz, e.radius * 0.8);
       if (wall) { e.wall = wall; attackTarget = wall; }
       else { e.pos.x = nx; e.pos.z = nz; moveSpeed = e.speed * slow; }
-      e.facing = lerpAngle(e.facing, Math.atan2(dx, dz), Math.min(1, dt * 6));
+      e.facing = lerpAngle(e.facing, Math.atan2(ux, uz), Math.min(1, dt * 6));
     }
     if (attackTarget && attackTarget !== 'idle') {
       if (attackTarget !== 'player' && attackTarget !== 'house' && attackTarget !== 'remote') { dx = attackTarget.x - e.pos.x; dz = attackTarget.z - e.pos.z; }
@@ -2655,9 +2678,7 @@ function startWave(fresh = true) {
   G.spawnT = 0;
   G.hitCount = 0;
   G.houseLastHit = -10;
-  world.setActivePortals(portalCount(n));
   const sum = waveSummary(n);
-  for (const pt of world.portals) { pt.laneShow = sum.portals.includes(pt.index) ? 1 : 0; pt.warnTarget = pt.laneShow; }
   G.state = 'playing';
   G.phase = 'countdown';
   G.phaseT = fresh ? 4 : 3;
@@ -2668,8 +2689,7 @@ function startWave(fresh = true) {
   $('bossWrap').classList.add('hidden');
   input.setEnabled(true);
   $('waveLabel').textContent = `WAVE ${n}`;
-  const from = sum.portals.map(i => COMPASS[i]).join(', ');
-  showBanner(`WAVE ${n}`, `${sum.total} enemies incoming from ${from}`, isBossWave(n) ? 'red' : '', fresh ? 3.2 : 2.2);
+  showBanner(`WAVE ${n}`, `${sum.total} enemies coming out of the storm from every side`, isBossWave(n) ? 'red' : '', fresh ? 3.2 : 2.2);
   sfx.waveStart();
   updateHud(true);
   updateHeroHud();
@@ -2698,15 +2718,10 @@ function updateWave(dt) {
     G.spawnT -= dt;
     if (G.queue.length && G.spawnT <= 0 && alive < maxAlive) {
       const s = G.queue.shift();
-      spawnEnemy(s.type, s.portal, null, s.elite);
+      spawnEnemy(s.type, s.a, null, s.elite);
       G.spawnT = Math.max(0.3, 1.5 - n * 0.045) * (0.7 + Math.random() * 0.6);
     }
-    const upcoming = G.queue.slice(0, 4).map(s => s.portal);
-    for (const pt of world.portals) {
-      const idx = upcoming.indexOf(pt.index);
-      pt.warnTarget = idx === 0 ? 1 : idx > 0 ? 0.55 : 0;
-      pt.laneShow = idx >= 0 ? (idx === 0 ? 1 : 0.5) : 0;
-    }
+    showSpawnWarnings();
     const regen = (HS.perks.has('basekit') ? 6 : 0) + 5 * PS.count('repair');
     G.houseHp = Math.min(G.houseMax, G.houseHp + regen * dt);
     if (!G.queue.length && !G.enemies.some(e => e.alive)) waveCleared();
@@ -2720,6 +2735,14 @@ function updateWave(dt) {
   if (G.phase === 'failed') {
     G.phaseT -= dt;
     if (G.phaseT <= 0) showResults();
+  }
+}
+
+// Red beams at the storm edge where the next enemies will step out.
+function showSpawnWarnings() {
+  for (let i = 0; i < world.portals.length; i++) {
+    const s = G.queue[i];
+    world.setWarning(i, s ? s.a : 0, s && G.phase === 'fight' ? (i === 0 ? 1 : 0.55) : 0);
   }
 }
 
@@ -2819,9 +2842,7 @@ function enterBuild() {
   showScreen('buildUI');
   buildMode.enter();
   const sum = waveSummary(save.wave);
-  world.setActivePortals(portalCount(save.wave));
-  for (const pt of world.portals) { pt.laneShow = sum.portals.includes(pt.index) ? 1 : 0; pt.warnTarget = pt.laneShow; }
-  $('buildWarn').textContent = `Wave ${save.wave}: ${sum.total} enemies from ${sum.portals.map(i => COMPASS[i]).join(', ')} (red arrows)`;
+  $('buildWarn').textContent = `Wave ${save.wave}: ${sum.total} enemies will come out of the storm from every side`;
   renderBuildPalette();
   updateBuildHud();
 }
@@ -2908,7 +2929,7 @@ function updateHud(force) {
   setText('abilityCharges', player.charges > 1 ? '×' + player.charges : '');
   const next = G.queue[0];
   if (G.phase === 'countdown') setText('incomingText', `Starting in ${Math.ceil(G.phaseT)}…`);
-  else if (next && G.phase === 'fight') setText('incomingText', `⚠ Next: ${ENEMIES[next.type].name} from ${COMPASS[next.portal]}`);
+  else if (next && G.phase === 'fight') setText('incomingText', `⚠ Next: ${ENEMIES[next.type].name} from the ${compassOf(next.a)}`);
   else setText('incomingText', G.phase === 'fight' ? 'Final enemies!' : '');
   const bosses = G.enemies.filter(e => e.def.boss && e.alive);
   if (bosses.length) {
@@ -2963,14 +2984,13 @@ function drawMinimap() {
   g.translate(R, R);
   g.rotate(player.yaw);
   const tx = (x) => (x - player.pos.x) * k, tz = (z) => (z - player.pos.z) * k;
+  g.strokeStyle = 'rgba(176,112,255,0.7)'; g.lineWidth = 3 * u;
+  g.beginPath(); g.arc(tx(0), tz(0), SPAWN_R * k, 0, TAU); g.stroke(); // the storm
   for (const pt of world.portals) {
-    const px = tx(pt.pos.x), pz = tz(pt.pos.z);
-    g.strokeStyle = pt.laneShow > 0 ? `rgba(255,70,90,${0.35 + 0.5 * pt.laneShow})` : 'rgba(160,120,90,0.35)';
-    g.lineWidth = 3 * u;
-    g.beginPath(); g.moveTo(px, pz); g.lineTo(tx(Math.cos(pt.angle) * 12), tz(Math.sin(pt.angle) * 12)); g.stroke();
-    const pulse = pt.warnTarget > 0 ? 1 + 0.35 * Math.sin(G.time * 8) : 1;
-    g.fillStyle = pt.warnTarget >= 1 ? '#ff4d5e' : pt.active ? '#b070ff' : 'rgba(120,90,160,0.6)';
-    g.beginPath(); g.arc(px, pz, 5 * pulse * u, 0, TAU); g.fill();
+    if (pt.warnTarget <= 0) continue;
+    const pulse = 1 + 0.35 * Math.sin(G.time * 8);
+    g.fillStyle = pt.warnTarget >= 1 ? '#ff4d5e' : 'rgba(255,120,130,0.7)';
+    g.beginPath(); g.arc(tx(pt.pos.x), tz(pt.pos.z), 5 * pulse * u, 0, TAU); g.fill();
   }
   g.fillStyle = '#3ce0ff';
   const hx = world.houseHalf.x * k, hz = world.houseHalf.z * k;
@@ -3478,7 +3498,7 @@ function hostSnapshot(maxE = 40) {
     sw: perm.map(x => (x.alive ? Math.max(1, Math.round(x.hp / x.max * 99)) : 0) + (x.stunT > 0 ? 100 : 0)).join('.'),
     tt: structures.list.filter(x => x.temporary && x.alive).map(x => [r1(x.x), r1(x.z)]),
     hu: Math.round(NET.hurtOut), co: Math.round(NET.coinsOut), q: G.queue.length,
-    up: G.queue.slice(0, 4).map(s => [ENEMY_KEYS.indexOf(s.type), s.portal]),
+    up: G.queue.slice(0, 4).map(s => [ENEMY_KEYS.indexOf(s.type), r2(s.a || 0)]),
   };
 }
 
@@ -3812,7 +3832,7 @@ function guestFollow(dt, hs, t, fresh) {
       guestSyncStructures(hs);
       guestSyncEnemies(hs.e, t);
       const q = hs.q | 0, up = Array.isArray(hs.up) ? hs.up : [];
-      G.queue = Array.from({ length: q }, (_, i) => up[i] && ENEMY_KEYS[up[i][0]] ? { type: ENEMY_KEYS[up[i][0]], portal: up[i][1] | 0 } : { type: 'husk', portal: 0 });
+      G.queue = Array.from({ length: q }, (_, i) => up[i] && ENEMY_KEYS[up[i][0]] ? { type: ENEMY_KEYS[up[i][0]], a: (up[i][1] || 0) / 100 } : { type: 'husk', a: 0 });
     }
     const hu = hs.hu | 0;
     if (hu > NET.hurtSeen) { hurtPlayer(hu - NET.hurtSeen); NET.hurtSeen = hu; }
@@ -3832,12 +3852,7 @@ function guestFollow(dt, hs, t, fresh) {
 
 function updateGuestWave(dt) {
   if (G.phase === 'fight') {
-    const upcoming = G.queue.slice(0, 4).map(s => s.portal);
-    for (const pt of world.portals) {
-      const idx = upcoming.indexOf(pt.index);
-      pt.warnTarget = idx === 0 ? 1 : idx > 0 ? 0.55 : 0;
-      pt.laneShow = idx >= 0 ? (idx === 0 ? 1 : 0.5) : 0;
-    }
+    showSpawnWarnings();
   } else if (G.phase === 'cleared') for (const pt of world.portals) { pt.warnTarget = 0; pt.laneShow = 0; }
   if (G.phase === 'failed') {
     G.phaseT -= dt;

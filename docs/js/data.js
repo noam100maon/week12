@@ -815,14 +815,13 @@ export function buildWave(n) {
   // the husk share shrinks as more types unlock
   const weights = types.map(([k, d]) => (k === 'husk' ? d.weight + Math.max(0, 8 - n) : d.weight));
   const sum = weights.reduce((a, b) => a + b, 0);
-  const portals = portalCount(n);
   const list = [];
   for (let i = 0; i < total; i++) {
     let x = r() * sum, t = 'husk';
     for (let k = 0; k < types.length; k++) { x -= weights[k]; if (x <= 0) { t = types[k][0]; break; } }
     // elites: tougher, glowing, richer versions that show up more and more
     const elite = n >= 6 && r() < Math.min(0.28, (n - 5) * 0.014);
-    list.push({ type: t, portal: Math.floor(r() * portals), elite });
+    list.push({ type: t, a: r() * Math.PI * 2, elite }); // spawn angle around the storm
   }
   if (isBossWave(n)) {
     const bosses = 1 + Math.floor(n / 20);
@@ -831,7 +830,7 @@ export function buildWave(n) {
       // the newest boss for this wave first, then earlier ones
       const left = pool.filter(x => !list.some(e => e.type === x));
       const k = b === 0 ? BOSS_ORDER[(n / 5 - 1) % BOSS_ORDER.length] : (left.length ? left : pool)[Math.floor(r() * (left.length || pool.length))];
-      list.splice(Math.floor(list.length * (0.3 + 0.3 * b)), 0, { type: ENEMIES[k].minWave <= n ? k : 'boss', portal: b % portals });
+      list.splice(Math.floor(list.length * (0.3 + 0.3 * b)), 0, { type: ENEMIES[k].minWave <= n ? k : 'boss', a: r() * Math.PI * 2 });
     }
   }
   return list;
@@ -840,9 +839,8 @@ export function buildWave(n) {
 export function waveSummary(n) {
   const list = buildWave(n);
   const counts = {};
-  const portals = new Set();
-  for (const s of list) { counts[s.type] = (counts[s.type] || 0) + 1; portals.add(s.portal); }
-  return { total: list.length, counts, portals: [...portals].sort() };
+  for (const s of list) counts[s.type] = (counts[s.type] || 0) + 1;
+  return { total: list.length, counts };
 }
 
 // ---------------------------------------------------------------- save

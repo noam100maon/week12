@@ -107,7 +107,7 @@ export class Shop {
     const s = this.game.save;
     const sum = waveSummary(s.wave);
     const types = Object.entries(sum.counts).sort((a, b) => b[1] - a[1]).map(([k, n]) => `<span class="echip ${k === 'boss' ? 'boss' : ''}">${ENEMIES[k].name} ×${n}</span>`).join('');
-    document.getElementById('shopTip').innerHTML = `<span class="warnico">⚠</span> <b>${sum.total}</b> enemies from <b>${sum.portals.map(i => COMPASS[i]).join(', ')}</b>${isBossWave(s.wave) ? ' · <b class="bossw">BOSS WAVE</b>' : ''}<div class="echips">${types}</div>`;
+    document.getElementById('shopTip').innerHTML = `<span class="warnico">⚠</span> <b>${sum.total}</b> enemies from <b>all around the storm</b>${isBossWave(s.wave) ? ' · <b class="bossw">BOSS WAVE</b>' : ''}<div class="echips">${types}</div>`;
   }
 
   thumb(key) { return this.game.thumbs[this.game.thumbs[key]] || this.game.thumbs[key] || ''; }

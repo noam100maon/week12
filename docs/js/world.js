@@ -4,6 +4,7 @@ import { cloneStatic, instanceParts } from './assets.js';
 
 export const PORTAL_R = 62;
 export const WORLD_R = 88;
+export const SPAWN_R = 86; // enemies step out of the storm wall here
 export const BUILD_R = 26;
 export const PORTAL_ANGLES = [Math.PI * 0.25, Math.PI * 0.75, Math.PI * 1.25, Math.PI * 1.75];
 export const COMPASS = ['SE', 'SW', 'NW', 'NE'];
@@ -222,7 +223,7 @@ export function buildWorld(scene, opts) {
   noiseTex.magFilter = noiseTex.minFilter = THREE.LinearFilter;
   noiseTex.needsUpdate = true;
   const stormMat = new THREE.ShaderMaterial({ uniforms: { time: { value: 0 }, noiseTex: { value: noiseTex } }, vertexShader: STORM_VERT, fragmentShader: STORM_FRAG, transparent: true, side: THREE.DoubleSide, depthWrite: false, fog: false });
-  const storm = new THREE.Mesh(new THREE.CylinderGeometry(140, 130, 60, 64, 1, true), stormMat);
+  const storm = new THREE.Mesh(new THREE.CylinderGeometry(98, 91, 60, 72, 1, true), stormMat);
   storm.position.y = 24;
   storm.renderOrder = -1;
   scene.add(storm);
@@ -245,63 +246,27 @@ export function buildWorld(scene, opts) {
   const stoneMat = new THREE.MeshLambertMaterial({ color: 0x3d3a48, flatShading: true });
   const beamGeo = new THREE.CylinderGeometry(1.2, 1.2, 70, 16, 1, true);
   beamGeo.translate(0, 35, 0);
-  PORTAL_ANGLES.forEach((a, i) => {
-    const pos = new THREE.Vector3(Math.cos(a) * PORTAL_R, 0, Math.sin(a) * PORTAL_R);
+  // Enemies pour out of the storm wall anywhere around the map. These markers show where the
+  // next ones will come from: a red beam at the storm edge plus a glow on the ground.
+  for (let i = 0; i < 4; i++) {
     const g = new THREE.Group();
-    g.position.copy(pos);
-    g.rotation.y = -a + Math.PI / 2;
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(3.4, 0.38, 12, 40), new THREE.MeshStandardMaterial({ color: 0x3a2256, emissive: 0x9b4dff, emissiveIntensity: 1.2, roughness: 0.4, metalness: 0.3 }));
-    ring.position.y = 3.8;
-    const disc = new THREE.Mesh(new THREE.CircleGeometry(3.1, 48), new THREE.ShaderMaterial({
-      uniforms: { time: { value: 0 }, power: { value: 0 }, warn: { value: 0 } }, vertexShader: PORTAL_VERT, fragmentShader: PORTAL_FRAG,
-      transparent: true, side: THREE.DoubleSide, depthWrite: false,
-    }));
-    disc.position.y = 3.8;
-    g.add(ring, disc);
-    for (let s = -1; s <= 1; s += 2) {
-      const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.8, 2.2, 6), stoneMat);
-      pillar.position.set(s * 3.4, 1.1, 0);
-      g.add(pillar);
-    }
-    const glow = new THREE.Mesh(new THREE.PlaneGeometry(14, 14), new THREE.MeshBasicMaterial({ map: glowTex, color: 0xb070ff, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
+    const glow = new THREE.Mesh(new THREE.PlaneGeometry(14, 14), new THREE.MeshBasicMaterial({ map: glowTex, color: 0xff3a4a, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }));
     glow.rotation.x = -Math.PI / 2; glow.position.y = 0.06;
-    g.add(glow);
     const beam = new THREE.Mesh(beamGeo, new THREE.ShaderMaterial({
       uniforms: { time: { value: 0 }, color: { value: new THREE.Color(0xff3a4a) }, amount: { value: 0 } },
       vertexShader: PORTAL_VERT, fragmentShader: BEAM_FRAG, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false,
     }));
-    g.add(beam);
+    g.add(glow, beam);
+    g.visible = false;
     scene.add(g);
-    // lane from portal to the base
-    const laneLen = PORTAL_R - 14;
-    const laneTex = pTex.clone(); laneTex.needsUpdate = true; laneTex.repeat.set(1, laneLen / 10);
-    const lane = new THREE.Mesh(new THREE.PlaneGeometry(5, laneLen), new THREE.MeshLambertMaterial({ map: laneTex, transparent: true, depthWrite: false }));
-    lane.rotation.x = -Math.PI / 2;
-    lane.rotation.z = -a - Math.PI / 2;
-    const mid = (PORTAL_R + 14) / 2;
-    lane.position.set(Math.cos(a) * mid, 0.015, Math.sin(a) * mid);
-    scene.add(lane);
-    // warning chevrons along the lane (shown before / during a wave)
-    const arrows = new THREE.Group();
-    const arrowMat = new THREE.MeshBasicMaterial({ color: 0xff3b4a, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
-    const shape = new THREE.Shape();
-    shape.moveTo(-1.2, 0); shape.lineTo(0, 1.1); shape.lineTo(1.2, 0); shape.lineTo(1.2, -0.5); shape.lineTo(0, 0.6); shape.lineTo(-1.2, -0.5);
-    const arrowGeo = new THREE.ShapeGeometry(shape);
-    for (let k = 0; k < 9; k++) {
-      const m = new THREE.Mesh(arrowGeo, arrowMat);
-      const d = PORTAL_R - 6 - k * 5;
-      m.position.set(Math.cos(a) * d, 0.06, Math.sin(a) * d);
-      m.rotation.x = -Math.PI / 2;
-      m.rotation.z = -a - Math.PI / 2 + Math.PI;
-      m.userData.k = k;
-      arrows.add(m);
-    }
-    scene.add(arrows);
-    W.portals.push({ index: i, angle: a, pos, group: g, ring, disc, glow, beam, arrows, arrowMat, power: 0, active: false, warn: 0, warnTarget: 0, compass: COMPASS[i] });
-    const side = new THREE.Vector3(-Math.sin(a), 0, Math.cos(a)).multiplyScalar(3.4);
-    W.obstacles.push({ x: pos.x + side.x, z: pos.z + side.z, r: 0.9 });
-    W.obstacles.push({ x: pos.x - side.x, z: pos.z - side.z, r: 0.9 });
-  });
+    W.portals.push({ index: i, angle: 0, pos: new THREE.Vector3(), group: g, glow, beam, warn: 0, warnTarget: 0, laneShow: 0, active: true });
+  }
+  W.setWarning = (i, angle, strength) => {
+    const pt = W.portals[i];
+    if (!pt) return;
+    if (strength > 0 && Math.abs(angle - pt.angle) > 1e-4) { pt.angle = angle; pt.pos.set(Math.cos(angle) * SPAWN_R, 0, Math.sin(angle) * SPAWN_R); pt.group.position.copy(pt.pos); }
+    pt.warnTarget = strength;
+  };
 
   const laneBlocked = (a, r, width) => PORTAL_ANGLES.some(pa => {
     const d = Math.abs(((a - pa + Math.PI * 3) % (Math.PI * 2)) - Math.PI);
@@ -380,26 +345,13 @@ export function buildWorld(scene, opts) {
       c.position.x = Math.cos(a) * r; c.position.z = Math.sin(a) * r;
     }
     for (const pt of W.portals) {
-      const target = pt.active ? 1 : 0.12;
-      pt.power += (target - pt.power) * Math.min(1, dt * 2);
       pt.warn += (pt.warnTarget - pt.warn) * Math.min(1, dt * 5);
-      const u = pt.disc.material.uniforms;
-      u.time.value = W.time; u.power.value = pt.power; u.warn.value = pt.warn;
-      pt.ring.material.emissive.setRGB(0.6 + pt.warn * 0.4, 0.3 * (1 - pt.warn), 1 - pt.warn * 0.8);
-      pt.ring.material.emissiveIntensity = 0.2 + pt.power * (1.4 + Math.sin(W.time * 3) * 0.3) + pt.warn;
-      pt.glow.material.opacity = pt.power * 0.9;
-      pt.glow.material.color.setRGB(0.7 + pt.warn * 0.3, 0.45 * (1 - pt.warn * 0.6), 1 - pt.warn * 0.7);
-      pt.disc.rotation.z = W.time * 0.3;
+      pt.group.visible = pt.warn > 0.02;
+      if (!pt.group.visible) continue;
       const bu = pt.beam.material.uniforms;
       bu.time.value = W.time;
       bu.amount.value = pt.warn * (0.7 + 0.3 * Math.sin(W.time * 8));
-      pt.beam.visible = pt.warn > 0.02;
-      const lane = pt.laneShow || 0;
-      pt.arrowMat.opacity = lane * 0.85;
-      pt.arrows.visible = lane > 0.01;
-      if (pt.arrows.visible) {
-        pt.arrows.children.forEach(m => { const k = m.userData.k; m.scale.setScalar(0.8 + 0.35 * Math.max(0, Math.sin(W.time * 5 + k * 0.7))); });
-      }
+      pt.glow.material.opacity = pt.warn * (0.6 + 0.3 * Math.sin(W.time * 6));
     }
     const H = W.house;
     if (H.flash > 0) {
@@ -409,7 +361,7 @@ export function buildWorld(scene, opts) {
     if (H.plates.visible) H.core.rotation.y += dt * 1.5;
   };
 
-  W.setActivePortals = (n) => { W.portals.forEach((pt, i) => { pt.active = i < n; }); };
+  W.setActivePortals = () => {};
   W.domeHit = () => { domeMat.uniforms.hit.value = 1; };
   return W;
 }
