@@ -198,3 +198,93 @@ export class DamageNumbers {
 
   clear() { for (const d of this.pool) { d.life = 0; d.el.style.display = 'none'; } }
 }
+
+// Jagged lightning bolts (chain lightning, storm strikes, Lightning Rod).
+export class Bolts {
+  constructor(scene, count = 16, segs = 10) {
+    this.pool = [];
+    this.segs = segs;
+    for (let i = 0; i < count; i++) {
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array((segs + 1) * 3), 3));
+      const mat = new THREE.LineBasicMaterial({ color: 0xbfe6ff, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
+      const line = new THREE.Line(geo, mat);
+      line.frustumCulled = false;
+      line.visible = false;
+      line.userData.life = 0;
+      scene.add(line);
+      this.pool.push(line);
+    }
+    this.i = 0;
+  }
+
+  spawn(from, to, color = 0xbfe6ff, life = 0.18, jitter = 0.6) {
+    const line = this.pool[this.i];
+    this.i = (this.i + 1) % this.pool.length;
+    const p = line.geometry.attributes.position.array;
+    for (let k = 0; k <= this.segs; k++) {
+      const t = k / this.segs;
+      const j = k === 0 || k === this.segs ? 0 : jitter;
+      p[k * 3] = from.x + (to.x - from.x) * t + (Math.random() - 0.5) * j;
+      p[k * 3 + 1] = from.y + (to.y - from.y) * t + (Math.random() - 0.5) * j;
+      p[k * 3 + 2] = from.z + (to.z - from.z) * t + (Math.random() - 0.5) * j;
+    }
+    line.geometry.attributes.position.needsUpdate = true;
+    line.material.color.setHex(color);
+    line.material.opacity = 1;
+    line.userData.life = life;
+    line.userData.maxLife = life;
+    line.visible = true;
+  }
+
+  update(dt) {
+    for (const l of this.pool) {
+      if (!l.visible) continue;
+      l.userData.life -= dt;
+      if (l.userData.life <= 0) { l.visible = false; continue; }
+      l.material.opacity = l.userData.life / l.userData.maxLife;
+    }
+  }
+
+  clear() { for (const l of this.pool) l.visible = false; }
+}
+
+// Expanding ground rings (shockwaves, heal pulses, explosions).
+export class Rings {
+  constructor(scene, count = 12) {
+    this.pool = [];
+    const geo = new THREE.RingGeometry(0.85, 1, 48);
+    geo.rotateX(-Math.PI / 2);
+    for (let i = 0; i < count; i++) {
+      const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+      m.visible = false;
+      m.frustumCulled = false;
+      scene.add(m);
+      this.pool.push(m);
+    }
+    this.i = 0;
+  }
+
+  spawn(pos, radius, color = 0xffffff, life = 0.5) {
+    const m = this.pool[this.i];
+    this.i = (this.i + 1) % this.pool.length;
+    m.position.set(pos.x, (pos.y || 0) + 0.12, pos.z);
+    m.material.color.setHex(color);
+    m.userData = { life, maxLife: life, radius };
+    m.scale.setScalar(0.1);
+    m.visible = true;
+  }
+
+  update(dt) {
+    for (const m of this.pool) {
+      if (!m.visible) continue;
+      m.userData.life -= dt;
+      if (m.userData.life <= 0) { m.visible = false; continue; }
+      const k = 1 - m.userData.life / m.userData.maxLife;
+      m.scale.setScalar(Math.max(0.1, m.userData.radius * (1 - Math.pow(1 - k, 3))));
+      m.material.opacity = 1 - k;
+    }
+  }
+
+  clear() { for (const m of this.pool) m.visible = false; }
+}

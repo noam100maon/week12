@@ -1,6 +1,11 @@
 # Asset credits
 
-- `RobotExpressive.glb` — model by [Tomás Laulhé (Quaternius)](https://quaternius.com), CC0 1.0 (public domain).
-  Facial expressions & glTF conversion by [Don McCurdy](https://donmccurdy.com/). Taken from the three.js examples.
-- `vendor/` — [three.js](https://threejs.org) r170, MIT license (see `vendor/THREE_LICENSE`).
-- All other visuals (house, trees, portals, guns, effects) and all sounds are generated in code.
+All 3D models are free to use.
+
+- **Kenney** (www.kenney.nl), CC0 1.0 / MIT starter kits:
+  zombies, survivors & cyborg (Animated Characters), suburban houses, castle tower, blasters,
+  flying enemy drone, trees, rock formations, grass and coin. Sourced from Kenney's GitHub starter kits
+  and the pmndrs market library. Converted to GLB (Draco removed, textures embedded).
+- `RobotExpressive.glb` by Tomás Laulhé (Quaternius), CC0 1.0, with edits by Don McCurdy (three.js examples).
+- `vendor/` — three.js r170, MIT license (see `vendor/THREE_LICENSE`).
+- Walls, traps, portals, storm, shield dome, effects, character animation and all sounds are made in code.

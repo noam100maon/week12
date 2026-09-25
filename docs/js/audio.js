@@ -213,4 +213,54 @@ export class Sfx {
     if (!this.ok('portal', 0.15)) return;
     this.tone('sine', 300, 900, 0.3, 0.07);
   }
+  levelUp(big) {
+    if (!this.ok('lvl', 0.3)) return;
+    const notes = big ? [523, 659, 784, 1046, 1318] : [784, 1046];
+    notes.forEach((f, i) => this.tone(big ? 'square' : 'triangle', f, f, 0.18, big ? 0.12 : 0.1, i * 0.08));
+    if (big) this.noiseHit(0.8, 'highpass', 6000, 0.25, 0.5, null, 0.1);
+  }
+
+  ability() {
+    if (!this.ok('ability', 0.2)) return;
+    this.tone('sawtooth', 200, 900, 0.25, 0.15);
+    this.noiseHit(0.3, 'bandpass', 2000, 0.4, 1, 500);
+  }
+
+  zap() {
+    if (!this.ok('zap', 0.06)) return;
+    this.noiseHit(0.15, 'highpass', 3500, 0.5, 0.7);
+    this.tone('square', 1800, 300, 0.1, 0.08);
+  }
+
+  heal() {
+    if (!this.ok('heal', 0.3)) return;
+    [440, 554, 659, 880].forEach((f, i) => this.tone('sine', f, f, 0.3, 0.12, i * 0.05));
+  }
+
+  place() {
+    if (!this.ok('place', 0.05)) return;
+    this.noiseHit(0.12, 'lowpass', 900, 0.7, 1, 200);
+    this.tone('square', 180, 120, 0.08, 0.12);
+  }
+
+  sell() {
+    if (!this.ok('sell', 0.05)) return;
+    this.tone('triangle', 900, 500, 0.12, 0.12);
+  }
+
+  spit() {
+    if (!this.ok('spit', 0.12)) return;
+    this.noiseHit(0.2, 'bandpass', 900, 0.4, 3, 300);
+  }
+
+  laser() {
+    if (!this.ok('laser', 0.08)) return;
+    this.tone('sawtooth', 1400, 200, 0.15, 0.08);
+  }
+
+  beep() {
+    if (!this.ok('beep', 0.25)) return;
+    this.tone('square', 1200, 1200, 0.05, 0.06);
+  }
 }
+

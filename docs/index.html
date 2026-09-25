@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#1c1236">
-<title>Holdout: Defend the House</title>
+<title>Holdout</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -27,6 +27,7 @@
   <div class="hud-tl">
     <div id="waveLabel" class="wave-pill">WAVE 1</div>
     <div id="enemyLabel" class="enemy-pill"><span class="ico ico-skull"></span><span id="enemyText">0</span></div>
+    <div id="incomingText" class="incoming"></div>
   </div>
   <div class="hud-tc">
     <div class="bar-label"><span class="ico ico-house"></span><span>HOUSE</span><span id="houseHpText" class="bar-num">600</span></div>
@@ -40,7 +41,9 @@
     <div class="coin-pill" id="coinPill"><span class="coin-ico"></span><span id="coinText">0</span></div>
     <button id="pauseBtn" class="icon-btn" aria-label="Pause"><span class="ico ico-pause"></span></button>
   </div>
+  <canvas id="minimap" aria-label="Minimap"></canvas>
   <div class="hud-bl">
+    <div id="heroName" class="hero-name">Rex · Lv 1</div>
     <div class="hp-wrap">
       <span class="ico ico-heart"></span>
       <div class="bar hp-bar"><div id="hpLag" class="lag"></div><div id="hpFill" class="fill"></div></div>
@@ -49,6 +52,8 @@
   </div>
   <div class="hud-br" id="ammoBox">
     <div id="weaponName">PISTOL</div>
+    <div id="weaponLv" class="weapon-lv">Lv 1 · Common</div>
+    <div class="wxp"><div id="weaponXp"></div></div>
     <div class="ammo-row"><span id="ammoText">12</span><span class="ammo-sep">/</span><span id="magText">12</span></div>
     <div id="reloadBar"><div id="reloadFill"></div></div>
   </div>
@@ -59,7 +64,7 @@
   <div id="houseAlert">HOUSE UNDER ATTACK!</div>
   <div id="dmgNums"></div>
   <div id="offscreen"></div>
-  <div id="desktopHint" class="hidden">WASD move · Mouse aim · Click shoot · R reload · Q swap · Esc pause</div>
+  <div id="desktopHint" class="hidden">WASD move · Mouse aim · Click shoot · E / right-click ability · R reload · Q swap · Esc pause</div>
 </div>
 
 <!-- ============ TOUCH CONTROLS ============ -->
@@ -72,6 +77,7 @@
   <button id="reloadBtn" class="tbtn small" aria-label="Reload"><span class="ico ico-reload"></span></button>
   <button id="fireBtn" class="tbtn fire" aria-label="Fire"><span class="ico ico-target"></span></button>
 </div>
+<button id="abilityBtn" class="ability" aria-label="Hero ability"><span class="ico ico-bolt"></span><span id="abilityName" class="aname">Ability</span><span id="abilityCharges" class="acharges"></span></button>
 
 <!-- ============ SCREENS ============ -->
 <div id="loading" class="screen show">
@@ -91,7 +97,7 @@
       <button id="howBtn" class="btn btn-ghost">How to play</button>
       <button id="menuSettingsBtn" class="btn btn-ghost">Settings</button>
     </div>
-    <div class="credits">3D robot model by Quaternius (CC0) · Engine: three.js (MIT)</div>
+    <div class="credits">Models by Kenney & Quaternius (CC0) · Engine: three.js (MIT)</div>
   </div>
 </div>
 
@@ -101,7 +107,10 @@
     <ul class="how-list">
       <li><b>Protect the house.</b> Storm husks pour out of the purple portals. If the house or you fall, the wave fails.</li>
       <li><b>Left thumb</b> moves. <b>Right thumb</b> drags to aim. Hold <b>FIRE</b> (you can aim while holding it). Auto-fire can shoot for you when your crosshair is on an enemy.</li>
-      <li><b>Collect coins</b> from defeated enemies, then spend them at the base: upgrade guns, buy new ones, build barricades, turrets and spike traps.</li>
+      <li><b>Guns and heroes level up as you use them</b>, all the way to level 160. Each new rarity (Uncommon, Rare, Epic, Legendary, Mythic) unlocks a new ability.</li>
+      <li><b>Every hero has an ability button</b> (grenade, dash, shield, turret, heal or lightning) plus perks.</li>
+      <li><b>Collect coins</b> to recruit heroes, unlock guns, upgrade the house and <b>build walls, traps and turret towers</b> in Edit Base.</li>
+      <li><b>Red arrows and beams</b> show where the next enemies will come from. Check the minimap!</li>
       <li><b>Failed a wave?</b> You keep every coin. Upgrade and try that wave again.</li>
       <li>Every 5th wave a <b>Storm King</b> boss appears. Aim for the head for bonus damage!</li>
     </ul>
@@ -117,15 +126,35 @@
   </div>
   <div class="shop-body">
     <div class="tabs">
-      <button class="tab active" data-tab="weapons"><span class="ico ico-gun"></span><span>Weapons</span></button>
-      <button class="tab" data-tab="house"><span class="ico ico-house"></span><span>House</span></button>
-      <button class="tab" data-tab="hero"><span class="ico ico-heart"></span><span>Hero</span></button>
+      <button class="tab active" data-tab="heroes"><span class="ico ico-heart"></span><span>Heroes</span></button>
+      <button class="tab" data-tab="weapons"><span class="ico ico-gun"></span><span>Weapons</span></button>
+      <button class="tab" data-tab="base"><span class="ico ico-house"></span><span>Base</span></button>
     </div>
     <div class="tab-content" id="tabContent"></div>
   </div>
   <div class="shop-bottom">
     <div id="shopTip" class="shop-tip"></div>
+    <button id="buildBtn" class="btn btn-build"><span class="ico ico-hammer"></span> EDIT BASE</button>
     <button id="startWaveBtn" class="btn btn-play">START WAVE 1</button>
+  </div>
+</div>
+
+<div id="buildUI" class="screen">
+  <div class="build-top">
+    <button id="buildDone" class="btn btn-play small">DONE</button>
+    <div class="build-info"><div id="buildWarn" class="build-warn"></div><div id="buildHint" class="build-hint"></div></div>
+    <div class="coin-pill"><span class="coin-ico"></span><span id="buildCoins">0</span></div>
+  </div>
+  <div id="buildContext" class="build-context hidden">
+    <b id="ctxName">Wall</b>
+    <button id="ctxRotate" class="btn btn-ghost small">Rotate</button>
+    <button id="ctxSell" class="btn btn-danger small">Sell</button>
+    <button id="ctxClose" class="btn btn-ghost small">✕</button>
+  </div>
+  <div class="build-bottom">
+    <div id="buildCount" class="build-count"></div>
+    <div id="buildPalette" class="build-palette"></div>
+    <div class="build-tip">Tap the ground to build · Tap a piece to rotate or sell it · Drag to turn · Pinch to zoom</div>
   </div>
 </div>
 
@@ -139,6 +168,7 @@
       <div id="resBonusRow"><span>Wave bonus</span><b id="resBonus">0</b></div>
       <div class="total"><span>Total coins</span><b id="resTotal">0</b></div>
     </div>
+    <div id="resLevels" class="res-levels"></div>
     <button id="resBtn" class="btn btn-play">CONTINUE</button>
   </div>
 </div>

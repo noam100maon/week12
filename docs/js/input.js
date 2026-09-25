@@ -12,6 +12,7 @@ export class Input {
     this.reloadPressed = false;
     this.swapPressed = false;
     this.pausePressed = false;
+    this.abilityPressed = false;
     this.keys = {};
     this.mouseDown = false;
     this.pointers = new Map();
@@ -71,6 +72,8 @@ export class Input {
         this.reloadPressed = true;
       } else if (role === 'swap') {
         this.swapPressed = true;
+      } else if (role === 'ability') {
+        this.abilityPressed = true;
       }
     };
 
@@ -118,6 +121,7 @@ export class Input {
     this.fireBtn.addEventListener('pointerdown', onDown('fire'));
     document.getElementById('reloadBtn').addEventListener('pointerdown', onDown('reload'));
     document.getElementById('swapBtn').addEventListener('pointerdown', onDown('swap'));
+    document.getElementById('abilityBtn').addEventListener('pointerdown', onDown('ability'));
     window.addEventListener('pointermove', onMove, { passive: false });
     window.addEventListener('pointerup', onUp);
     window.addEventListener('pointercancel', onUp);
@@ -125,10 +129,12 @@ export class Input {
   }
 
   bindDesktop() {
+    this.canvas.addEventListener('contextmenu', e => e.preventDefault());
     window.addEventListener('keydown', (e) => {
       if (!this.enabled) return;
       this.keys[e.code] = true;
       if (e.code === 'KeyR') this.reloadPressed = true;
+      if (e.code === 'KeyE' || e.code === 'KeyF' || e.code === 'ShiftLeft') this.abilityPressed = true;
       if (e.code === 'KeyQ' || e.code === 'Tab') { this.swapPressed = true; e.preventDefault(); }
       if (e.code === 'Escape' || e.code === 'KeyP') this.pausePressed = true;
     });
@@ -142,6 +148,7 @@ export class Input {
         return;
       }
       if (e.button === 0) this.mouseDown = true;
+      if (e.button === 2) this.abilityPressed = true;
     });
     window.addEventListener('mouseup', (e) => { if (e.button === 0) this.mouseDown = false; });
     window.addEventListener('mousemove', (e) => {
