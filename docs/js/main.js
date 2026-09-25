@@ -1532,11 +1532,18 @@ function dynamicResolution(dt) {
 }
 
 // ---------------------------------------------------------------- boot
+function showFatal(msg) {
+  const el = $('loadText');
+  if (el) { el.textContent = msg; el.style.color = '#ff9aa3'; }
+  toast(msg.slice(0, 140));
+}
+window.addEventListener('error', (e) => showFatal('Error: ' + (e.message || 'unknown')));
+window.addEventListener('unhandledrejection', (e) => { const m = String(e.reason && e.reason.message || e.reason || ''); if (!/fullscreen|orientation|lock|play\(\)/i.test(m)) showFatal('Error: ' + m); });
+
 function boot() {
   resize();
   bindUi();
-  const loader = new GLTFLoader();
-  loader.load('models/RobotExpressive.glb', (gltf) => {
+  const onModel = (gltf) => {
     ROBOT.scene = gltf.scene;
     ROBOT.clips = gltf.animations;
     const box = new THREE.Box3().setFromObject(gltf.scene);
@@ -1547,17 +1554,30 @@ function boot() {
     applyUpgradesToWorld();
     resetPlayer();
     // warm up shaders
-    renderer.compile(scene, camera);
+    try { renderer.compile(scene, camera); } catch (e) { /* not critical */ }
     setTimeout(() => {
       G.state = 'menu';
       openMenu();
     }, 250);
-  }, (xhr) => {
-    if (xhr.total) $('loadFill').style.width = (xhr.loaded / xhr.total * 90).toFixed(0) + '%';
-  }, (err) => {
+  };
+  const onError = (err) => {
     console.error(err);
-    $('loadText').textContent = 'Could not load the game files. Please serve this folder over http(s) and reload.';
-  });
+    showFatal('Could not load the game files. ' + (err && err.message ? err.message : ''));
+  };
+  const loader = new GLTFLoader();
+  if (window.__EMBED_GLB) {
+    // single-file build: the model is embedded, parse it directly (no network fetch needed)
+    try {
+      const bin = atob(window.__EMBED_GLB);
+      const buf = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+      loader.parse(buf.buffer, '', onModel, onError);
+    } catch (e) { onError(e); }
+  } else {
+    loader.load('models/RobotExpressive.glb', onModel, (xhr) => {
+      if (xhr.total) $('loadFill').style.width = (xhr.loaded / xhr.total * 90).toFixed(0) + '%';
+    }, onError);
+  }
   frame();
 }
 

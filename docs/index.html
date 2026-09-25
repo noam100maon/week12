@@ -186,6 +186,15 @@
 
 <div id="toast"></div>
 
+<script>
+  // If the game code can't start (old browser or a viewer that blocks scripts), say so instead of hanging.
+  setTimeout(function () {
+    if (!window.__game) {
+      var t = document.getElementById('loadText');
+      if (t) { t.style.color = '#ff9aa3'; t.textContent = 'The game could not start here. Open this file in Chrome or Safari (not a file preview).'; }
+    }
+  }, 15000);
+</script>
 <script type="module" src="js/main.js"></script>
 </body>
 </html>
