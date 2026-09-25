@@ -13,6 +13,7 @@ export class Input {
     this.swapPressed = false;
     this.pausePressed = false;
     this.abilityPressed = false;
+    this.fpPressed = false;
     this.keys = {};
     this.mouseDown = false;
     this.pointers = new Map();
@@ -72,6 +73,8 @@ export class Input {
         this.reloadPressed = true;
       } else if (role === 'swap') {
         this.swapPressed = true;
+      } else if (role === 'fp') {
+        this.fpPressed = true;
       } else if (role === 'ability') {
         this.abilityPressed = true;
       }
@@ -121,6 +124,7 @@ export class Input {
     this.fireBtn.addEventListener('pointerdown', onDown('fire'));
     document.getElementById('reloadBtn').addEventListener('pointerdown', onDown('reload'));
     document.getElementById('abilityBtn').addEventListener('pointerdown', onDown('ability'));
+    document.getElementById('fpBtn').addEventListener('pointerdown', onDown('fp'));
     window.addEventListener('pointermove', onMove, { passive: false });
     window.addEventListener('pointerup', onUp);
     window.addEventListener('pointercancel', onUp);
@@ -133,6 +137,7 @@ export class Input {
       if (!this.enabled) return;
       this.keys[e.code] = true;
       if (e.code === 'KeyR') this.reloadPressed = true;
+      if (e.code === 'KeyV') this.fpPressed = true;
       if (e.code === 'KeyE' || e.code === 'KeyF' || e.code === 'ShiftLeft') this.abilityPressed = true;
       if (e.code === 'Tab') e.preventDefault();
       if (e.code === 'Escape' || e.code === 'KeyP') this.pausePressed = true;

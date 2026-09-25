@@ -98,6 +98,7 @@ void main(){
   vec3 c = mix(horizon, mid, smoothstep(-0.02, 0.22, h));
   c = mix(c, top, smoothstep(0.22, 0.85, h));
   float s = max(0.0, dot(d, normalize(sunDir)));
+  s = clamp(s, 0.0, 1.0);
   c += vec3(1.0, 0.85, 0.6) * (pow(s, 600.0) * 3.0 + pow(s, 12.0) * 0.35);
   gl_FragColor = vec4(c, 1.0);
 }`;
@@ -117,7 +118,7 @@ void main(){
   float bolt = step(0.985, noise(vec2(vUv.x * 60.0, floor(time * 3.0))));
   col += vec3(0.8, 0.6, 1.0) * bolt * smoothstep(0.2, 0.8, vUv.y) * n2;
   float a = (0.55 + 0.4 * n) * smoothstep(0.0, 0.08, vUv.y) * (1.0 - smoothstep(0.75, 1.0, vUv.y));
-  gl_FragColor = vec4(col, a);
+  gl_FragColor = vec4(max(col, 0.0), clamp(a, 0.0, 1.0));
 }`;
 
 const DOME_VERT = `varying vec3 vN; varying vec3 vV; varying vec3 vP;
@@ -125,14 +126,14 @@ void main(){ vec4 w = modelMatrix * vec4(position,1.0); vP = position; vN = norm
 const DOME_FRAG = `
 uniform float time; uniform float hit; varying vec3 vN; varying vec3 vV; varying vec3 vP;
 void main(){
-  float f = pow(1.0 - abs(dot(normalize(vN), normalize(vV))), 2.5);
+  float f = pow(clamp(1.0 - abs(dot(normalize(vN), normalize(vV))), 0.0, 1.0), 2.5);
   vec2 hp = vec2(atan(vP.z, vP.x) * 9.0, vP.y * 0.9);
   vec2 g = abs(fract(hp) - 0.5);
   float line = smoothstep(0.46, 0.5, max(g.x, g.y));
   float band = 0.5 + 0.5 * sin(vP.y * 0.6 - time * 1.5);
   vec3 col = mix(vec3(0.25, 0.7, 1.0), vec3(1.0, 0.35, 0.4), hit);
   float a = f * 0.55 + line * 0.08 * band + hit * 0.15 * f;
-  gl_FragColor = vec4(col, a * (0.7 + 0.3 * band));
+  gl_FragColor = vec4(col, clamp(a * (0.7 + 0.3 * band), 0.0, 1.0));
 }`;
 
 const PORTAL_VERT = `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`;
@@ -145,9 +146,9 @@ void main(){
   vec3 c1 = mix(vec3(0.45, 0.1, 0.85), vec3(0.95, 0.15, 0.2), warn);
   vec3 c2 = mix(vec3(0.95, 0.35, 1.0), vec3(1.0, 0.7, 0.3), warn);
   vec3 col = mix(vec3(0.05, 0.0, 0.15), mix(c1, c2, swirl), (1.0 - r) * 0.6 + swirl2 * 0.4);
-  col += vec3(1.0, 0.85, 1.0) * pow(1.0 - r, 4.0) * 0.9;
+  col += vec3(1.0, 0.85, 1.0) * pow(clamp(1.0 - r, 0.0, 1.0), 4.0) * 0.9;
   float alpha = smoothstep(1.0, 0.85, r);
-  gl_FragColor = vec4(col * (0.35 + 0.9 * power), alpha * (0.35 + 0.65 * power));
+  gl_FragColor = vec4(max(col, 0.0) * (0.35 + 0.9 * power), clamp(alpha * (0.35 + 0.65 * power), 0.0, 1.0));
 }`;
 
 const BEAM_FRAG = `
@@ -155,8 +156,8 @@ uniform float time; uniform vec3 color; uniform float amount; varying vec2 vUv;
 void main(){
   float edge = 1.0 - abs(vUv.x - 0.5) * 2.0;
   float flow = 0.6 + 0.4 * sin(vUv.y * 30.0 - time * 8.0);
-  float a = pow(edge, 2.0) * flow * (1.0 - vUv.y) * amount;
-  gl_FragColor = vec4(color, a);
+  float a = pow(clamp(edge, 0.0, 1.0), 2.0) * flow * (1.0 - vUv.y) * amount;
+  gl_FragColor = vec4(color, clamp(a, 0.0, 1.0));
 }`;
 
 export function buildWorld(scene, opts) {

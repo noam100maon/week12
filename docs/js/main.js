@@ -3,6 +3,7 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { Sfx } from './audio.js';
 import { Input } from './input.js';
@@ -62,6 +63,12 @@ if (Q.bloom) {
   const rt = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: Q.samples });
   composer = new EffectComposer(renderer, rt);
   composer.addPass(new RenderPass(scene, camera));
+  // guards against any invalid (NaN/Inf) pixel, which bloom would otherwise smear into a black flash
+  composer.addPass(new ShaderPass({
+    uniforms: { tDiffuse: { value: null } },
+    vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+    fragmentShader: 'uniform sampler2D tDiffuse; varying vec2 vUv; void main(){ vec4 c = texture2D(tDiffuse, vUv); if (!(c.r == c.r && c.g == c.g && c.b == c.b && c.a == c.a)) c = vec4(0.0, 0.0, 0.0, 1.0); gl_FragColor = clamp(c, 0.0, 64.0); }',
+  }));
   bloomPass = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.55, 0.45, 0.82);
   composer.addPass(bloomPass);
   composer.addPass(new OutputPass());
@@ -282,7 +289,7 @@ function equipWeapon(id, silent = false) {
   player.weaponId = id;
   const w = weaponById(id);
   const st = refreshWeapon(id);
-  if (player.gun) player.gunHolder.remove(player.gun);
+  if (player.gun && player.gun.parent) player.gun.parent.remove(player.gun);
   const ri = rarityIndex(weaponRec(id).level);
   player.gun = makeGun(w, RARITIES[ri].hex, ri);
   player.gun.userData.rarity = ri;
@@ -345,16 +352,27 @@ function updateCamera(dt) {
     const pivot = camState.pivot.set(player.pos.x, player.pos.y + 1.75, player.pos.z);
     E1.set(player.pitch + G.kick, player.yaw, 0, 'YXZ');
     camState.q.setFromEuler(E1);
-    const big = heroDef().model === 'robot';
-    const off = (camera.aspect < 1 ? V1.set(0.35, big ? 0.8 : 0.6, big ? 5.4 : 4.6) : big ? V1.set(0.85, 0.55, 4.2) : V1.set(0.62, 0.32, 3.4)).applyQuaternion(camState.q);
-    let dist = off.length();
-    const dir = V2.copy(off).divideScalar(dist);
-    RAY.set(pivot, dir);
-    const hit = RAY.intersectBox(houseBox, V3);
-    if (hit) dist = Math.max(0.9, pivot.distanceTo(hit) - 0.3);
-    camera.position.copy(pivot).addScaledVector(dir, dist);
-    if (camera.position.y < 0.4) camera.position.y = 0.4;
-    camera.quaternion.copy(camState.q);
+    if (isFp()) {
+      // first person: eyes of the hero, gun held in view
+      camera.position.set(player.pos.x, player.pos.y + (heroDef().model === 'robot' ? 1.85 : 1.65), player.pos.z);
+      camera.position.addScaledVector(V1.set(0, 0, -0.15).applyQuaternion(camState.q), 1);
+      camera.quaternion.copy(camState.q);
+      camState.dist = null;
+    } else {
+      const big = heroDef().model === 'robot';
+      const off = (camera.aspect < 1 ? V1.set(0.35, big ? 0.8 : 0.6, big ? 5.4 : 4.6) : big ? V1.set(0.85, 0.55, 4.2) : V1.set(0.62, 0.32, 3.4)).applyQuaternion(camState.q);
+      let dist = off.length();
+      const dir = V2.copy(off).divideScalar(dist);
+      RAY.set(pivot, dir);
+      const hit = RAY.intersectBox(houseBox, V3);
+      if (hit) dist = Math.max(1.2, pivot.distanceTo(hit) - 0.3);
+      // ease the distance so the view never pops in and out
+      if (camState.dist == null) camState.dist = dist;
+      camState.dist += (dist - camState.dist) * Math.min(1, dt * (dist < camState.dist ? 6 : 2.5));
+      camera.position.copy(pivot).addScaledVector(dir, camState.dist);
+      if (camera.position.y < 0.4) camera.position.y = 0.4;
+      camera.quaternion.copy(camState.q);
+    }
   } else if (G.state === 'build') {
     buildMode.updateCamera(dt);
   } else {
@@ -387,6 +405,8 @@ function aimRay(out) {
 
 // ---------------------------------------------------------------- player
 function resetPlayer() {
+  if (player.char) player.char.body.visible = true;
+  if (player.gun && player.gun.parent === viewModel) { player.gunHolder.add(player.gun); player.gun.position.set(0, 0, 0); player.gun.rotation.set(0, 0, 0); player.gun.scale.setScalar(1); }
   player.pos.set(0, 0, world.houseHalf.z + 4);
   player.vel.set(0, 0, 0);
   player.yaw = Math.PI; player.pitch = -0.1; player.facing = 0;
@@ -466,6 +486,7 @@ function updatePlayer(dt) {
   player.bloom = Math.max(0, player.bloom - dt * 3);
   if (player.swapT > 0) player.swapT -= dt;
   input.consume('swapPressed'); // guns are locked in for the whole run
+  if (input.consume('fpPressed')) { save.settings.fp = !save.settings.fp; writeSave(); toast(save.settings.fp ? 'First person' : 'Third person'); $('fpBtn').classList.toggle('on', save.settings.fp); }
   if (input.consume('reloadPressed')) startReload();
   if (player.reloadT > 0) {
     player.reloadT -= dt;
@@ -488,8 +509,25 @@ function updatePlayer(dt) {
 }
 
 const HAND = new THREE.Vector3();
+const viewModel = new THREE.Group();
+camera.add(viewModel);
+scene.add(camera);
+const isFp = () => save.settings.fp && player.alive && (G.state === 'playing' || G.state === 'paused');
+
 function attachGun(aiming, pitch) {
   const ch = player.char;
+  const fp = isFp();
+  ch.body.visible = !fp;
+  if (player.ring) player.ring.visible = !fp;
+  if (fp) {
+    if (player.gun.parent !== viewModel) viewModel.add(player.gun);
+    const bob = Math.sin(G.time * 9) * Math.min(1, Math.hypot(player.vel.x, player.vel.z) / 6) * 0.015;
+    player.gun.position.set(0.2, -0.19 + bob - G.kick * 0.4, -0.46 + G.kick * 1.2);
+    player.gun.rotation.set(G.kick * 2, Math.PI + 0.06, 0);
+    player.gun.scale.setScalar(0.62);
+    return;
+  }
+  if (player.gun.parent !== player.gunHolder) { player.gunHolder.add(player.gun); player.gun.position.set(0, 0, 0); player.gun.rotation.set(0, 0, 0); player.gun.scale.setScalar(1); }
   ch.root.updateMatrixWorld(true);
   ch.handWorld(HAND);
   ch.root.worldToLocal(HAND);
@@ -797,7 +835,7 @@ function updatePet(dt) {
   pet.speedNow += (spd - pet.speedNow) * Math.min(1, dt * 8);
   pet.char.root.position.set(pet.pos.x, flyH ? flyH + Math.sin(G.time * 4) * 0.15 : 0, pet.pos.z);
   pet.char.root.rotation.y = pet.facing;
-  pet.char.pose(dt, pet.speedNow, attackPhase, null, { dance: G.phase === 'cleared' });
+  pet.char.pose(dt, pet.speedNow, attackPhase);
   pet.char.updateFlash(dt, 0);
 }
 
@@ -921,7 +959,7 @@ function fire(w, st) {
   const fl = player.gun.userData.flash;
   fl.visible = true;
   fl.material.rotation = Math.random() * TAU;
-  fl.scale.setScalar(0.45 + Math.random() * 0.35 + (w.pellets > 1 ? 0.35 : 0));
+  fl.scale.setScalar((0.45 + Math.random() * 0.35 + (w.pellets > 1 ? 0.35 : 0)) * (isFp() ? 0.4 : 1));
   const ri = player.gun.userData.rarity;
   const tracerCol = ri > 0 ? RARITIES[ri].hex : 0xffe08a;
   fl.material.color.setHex(ri > 0 ? tracerCol : 0xffe0a0);
@@ -1739,7 +1777,7 @@ function startWave(fresh = true) {
   for (const pt of world.portals) { pt.laneShow = sum.portals.includes(pt.index) ? 1 : 0; pt.warnTarget = pt.laneShow; }
   G.state = 'playing';
   G.phase = 'countdown';
-  G.phaseT = fresh ? 4 : 5;
+  G.phaseT = fresh ? 4 : 3;
   G.lastCount = 6;
   showScreen(null);
   $('hud').classList.remove('hidden');
@@ -1748,12 +1786,13 @@ function startWave(fresh = true) {
   input.setEnabled(true);
   $('waveLabel').textContent = `WAVE ${n}`;
   const from = sum.portals.map(i => COMPASS[i]).join(', ');
-  showBanner(`WAVE ${n}`, `${sum.total} enemies incoming from ${from}`, isBossWave(n) ? 'red' : '', 3.2);
+  showBanner(`WAVE ${n}`, `${sum.total} enemies incoming from ${from}`, isBossWave(n) ? 'red' : '', fresh ? 3.2 : 2.2);
   sfx.waveStart();
   updateHud(true);
   updateHeroHud();
   checkRotate();
   writeSave(true);
+  $('fpBtn').classList.toggle('on', !!save.settings.fp);
   if (fresh) {
     $('desktopHint').classList.toggle('hidden', input.isTouch);
     if (!input.isTouch) setTimeout(() => $('desktopHint').classList.add('hidden'), 7000);
@@ -1810,16 +1849,14 @@ function processNovas() {
 
 function waveCleared() {
   G.phase = 'cleared';
-  G.phaseT = 3.2;
+  G.phaseT = 1.5;
   const bonus = waveBonus(save.wave);
   save.coins += bonus;
   G.runCoins += bonus;
   save.wave++;
   save.best = Math.max(save.best, save.wave);
   writeSave(true);
-  sfx.victory();
-  showBanner(`WAVE ${save.wave - 1} CLEARED!`, `+${bonus} coins · next wave coming up`, 'gold', 2.6);
-  if (player.char.play) player.char.play('Dance', 0.3);
+  // no reward screen between waves: the run just keeps going
   for (const pt of world.portals) { pt.warnTarget = 0; pt.laneShow = 0; }
 }
 
@@ -2228,7 +2265,7 @@ function frame() {
     if (G.state === 'playing') {
       if (input.consume('pausePressed')) pauseGame();
       else {
-        if (G.phase === 'countdown' || G.phase === 'fight') updatePlayer(dt);
+        if (G.phase === 'countdown' || G.phase === 'fight' || G.phase === 'cleared') updatePlayer(dt);
         else { player.char.pose(dt, 0, -1, null, { cheer: G.phase === 'cleared' || G.phase === 'results' }); player.char.updateFlash(dt, 0); }
         updateWave(dt);
         updatePet(dt);
@@ -2259,14 +2296,14 @@ function frame() {
     dmgNums.update(dt, window.innerWidth, window.innerHeight);
     updateCamera(dt);
   }
+  dynamicResolution(dt); // resize (if needed) before drawing so the canvas is never shown cleared
   if (composer) composer.render(); else renderer.render(scene, camera);
-  dynamicResolution(dt);
 }
 
 function dynamicResolution(dt) {
   if (save.settings.quality !== 'auto' || G.state !== 'playing') return;
   G.dynT += dt; G.dynFrames++;
-  if (G.dynT < 2) return;
+  if (G.dynT < 3) return;
   const fps = G.dynFrames / G.dynT;
   G.dynT = 0; G.dynFrames = 0;
   if (fps < 45 && pixelRatio > 0.7) { pixelRatio = Math.max(0.7, pixelRatio - 0.15); resize(); G.slowStreak = 0; }
@@ -2275,7 +2312,7 @@ function dynamicResolution(dt) {
     G.slowStreak = (G.slowStreak || 0) + 1;
     if (G.slowStreak >= 2 && composer) { composer = null; G.slowStreak = 0; }
     else if (G.slowStreak >= 2 && renderer.shadowMap.enabled) { renderer.shadowMap.enabled = false; world.sun.castShadow = false; scene.traverse(o => { if (o.material) o.material.needsUpdate = true; }); G.slowStreak = 0; }
-  } else if (fps > 58 && pixelRatio < Q.pr) { pixelRatio = Math.min(Q.pr, pixelRatio + 0.1); resize(); }
+  } else if (fps > 58 && pixelRatio < Q.pr && (G.upT = (G.upT || 0) + 1) >= 3) { G.upT = 0; pixelRatio = Math.min(Q.pr, pixelRatio + 0.1); resize(); }
 }
 
 // ---------------------------------------------------------------- boot

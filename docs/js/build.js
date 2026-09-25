@@ -312,7 +312,7 @@ export class BuildMode {
     Object.assign(this, { scene, camera, canvas, structures, getHouseHalf, onPlace, onRemove, onRotate, onExit, sfx });
     this.active = false;
     this.yaw = 0.7;
-    this.dist = 44;
+    this.dist = 38;
     this.selected = 'wood';
     this.pointers = new Map();
     this.ray = new THREE.Raycaster();
@@ -465,7 +465,9 @@ export class BuildMode {
 
   updateCamera(dt) {
     const pitch = 0.95;
-    const tx = 0, tz = 0;
+    // shift the view target so the base sits in the visible area right of the side panel
+    const shift = 4.5 * (this.dist / 44);
+    const tx = -Math.cos(this.yaw) * shift, tz = Math.sin(this.yaw) * shift;
     this.camera.position.set(tx + Math.sin(this.yaw) * Math.cos(pitch) * this.dist, Math.sin(pitch) * this.dist, tz + Math.cos(this.yaw) * Math.cos(pitch) * this.dist);
     this.camera.lookAt(tx, 0, tz);
   }
