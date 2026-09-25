@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1c1236">
+<title>Holdout</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script type="importmap">
+{ "imports": { "three": "./vendor/three.module.js", "three/addons/": "./vendor/jsm/" } }
+</script>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<!-- ============ HUD ============ -->
+<div id="hud" class="hidden">
+  <div class="hud-tl">
+    <div id="waveLabel" class="wave-pill">WAVE 1</div>
+    <div id="enemyLabel" class="enemy-pill"><span class="ico ico-skull"></span><span id="enemyText">0</span></div>
+    <div id="incomingText" class="incoming"></div>
+    <div id="coopHud" class="coop-hud hidden"></div>
+  </div>
+  <div class="hud-tc">
+    <div class="bar-label"><span class="ico ico-house"></span><span>HOUSE</span><span id="houseHpText" class="bar-num">600</span></div>
+    <div class="bar house-bar"><div id="houseHpLag" class="lag"></div><div id="houseHpFill" class="fill"></div></div>
+    <div id="bossWrap" class="hidden">
+      <div class="bar-label boss"><span id="bossName">STORM KING</span></div>
+      <div class="bar boss-bar"><div id="bossFill" class="fill"></div></div>
+    </div>
+  </div>
+  <div class="hud-tr">
+    <div class="coin-pill" id="coinPill"><span class="coin-ico"></span><span id="coinText">0</span></div>
+    <button id="pauseBtn" class="icon-btn" aria-label="Pause"><span class="ico ico-pause"></span></button>
+  </div>
+  <canvas id="minimap" aria-label="Minimap"></canvas>
+  <div class="hud-bl">
+    <div class="hero-row"><span id="heroName" class="hero-name">Rex · Lv 1</span><span id="petName" class="pet-name">Nugget · Lv 1</span></div>
+    <div class="hp-wrap">
+      <span class="ico ico-heart"></span>
+      <div class="bar hp-bar"><div id="hpLag" class="lag"></div><div id="hpFill" class="fill"></div></div>
+      <span id="hpText" class="bar-num">100</span>
+    </div>
+  </div>
+  <div class="hud-br" id="ammoBox">
+    <div id="weaponName">PISTOL</div>
+    <div id="weaponLv" class="weapon-lv">Lv 1 · Common</div>
+    <div class="wxp"><div id="weaponXp"></div></div>
+    <div class="ammo-row"><span id="ammoText">12</span><span class="ammo-sep">/</span><span id="magText">12</span></div>
+    <div id="reloadBar"><div id="reloadFill"></div></div>
+  </div>
+  <div id="crosshair"><i></i><i></i><i></i><i></i><b></b></div>
+  <div id="hitmarker"><i></i><i></i><i></i><i></i></div>
+  <div id="banner"><div id="bannerTitle"></div><div id="bannerSub"></div></div>
+  <div id="vignette"></div>
+  <div id="houseAlert">HOUSE UNDER ATTACK!</div>
+  <div id="dmgNums"></div>
+  <div id="offscreen"></div>
+  <div id="lockHint" class="hidden">Click to aim &amp; shoot</div>
+  <div id="desktopHint" class="hidden">WASD move · Mouse aim · Click shoot · E / right-click ability · R reload · V first person · Esc pause</div>
+</div>
+
+<!-- ============ TOUCH CONTROLS ============ -->
+<div id="touch" class="hidden">
+  <div id="joyZone"></div>
+  <div id="lookZone"></div>
+  <div id="joy"><div id="joyKnob"></div></div>
+  <div id="joyHint">MOVE</div>
+  <button id="fpBtn" class="tbtn small" aria-label="First person view"><span class="ico ico-eye"></span></button>
+  <button id="reloadBtn" class="tbtn small" aria-label="Reload"><span class="ico ico-reload"></span></button>
+  <button id="fireBtn" class="tbtn fire" aria-label="Fire"><span class="ico ico-target"></span></button>
+</div>
+<button id="abilityBtn" class="ability" aria-label="Hero ability"><span class="ico ico-bolt"></span><span id="abilityName" class="aname">Ability</span><span id="abilityCharges" class="acharges"></span></button>
+
+<!-- ============ SCREENS ============ -->
+<div id="loading" class="screen show">
+  <div class="logo">HOLD<span>OUT</span></div>
+  <div class="tagline">Defend the House</div>
+  <div class="load-bar"><div id="loadFill"></div></div>
+  <div id="loadText">Loading…</div>
+</div>
+
+<div id="menu" class="screen">
+  <div class="menu-inner">
+    <div class="logo big">HOLD<span>OUT</span></div>
+    <div class="tagline">Defend the House · Survive the Storm</div>
+    <div class="menu-stats" id="menuStats"></div>
+    <button id="playBtn" class="btn btn-play">PLAY</button>
+    <button id="coopBtn" class="btn btn-coop"><span class="ico-2p">👥</span> 2 PLAYER</button>
+    <div class="menu-row">
+      <button id="howBtn" class="btn btn-ghost">How to play</button>
+      <button id="menuSettingsBtn" class="btn btn-ghost">Settings</button>
+    </div>
+    <div class="credits">Models by Kenney & Quaternius (CC0) · Engine: three.js (MIT)</div>
+  </div>
+</div>
+
+<div id="how" class="screen modal">
+  <div class="panel narrow">
+    <h2>How to play</h2>
+    <ul class="how-list">
+      <li><b>Protect the house.</b> Storm husks pour out of the purple portals. If the house or you fall, the wave fails.</li>
+      <li><b>Left thumb</b> moves. <b>Right thumb</b> drags to aim. Hold <b>FIRE</b> (you can aim while holding it). Auto-fire can shoot for you when your crosshair is on an enemy.</li>
+      <li><b>Waves keep coming.</b> Clear one and the next starts automatically. Your gun, hero and pet are locked in until you fall; then you're back at the base to swap gear, recruit, and build.</li>
+      <li><b>Guns, heroes and pets level up as you use them</b>, all the way to level 160. Each new rarity (Uncommon, Rare, Epic, Legendary, Mythic) unlocks a new ability.</li>
+      <li><b>Every hero has an ability button</b> (grenade, dash, shield, turret, heal or lightning) plus perks.</li>
+      <li><b>Collect coins</b> to recruit heroes, unlock guns, adopt pets and <b>build walls, traps and turret towers</b> in Edit Base. The house grows stronger as you reach higher waves.</li>
+      <li><b>Red arrows and beams</b> show where the next enemies will come from. Check the minimap!</li>
+      <li><b>2 PLAYER:</b> host a game and send your friend the code. They open the same game link, tap 2 PLAYER and type it in.</li>
+      <li><b>Failed a wave?</b> You keep every coin. Upgrade and try that wave again.</li>
+      <li>Every 5th wave a <b>Storm King</b> boss appears. Aim for the head for bonus damage!</li>
+    </ul>
+    <button class="btn btn-play close-modal">GOT IT</button>
+  </div>
+</div>
+
+<div id="coop" class="screen modal">
+  <div class="panel narrow coop-panel">
+    <h2>2 Player Co-op</h2>
+    <div id="coopBody"></div>
+    <button class="btn btn-ghost small close-modal">Close</button>
+  </div>
+</div>
+
+<div id="shop" class="screen">
+  <div class="shop-top">
+    <button id="shopHomeBtn" class="icon-btn" aria-label="Menu"><span class="ico ico-home"></span></button>
+    <div class="shop-title">BASE <span id="shopWave">· Next: Wave 1</span></div>
+    <button id="shopCoopBtn" class="icon-btn coop-btn" aria-label="2 player">👥</button>
+    <div class="coin-pill big"><span class="coin-ico"></span><span id="shopCoins">0</span></div>
+  </div>
+  <div class="shop-body">
+    <div class="tabs">
+      <button class="tab active" data-tab="heroes"><span class="ico ico-heart"></span><span>Heroes</span></button>
+      <button class="tab" data-tab="weapons"><span class="ico ico-gun"></span><span>Weapons</span></button>
+      <button class="tab" data-tab="pets"><span class="ico ico-paw"></span><span>Pets</span></button>
+      <button class="tab" data-tab="base"><span class="ico ico-house"></span><span>Base</span></button>
+    </div>
+    <div class="tab-content" id="tabContent"></div>
+  </div>
+  <div class="shop-bottom">
+    <div id="shopTip" class="shop-tip"></div>
+    <button id="buildBtn" class="btn btn-build"><span class="ico ico-hammer"></span> EDIT BASE</button>
+    <button id="startWaveBtn" class="btn btn-play">START WAVE 1</button>
+  </div>
+</div>
+
+<div id="buildUI" class="screen">
+  <div class="build-top">
+    <button id="buildDone" class="btn btn-play small">DONE</button>
+    <div class="build-info"><div id="buildWarn" class="build-warn"></div><div id="buildHint" class="build-hint"></div></div>
+    <div class="coin-pill"><span class="coin-ico"></span><span id="buildCoins">0</span></div>
+  </div>
+  <div id="buildContext" class="build-context hidden">
+    <b id="ctxName">Wall</b>
+    <button id="ctxUpgrade" class="btn btn-play small">Upgrade</button>
+    <button id="ctxRotate" class="btn btn-ghost small">Rotate</button>
+    <button id="ctxSell" class="btn btn-danger small">Sell</button>
+    <button id="ctxClose" class="btn btn-ghost small">✕</button>
+  </div>
+  <div class="build-bottom">
+    <div id="buildCount" class="build-count"></div>
+    <div id="buildPalette" class="build-palette"></div>
+    <div class="build-tip">Tap the ground to build · Tap a piece to rotate or sell it · Drag to turn · Pinch to zoom</div>
+  </div>
+</div>
+
+<div id="results" class="screen modal">
+  <div class="panel narrow">
+    <h2 id="resTitle">WAVE CLEARED</h2>
+    <div id="resSub" class="res-sub"></div>
+    <div class="res-grid">
+      <div><span>Enemies defeated</span><b id="resKills">0</b></div>
+      <div><span>Coins collected</span><b id="resCoins">0</b></div>
+      <div id="resBonusRow"><span>Waves cleared this run</span><b id="resBonus">0</b></div>
+      <div class="total"><span>Total coins</span><b id="resTotal">0</b></div>
+    </div>
+    <div id="resLevels" class="res-levels"></div>
+    <button id="resBtn" class="btn btn-play">CONTINUE</button>
+  </div>
+</div>
+
+<div id="pause" class="screen modal">
+  <div class="panel narrow">
+    <h2>PAUSED</h2>
+    <button id="resumeBtn" class="btn btn-play">RESUME</button>
+    <button id="pauseSettingsBtn" class="btn btn-ghost wide">Settings</button>
+    <button id="quitBtn" class="btn btn-danger wide">End run &amp; go to base</button>
+  </div>
+</div>
+
+<div id="settings" class="screen modal">
+  <div class="panel narrow">
+    <h2>SETTINGS</h2>
+    <label class="setting"><span>Look sensitivity</span><input type="range" id="sensRange" min="0.3" max="2.5" step="0.05"><em id="sensVal">1.0</em></label>
+    <label class="setting"><span>Sound</span><input type="checkbox" id="soundChk"></label>
+    <label class="setting"><span>Auto-fire on target</span><input type="checkbox" id="autoChk"></label>
+    <label class="setting"><span>Graphics</span>
+      <select id="qualitySel"><option value="auto">Auto</option><option value="low">Low (fast)</option><option value="medium">Medium</option><option value="high">High</option></select>
+    </label>
+    <button id="fullscreenBtn" class="btn btn-ghost wide">Toggle fullscreen</button>
+    <button id="resetBtn" class="btn btn-danger wide">Reset all progress</button>
+    <button class="btn btn-play close-modal">DONE</button>
+  </div>
+</div>
+
+<div id="confirm" class="screen modal">
+  <div class="panel narrow">
+    <h2 id="confirmTitle">Are you sure?</h2>
+    <p id="confirmText"></p>
+    <div class="menu-row">
+      <button id="confirmNo" class="btn btn-ghost">Cancel</button>
+      <button id="confirmYes" class="btn btn-danger">Yes</button>
+    </div>
+  </div>
+</div>
+
+<div id="rotate" class="hidden">
+  <div class="rotate-phone"></div>
+  <div>Turn your phone sideways for the best experience</div>
+  <button id="rotateDismiss" class="btn btn-ghost">Play anyway</button>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  // If the game code can't start (old browser or a viewer that blocks scripts), say so instead of hanging.
+  setTimeout(function () {
+    if (!window.__game) {
+      var t = document.getElementById('loadText');
+      if (t) { t.style.color = '#ff9aa3'; t.textContent = 'The game could not start here. Open this file in Chrome or Safari (not a file preview).'; }
+    }
+  }, 15000);
+</script>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
