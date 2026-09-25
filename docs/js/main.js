@@ -2550,6 +2550,11 @@ function drawMinimap() {
     g.fillStyle = e.def.boss ? '#ff40ff' : e.def.fly ? '#ffa23a' : '#ff4d5e';
     g.beginPath(); g.arc(tx(e.pos.x), tz(e.pos.z), (e.def.boss ? 5 : 2.6) * u, 0, TAU); g.fill();
   }
+  if (NET.avatar) {
+    const a = NET.avatar.pos;
+    g.fillStyle = '#6dff9a'; g.strokeStyle = '#0b3a1f'; g.lineWidth = 1.5 * u;
+    g.beginPath(); g.arc(tx(a.x), tz(a.z), 4 * u, 0, TAU); g.fill(); g.stroke();
+  }
   g.restore();
   g.fillStyle = '#fff';
   g.beginPath(); g.moveTo(R, R - 7 * u); g.lineTo(R + 5 * u, R + 5 * u); g.lineTo(R - 5 * u, R + 5 * u); g.closePath(); g.fill();
