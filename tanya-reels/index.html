@@ -352,11 +352,12 @@ sup{font-size:.62em;line-height:0}
   <div class="grabber"></div>
   <form id="add-form">
     <h2 id="add-h">Add a sicha</h2>
-    <p class="lead">Paste the whole sicha. English and the original can go in together; each becomes the other half of every reel.</p>
+    <p class="lead">Open the sicha on Chabad.org, select all and copy, then paste it into the first box. English and Hebrew or Yiddish paragraphs sort themselves into the right boxes.</p>
     <div class="field"><label for="f-parsha">Parsha or occasion</label><select id="f-parsha"></select></div>
+    <a class="btn sec" id="find-chabad" href="#" target="_blank" rel="noopener" style="margin-top:12px;text-decoration:none">Find this parsha's sichot on Chabad.org ↗</a>
     <div class="field"><label for="f-title">Title</label><input id="f-title" required maxlength="90" placeholder="The first Rashi in Bereishit" autocomplete="off"></div>
-    <div class="field"><label for="f-source">Source (optional)</label><input id="f-source" maxlength="90" placeholder="Likkutei Sichot vol. 5, p. 1" autocomplete="off"></div>
-    <div class="field"><label for="f-en">English</label><textarea id="f-en" placeholder="Paste the English translation"></textarea></div>
+    <div class="field"><label for="f-source">Source (optional)</label><input id="f-source" maxlength="90" placeholder="Chabad.org · Likkutei Sichot vol. 5" autocomplete="off"></div>
+    <div class="field"><label for="f-en">English</label><textarea id="f-en" placeholder="Paste the sicha here — English, Hebrew or both"></textarea></div>
     <div class="field"><label for="f-he">Hebrew or Yiddish</label><textarea id="f-he" class="he-in" dir="rtl" placeholder="הדביקו כאן את המקור"></textarea></div>
     <p class="fine" id="add-msg" role="status"></p>
     <div class="sheet-acts"><button type="button" class="btn sec" data-close>Cancel</button><button type="submit" class="btn">Save sicha</button></div>
@@ -668,7 +669,7 @@ function renderSichot(){
       const mine = inBook.filter(x=>x.parsha===pn);
       if(!mine.length){
         const st = document.createElement('button'); st.className = 'stop empty-stop';
-        st.innerHTML = `<span class="st-main"><span class="st-t">${esc(pn)} <span dir="rtl" class="src">${esc(ph)}</span></span><span class="st-s">Tap to add a sicha</span></span><span class="pill soft">+</span>`;
+        st.innerHTML = `<span class="st-main"><span class="st-t">${esc(pn)} <span dir="rtl" class="src">${esc(ph)}</span></span><span class="st-s">Tap to find and add a sicha</span></span><span class="pill soft">+</span>`;
         st.onclick = ()=>addSicha(pn);
         stops.appendChild(st); return;
       }
@@ -807,9 +808,29 @@ document.querySelectorAll('.theme-btn').forEach(b=>b.onclick = ()=>{ const t = c
 const sel = $('f-parsha');
 BOOKS.forEach(([bn,bh,ps])=>{ const g = document.createElement('optgroup'); g.label = bn; ps.forEach(([pn,ph])=>{ const o = document.createElement('option'); o.value = pn; o.textContent = `${pn} · ${ph}`; g.appendChild(o); }); sel.appendChild(g); });
 let editing = null;
+/* one-tap search for a parsha's sichot on Chabad.org, and a paste that sorts itself */
+const chabadSearch = pn => 'https://www.google.com/search?q=' + encodeURIComponent(`site:chabad.org Likkutei Sichot ${pn}`);
+function syncFind(){ $('find-chabad').href = chabadSearch(sel.value); }
+sel.addEventListener('change', syncFind);
+const isHebrewPara = p => { const he = (p.match(/[א-ת]/g)||[]).length, la = (p.match(/[A-Za-z]/g)||[]).length; return he > la; };
+$('f-en').addEventListener('paste', ()=>setTimeout(()=>{
+  const all = $('f-en').value.replace(/\r\n?/g,'\n');
+  const ps = all.split(/\n\s*\n|\n(?=\S)/).map(p=>p.trim()).filter(Boolean);
+  const he = ps.filter(isHebrewPara), en = ps.filter(p=>!isHebrewPara(p));
+  if(he.length && en.length){
+    $('f-en').value = en.join('\n\n');
+    $('f-he').value = [$('f-he').value.trim(), ...he].filter(Boolean).join('\n\n');
+    $('add-msg').textContent = `Sorted: ${en.length} English and ${he.length} Hebrew/Yiddish paragraphs.`;
+  } else if(he.length && !en.length){
+    $('f-he').value = [$('f-he').value.trim(), all.trim()].filter(Boolean).join('\n\n'); $('f-en').value = '';
+    $('add-msg').textContent = 'Moved to the Hebrew/Yiddish box.';
+  }
+  if(!$('f-title').value.trim()){ const first = (en[0]||he[0]||'').split('\n')[0].trim(); if(first.length < 90) $('f-title').value = first; }
+}, 0));
+
 function addSicha(parsha){
   editing = null; $('add-form').reset(); if(parsha) sel.value = parsha;
-  $('add-h').textContent = 'Add a sicha'; $('del-sicha').hidden = true; $('add-msg').textContent = '';
+  $('add-h').textContent = 'Add a sicha'; $('del-sicha').hidden = true; $('add-msg').textContent = ''; syncFind();
   openSheet('sheet-add');
 }
 function editSicha(id){
