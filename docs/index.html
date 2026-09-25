@@ -43,7 +43,7 @@
   </div>
   <canvas id="minimap" aria-label="Minimap"></canvas>
   <div class="hud-bl">
-    <div id="heroName" class="hero-name">Rex · Lv 1</div>
+    <div class="hero-row"><span id="heroName" class="hero-name">Rex · Lv 1</span><span id="petName" class="pet-name">Nugget · Lv 1</span></div>
     <div class="hp-wrap">
       <span class="ico ico-heart"></span>
       <div class="bar hp-bar"><div id="hpLag" class="lag"></div><div id="hpFill" class="fill"></div></div>
@@ -64,7 +64,7 @@
   <div id="houseAlert">HOUSE UNDER ATTACK!</div>
   <div id="dmgNums"></div>
   <div id="offscreen"></div>
-  <div id="desktopHint" class="hidden">WASD move · Mouse aim · Click shoot · E / right-click ability · R reload · Q swap · Esc pause</div>
+  <div id="desktopHint" class="hidden">WASD move · Mouse aim · Click shoot · E / right-click ability · R reload · Esc pause</div>
 </div>
 
 <!-- ============ TOUCH CONTROLS ============ -->
@@ -73,7 +73,6 @@
   <div id="lookZone"></div>
   <div id="joy"><div id="joyKnob"></div></div>
   <div id="joyHint">MOVE</div>
-  <button id="swapBtn" class="tbtn small" aria-label="Swap weapon"><span class="ico ico-swap"></span></button>
   <button id="reloadBtn" class="tbtn small" aria-label="Reload"><span class="ico ico-reload"></span></button>
   <button id="fireBtn" class="tbtn fire" aria-label="Fire"><span class="ico ico-target"></span></button>
 </div>
@@ -107,9 +106,10 @@
     <ul class="how-list">
       <li><b>Protect the house.</b> Storm husks pour out of the purple portals. If the house or you fall, the wave fails.</li>
       <li><b>Left thumb</b> moves. <b>Right thumb</b> drags to aim. Hold <b>FIRE</b> (you can aim while holding it). Auto-fire can shoot for you when your crosshair is on an enemy.</li>
-      <li><b>Guns and heroes level up as you use them</b>, all the way to level 160. Each new rarity (Uncommon, Rare, Epic, Legendary, Mythic) unlocks a new ability.</li>
+      <li><b>Waves keep coming.</b> Clear one and the next starts automatically. Your gun, hero and pet are locked in until you fall; then you're back at the base to swap gear, recruit, and build.</li>
+      <li><b>Guns, heroes and pets level up as you use them</b>, all the way to level 160. Each new rarity (Uncommon, Rare, Epic, Legendary, Mythic) unlocks a new ability.</li>
       <li><b>Every hero has an ability button</b> (grenade, dash, shield, turret, heal or lightning) plus perks.</li>
-      <li><b>Collect coins</b> to recruit heroes, unlock guns, upgrade the house and <b>build walls, traps and turret towers</b> in Edit Base.</li>
+      <li><b>Collect coins</b> to recruit heroes, unlock guns, adopt pets and <b>build walls, traps and turret towers</b> in Edit Base. The house grows stronger as you reach higher waves.</li>
       <li><b>Red arrows and beams</b> show where the next enemies will come from. Check the minimap!</li>
       <li><b>Failed a wave?</b> You keep every coin. Upgrade and try that wave again.</li>
       <li>Every 5th wave a <b>Storm King</b> boss appears. Aim for the head for bonus damage!</li>
@@ -128,6 +128,7 @@
     <div class="tabs">
       <button class="tab active" data-tab="heroes"><span class="ico ico-heart"></span><span>Heroes</span></button>
       <button class="tab" data-tab="weapons"><span class="ico ico-gun"></span><span>Weapons</span></button>
+      <button class="tab" data-tab="pets"><span class="ico ico-paw"></span><span>Pets</span></button>
       <button class="tab" data-tab="base"><span class="ico ico-house"></span><span>Base</span></button>
     </div>
     <div class="tab-content" id="tabContent"></div>
@@ -165,7 +166,7 @@
     <div class="res-grid">
       <div><span>Enemies defeated</span><b id="resKills">0</b></div>
       <div><span>Coins collected</span><b id="resCoins">0</b></div>
-      <div id="resBonusRow"><span>Wave bonus</span><b id="resBonus">0</b></div>
+      <div id="resBonusRow"><span>Waves cleared this run</span><b id="resBonus">0</b></div>
       <div class="total"><span>Total coins</span><b id="resTotal">0</b></div>
     </div>
     <div id="resLevels" class="res-levels"></div>
@@ -178,7 +179,7 @@
     <h2>PAUSED</h2>
     <button id="resumeBtn" class="btn btn-play">RESUME</button>
     <button id="pauseSettingsBtn" class="btn btn-ghost wide">Settings</button>
-    <button id="quitBtn" class="btn btn-danger wide">Abandon wave</button>
+    <button id="quitBtn" class="btn btn-danger wide">End run &amp; go to base</button>
   </div>
 </div>
 

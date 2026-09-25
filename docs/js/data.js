@@ -251,19 +251,60 @@ export function heroStats(h, level) {
   };
 }
 
-// ---------------------------------------------------------------- house upgrades (coins)
-export const HOUSE_UPGRADES = [
-  { key: 'hp', name: 'Reinforced House', desc: 'More house health. The house itself gets bigger and better.', max: 15, base: 60, growth: 1.42, value: l => 700 + 260 * l, fmt: v => `${v} HP` },
-  { key: 'armor', name: 'Armor Plating', desc: 'The house takes less damage.', max: 10, base: 110, growth: 1.5, value: l => l * 5, fmt: v => `-${v}% dmg` },
-  { key: 'regen', name: 'Repair Bots', desc: 'The house repairs itself during waves.', max: 10, base: 90, growth: 1.45, value: l => l * 3, fmt: v => `${v} HP/s` },
-  { key: 'trap', name: 'Trap Power', desc: 'Spikes, freeze traps and turrets deal more damage.', max: 15, base: 120, growth: 1.42, value: l => 100 + 18 * l, fmt: v => `${v}%` },
-  { key: 'wall', name: 'Wall Strength', desc: 'Every wall you build gets more health.', max: 15, base: 100, growth: 1.42, value: l => 100 + 20 * l, fmt: v => `${v}%` },
-];
+// ---------------------------------------------------------------- pets (level by use, like heroes)
+export const PET_INFO = {
+  power: () => '+35% pet damage.',
+  frenzy: () => '+30% pet attack speed.',
+  burn: () => 'Attacks set enemies on fire.',
+  freeze: () => 'Attacks chill and slow enemies.',
+  splash: () => 'Attacks also hit enemies nearby.',
+  chain: () => 'Attacks arc lightning to 2 more enemies.',
+  magnet: () => '+5m coin magnet.',
+  coins: () => '+12% coins.',
+  guard: () => 'You take 10% less damage.',
+  repair: () => 'The house repairs 5 HP/s.',
+  heal: () => 'Heals you 2 HP/s.',
+  double: () => 'Attacks hit a second enemy.',
+  crit: () => '25% chance for triple damage.',
+  swift: () => 'You move 8% faster.',
+  roar: () => 'Roar more often and wider.',
+};
 
-export function upgradeCost(u, lvl) {
-  if (u.costs) return u.costs[lvl];
-  return Math.round(u.base * Math.pow(u.growth, lvl) / 5) * 5;
+export const PET_PERK_NAMES = {
+  power: 'Power Up', frenzy: 'Frenzy', burn: 'Fire Bite', freeze: 'Frost Bite', splash: 'Splash Attack', chain: 'Static Shock',
+  magnet: 'Coin Magnet', coins: 'Treasure Nose', guard: 'Bodyguard', repair: 'Handy Paws', heal: 'Healing Hug',
+  double: 'Double Trouble', crit: 'Lucky Strike', swift: 'Zoomies', roar: 'Mighty Roar',
+};
+
+export const PETS = [
+  { id: 'chick', name: 'Nugget', model: 'pet-chick', cost: 0, kind: 'melee', dmg: 8, rate: 1.4, speed: 9, desc: 'A brave little chick that pecks nearby enemies.', perks: ['frenzy', 'power', 'coins', 'crit', 'double'] },
+  { id: 'dog', name: 'Biscuit', model: 'pet-dog', cost: 350, kind: 'melee', dmg: 16, rate: 1.2, speed: 10, desc: 'Loyal dog that chases down enemies and bites.', perks: ['power', 'frenzy', 'guard', 'crit', 'splash'] },
+  { id: 'cat', name: 'Whiskers', model: 'pet-cat', cost: 600, kind: 'melee', dmg: 11, rate: 2.2, speed: 11, desc: 'Lightning-fast pounces that shred enemies.', perks: ['crit', 'frenzy', 'swift', 'power', 'double'] },
+  { id: 'penguin', name: 'Frosty', model: 'pet-penguin', cost: 900, kind: 'ranged', dmg: 12, rate: 1.1, speed: 8, range: 16, color: 0x9fe8ff, desc: 'Throws snowballs that slow enemies.', perks: ['freeze', 'power', 'frenzy', 'splash', 'double'] },
+  { id: 'bee', name: 'Buzz', model: 'pet-bee', cost: 1200, kind: 'ranged', fly: 1.8, dmg: 9, rate: 2.6, speed: 11, range: 14, color: 0xffd23c, desc: 'Flying stinger that zaps enemies from the air.', perks: ['frenzy', 'chain', 'power', 'double', 'crit'] },
+  { id: 'panda', name: 'Bamboo', model: 'pet-panda', cost: 1500, kind: 'support', dmg: 10, rate: 1, speed: 8, desc: 'Heals you and repairs the house.', perks: ['heal', 'repair', 'guard', 'power', 'heal'] },
+  { id: 'parrot', name: 'Rio', model: 'pet-parrot', cost: 1800, kind: 'collector', fly: 2.2, dmg: 10, rate: 1.6, speed: 12, range: 12, color: 0xff6b3a, desc: 'Grabs coins from far away and pecks enemies.', perks: ['magnet', 'coins', 'frenzy', 'coins', 'power'] },
+  { id: 'fox', name: 'Ember', model: 'pet-fox', cost: 2400, kind: 'melee', dmg: 20, rate: 1.3, speed: 11, desc: 'Fire fox. Its bites burn.', perks: ['burn', 'power', 'splash', 'frenzy', 'chain'] },
+  { id: 'tiger', name: 'Stripes', model: 'pet-tiger', cost: 3200, kind: 'melee', dmg: 34, rate: 0.9, speed: 10, desc: 'Huge claw swipes that hit everything around.', perks: ['splash', 'power', 'crit', 'frenzy', 'burn'] },
+  { id: 'lion', name: 'King', model: 'pet-lion', cost: 4200, kind: 'roar', dmg: 26, rate: 1, speed: 10, desc: 'Bites, and roars to damage and slow every enemy nearby.', perks: ['roar', 'power', 'guard', 'freeze', 'roar'] },
+];
+export function petById(id) { return PETS.find(p => p.id === id); }
+
+export function petStats(p, level) {
+  const L = level - 1;
+  const perks = activeAbilities(p.perks, level);
+  const count = (k) => perks.filter(x => x === k).length;
+  return {
+    dmg: p.dmg * (1 + 0.035 * L) * (1 + 0.1 * rarityIndex(level)) * Math.pow(1.35, count('power')),
+    rate: p.rate * Math.pow(1.3, count('frenzy')),
+    perks: new Set(perks),
+    count,
+  };
 }
+
+// The house grows automatically as you reach higher waves.
+export function houseTier(wave) { return wave >= 35 ? 3 : wave >= 20 ? 2 : wave >= 10 ? 1 : 0; }
+export function houseMaxHp(wave) { return Math.round(700 * (1 + 0.14 * (wave - 1))); }
 
 // ---------------------------------------------------------------- build pieces
 export const BUILD_PIECES = [
@@ -340,7 +381,8 @@ export function defaultSave() {
     equipped: 'pistol',
     heroes: { rex: { owned: true, level: 1, xp: 0 } },
     hero: 'rex',
-    house: { hp: 0, armor: 0, regen: 0, trap: 0, wall: 0 },
+    pets: { chick: { owned: true, level: 1, xp: 0 } },
+    pet: 'chick',
     structures: [],
     settings: { sens: 1, sound: true, autofire: null, quality: 'auto' },
   };
@@ -364,7 +406,6 @@ function migrate(raw) {
     const ups = Object.values(w.lv || {}).reduce((a, b) => a + b, 0);
     out.weapons[id] = { owned: true, level: Math.min(24, 1 + ups * 2), xp: 0 };
   }
-  out.house = { hp: raw.house?.hp || 0, armor: raw.house?.armor || 0, regen: raw.house?.regen || 0, trap: raw.house?.spikes || 0, wall: raw.house?.fence || 0 };
   return out;
 }
 
@@ -374,6 +415,9 @@ export function parseSave(json) {
     const s = merge(defaultSave(), migrate(raw));
     if (!s.weapons.pistol) s.weapons.pistol = { owned: true, level: 1, xp: 0 };
     if (!s.heroes.rex) s.heroes.rex = { owned: true, level: 1, xp: 0 };
+    if (!s.pets || !s.pets.chick) s.pets = Object.assign({ chick: { owned: true, level: 1, xp: 0 } }, s.pets || {});
+    if (!s.pets[s.pet]?.owned) s.pet = 'chick';
+    delete s.house;
     if (!s.weapons[s.equipped]?.owned) s.equipped = 'pistol';
     if (!s.heroes[s.hero]?.owned) s.hero = 'rex';
     if (!Array.isArray(s.structures)) s.structures = [];

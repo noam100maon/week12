@@ -120,7 +120,6 @@ export class Input {
     lookZone.addEventListener('pointerdown', onDown('look'));
     this.fireBtn.addEventListener('pointerdown', onDown('fire'));
     document.getElementById('reloadBtn').addEventListener('pointerdown', onDown('reload'));
-    document.getElementById('swapBtn').addEventListener('pointerdown', onDown('swap'));
     document.getElementById('abilityBtn').addEventListener('pointerdown', onDown('ability'));
     window.addEventListener('pointermove', onMove, { passive: false });
     window.addEventListener('pointerup', onUp);
@@ -135,7 +134,7 @@ export class Input {
       this.keys[e.code] = true;
       if (e.code === 'KeyR') this.reloadPressed = true;
       if (e.code === 'KeyE' || e.code === 'KeyF' || e.code === 'ShiftLeft') this.abilityPressed = true;
-      if (e.code === 'KeyQ' || e.code === 'Tab') { this.swapPressed = true; e.preventDefault(); }
+      if (e.code === 'Tab') e.preventDefault();
       if (e.code === 'Escape' || e.code === 'KeyP') this.pausePressed = true;
     });
     window.addEventListener('keyup', (e) => { this.keys[e.code] = false; });
@@ -162,7 +161,6 @@ export class Input {
         if (this.enabled && !this.isTouch) this.pausePressed = true;
       }
     });
-    window.addEventListener('wheel', (e) => { if (this.enabled && Math.abs(e.deltaY) > 20) this.swapPressed = true; });
   }
 
   update() {

@@ -415,3 +415,9 @@ body.desktop .ability::after { content: 'E'; position: absolute; top: -6px; left
   .shop-title { font-size: 20px; }
   .shop-title span { display: block; font-size: 13px; }
 }
+.ico-paw { --m: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 11c3 0 6 4.5 6 7 0 2-1.6 3-3.5 3-1.2 0-1.7-.6-2.5-.6s-1.3.6-2.5.6C7.6 21 6 20 6 18c0-2.5 3-7 6-7zM6 6.5a2.5 3 0 1 1 0 .1zM18 6.5a2.5 3 0 1 1 0 .1zM9.5 3a2.2 2.7 0 1 1 0 .1zM14.5 3a2.2 2.7 0 1 1 0 .1zM3 11.5a2 2.5 0 1 1 0 .1zM21 11.5a2 2.5 0 1 1 0 .1z'/%3E%3C/svg%3E"); }
+.hero-row { display: flex; gap: 10px; align-items: baseline; margin-bottom: 4px; }
+.hero-row .hero-name { margin: 0; }
+.pet-name { font-family: var(--head); font-size: 13px; text-shadow: 0 2px 0 rgba(0,0,0,.6); opacity: .9; }
+.pet-name::before { content: ''; display: inline-block; width: .9em; height: .9em; margin-right: 4px; vertical-align: -1px; background: currentColor; -webkit-mask: var(--paw) center / contain no-repeat; mask: var(--paw) center / contain no-repeat; }
+.pet-name { --paw: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 11c3 0 6 4.5 6 7 0 2-1.6 3-3.5 3-1.2 0-1.7-.6-2.5-.6s-1.3.6-2.5.6C7.6 21 6 20 6 18c0-2.5 3-7 6-7zM6 6.5a2.5 3 0 1 1 0 .1zM18 6.5a2.5 3 0 1 1 0 .1zM9.5 3a2.2 2.7 0 1 1 0 .1zM14.5 3a2.2 2.7 0 1 1 0 .1z'/%3E%3C/svg%3E"); }

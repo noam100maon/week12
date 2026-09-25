@@ -7,11 +7,11 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { Sfx } from './audio.js';
 import { Input } from './input.js';
 import { Particles, Tracers, DamageNumbers, Bolts, Rings } from './fx.js';
-import { loadModels, setShadowMode, KenneyChar, RobotChar, DroneChar, makeGun, cloneStatic, renderThumbs } from './assets.js';
+import { loadModels, setShadowMode, KenneyChar, RobotChar, DroneChar, PetChar, makeGun, cloneStatic, renderThumbs } from './assets.js';
 import { buildWorld, WORLD_R, COMPASS } from './world.js';
 import { Structures, BuildMode, pieceById } from './build.js';
 import {
-  WEAPONS, weaponById, weaponStats, HEROES, heroById, heroStats, HOUSE_UPGRADES, ENEMIES, BUILD_PIECES,
+  WEAPONS, weaponById, weaponStats, HEROES, heroById, heroStats, PETS, petById, petStats, PET_PERK_NAMES, houseTier, houseMaxHp, ENEMIES, BUILD_PIECES,
   RARITIES, rarityIndex, rarityOf, xpToNext, addXp, MAX_LEVEL,
   buildWave, waveSummary, waveHpMult, waveDmgMult, waveCoinMult, waveBonus, isBossWave, portalCount,
   loadSave, parseSave, writeLocal, clearSave, defaultSave,
@@ -19,10 +19,10 @@ import {
 import { Shop } from './ui.js';
 
 const $ = (id) => document.getElementById(id);
+const PET_NAMES = PET_PERK_NAMES;
 const TAU = Math.PI * 2;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const lerpAngle = (a, b, t) => a + ((((b - a) % TAU) + TAU * 1.5) % TAU - Math.PI) * t;
-const houseVal = (key) => HOUSE_UPGRADES.find(u => u.key === key).value(save.house[key]);
 
 // ---------------------------------------------------------------- setup
 let save = loadSave();
@@ -157,15 +157,20 @@ const player = {
   ring: null,
 };
 let HS = null;      // hero stats
+let PS = null;      // pet stats
 const WS = {};      // weapon stats cache
 
 const heroRec = () => save.heroes[save.hero];
 const heroDef = () => heroById(save.hero);
 const weaponRec = (id = player.weaponId) => save.weapons[id];
+const petRec = () => save.pets[save.pet];
+const petDef = () => petById(save.pet);
 function refreshHero() {
   HS = heroStats(heroDef(), heroRec().level);
+  PS = petStats(petDef(), petRec().level);
   player.maxHp = HS.hp;
 }
+const coinMult = () => HS.coinMult * (1 + 0.12 * PS.count('coins'));
 function refreshWeapon(id) { WS[id] = weaponStats(weaponById(id), save.weapons[id].level); return WS[id]; }
 function curWeapon() { return weaponById(player.weaponId); }
 function curStats() { return WS[player.weaponId] || refreshWeapon(player.weaponId); }
@@ -202,9 +207,11 @@ function toast(text, cls = '') {
 function onShopChange() {
   applyUpgradesToWorld();
   setupHeroModel();
+  setupPet();
   refreshAllWeapons();
   equipWeapon(save.equipped, true);
   resetPlayer();
+  resetPet();
   updateThumbs();
   writeSave();
 }
@@ -213,6 +220,7 @@ function onSaveReplaced() {
   structures.loadFrom(save.structures);
   applyUpgradesToWorld();
   setupHeroModel();
+  setupPet();
   refreshAllWeapons();
   equipWeapon(save.equipped, true);
   resetPlayer();
@@ -224,20 +232,19 @@ function onSaveReplaced() {
 function refreshAllWeapons() { for (const w of ownedWeapons()) refreshWeapon(w.id); }
 
 function applyUpgradesToWorld() {
-  const t = save.house.hp >= 12 ? 3 : save.house.hp >= 8 ? 2 : save.house.hp >= 4 ? 1 : 0;
-  world.house.setTier(t);
-  G.houseMax = houseVal('hp');
+  world.house.setTier(houseTier(save.wave));
+  G.houseMax = houseMaxHp(save.wave);
   refreshHero();
 }
 
 function wallMult() {
-  let m = houseVal('wall') / 100;
+  let m = 1 + 0.08 * (save.wave - 1);
   if (save.hero === 'cyra') m *= 1.3;
   if (HS.perks.has('fortify')) m *= 1.3;
   return m;
 }
 function trapMult() {
-  let m = houseVal('trap') / 100;
+  let m = 1;
   if (HS.perks.has('overclock')) m *= 1.3;
   return m * waveScale();
 }
@@ -306,6 +313,13 @@ function updateThumbs() {
     ch.pose(0.016, 0, -1, null);
     if (ch.mixer) ch.mixer.update(0.5);
     jobs.push({ id: key, object: ch.root, dir: [0.35, 0.25, 1], dist: 1.3, done: () => ch.dispose() });
+  }
+  for (const p of PETS) {
+    const key = 'pet_' + p.id;
+    if (G.thumbs[key]) continue;
+    const ch = new PetChar(p.model, { height: 0.9 });
+    ch.mixer.update(0.3);
+    jobs.push({ id: key, object: ch.root, dir: [0.6, 0.45, 1], dist: 1.5, done: () => ch.dispose() });
   }
   for (const w of WEAPONS) {
     const ri = rarityIndex(save.weapons[w.id]?.level || 1);
@@ -400,7 +414,7 @@ function updatePlayer(dt) {
   player.pitch = clamp(player.pitch - input.lookDY * sens, -0.8, 0.6);
   input.lookDX = input.lookDY = 0;
 
-  const speed = 6.8 * HS.speed;
+  const speed = 6.8 * HS.speed * (1 + 0.08 * PS.count('swift'));
   const fx = -Math.sin(player.yaw), fz = -Math.cos(player.yaw);
   const rx = Math.cos(player.yaw), rz = -Math.sin(player.yaw);
   if (player.dashT > 0) {
@@ -434,6 +448,7 @@ function updatePlayer(dt) {
   if (player.ring) player.ring.material.opacity = 0.45 + 0.3 * Math.sin(G.time * 3);
 
   if (G.time - player.lastHurt > 3) player.hp = Math.min(player.maxHp, player.hp + HS.regen * dt);
+  player.hp = Math.min(player.maxHp, player.hp + 2 * PS.count('heal') * dt);
   player.shieldT = Math.max(0, player.shieldT - dt);
   player.boostT = Math.max(0, player.boostT - dt);
   player.adrenalineT = Math.max(0, player.adrenalineT - dt);
@@ -450,14 +465,7 @@ function updatePlayer(dt) {
   player.fireCd -= dt;
   player.bloom = Math.max(0, player.bloom - dt * 3);
   if (player.swapT > 0) player.swapT -= dt;
-  if (input.consume('swapPressed')) {
-    const list = ownedWeapons();
-    if (list.length > 1) {
-      const i = list.findIndex(x => x.id === player.weaponId);
-      equipWeapon(list[(i + 1) % list.length].id);
-      save.equipped = player.weaponId;
-    }
-  }
+  input.consume('swapPressed'); // guns are locked in for the whole run
   if (input.consume('reloadPressed')) startReload();
   if (player.reloadT > 0) {
     player.reloadT -= dt;
@@ -633,6 +641,164 @@ function updateGrenades(dt) {
       G.grenades.splice(i, 1);
     }
   }
+}
+
+
+// ---------------------------------------------------------------- pets
+const pet = { char: null, id: null, pos: new THREE.Vector3(), vel: new THREE.Vector3(), facing: 0, target: null, cd: 0, atkT: -1, roarCd: 6, healCd: 4, ring: null, speedNow: 0 };
+
+function setupPet() {
+  const def = petDef();
+  const ri = rarityIndex(petRec().level);
+  if (pet.char && pet.id === def.id) { if (pet.ring) pet.ring.material.color.setHex(RARITIES[ri].hex); return; }
+  if (pet.char) { scene.remove(pet.char.root); pet.char.dispose(); }
+  pet.char = new PetChar(def.model, { height: def.fly ? 0.75 : 0.85 });
+  pet.id = def.id;
+  scene.add(pet.char.root);
+  const ring = new THREE.Mesh(new THREE.RingGeometry(0.42, 0.52, 32), new THREE.MeshBasicMaterial({ color: RARITIES[ri].hex, transparent: true, opacity: 0.7, blending: THREE.AdditiveBlending, depthWrite: false }));
+  ring.rotation.x = -Math.PI / 2; ring.position.y = 0.05;
+  pet.char.root.add(ring);
+  pet.ring = ring;
+  resetPet();
+}
+
+function resetPet() {
+  if (!pet.char) return;
+  pet.pos.set(player.pos.x + 1.6, 0, player.pos.z + 0.6);
+  pet.target = null; pet.cd = 0.5; pet.atkT = -1; pet.roarCd = 6; pet.healCd = 4; pet.speedNow = 0;
+  pet.char.root.position.copy(pet.pos);
+}
+
+function petDamage(e, dmg, point) {
+  const def = petDef();
+  if (PS.perks.has('crit') && Math.random() < 0.25) dmg *= 3;
+  damageEnemy(e, dmg, { point, src: 'ability', pet: true });
+  if (e.alive) {
+    if (PS.perks.has('burn')) e.burn = { dps: dmg * 0.4, t: 3 };
+    if (PS.perks.has('freeze') || def.id === 'penguin') e.chill = { slow: 0.4, t: 2 };
+  }
+  if (PS.perks.has('splash')) {
+    for (const o of G.enemies) if (o !== e && o.alive && o.spawnT <= 0 && o.pos.distanceTo(e.pos) < 2.8) damageEnemy(o, dmg * 0.5, { point: new THREE.Vector3(o.pos.x, o.pos.y + o.height * 0.5, o.pos.z), src: 'ability', pet: true });
+    rings.spawn(e.pos, 2.8, def.color || 0xffc02e, 0.3);
+  }
+  if (PS.perks.has('chain')) {
+    let from = point.clone();
+    const near = G.enemies.filter(o => o !== e && o.alive && o.spawnT <= 0 && o.pos.distanceTo(e.pos) < 7).slice(0, 2);
+    for (const o of near) {
+      const to = new THREE.Vector3(o.pos.x, o.pos.y + o.height * 0.5, o.pos.z);
+      bolts.spawn(from, to, 0xffe066, 0.14, 0.4);
+      damageEnemy(o, dmg * 0.5, { point: to, src: 'ability', pet: true });
+      from = to;
+    }
+  }
+}
+
+function petTargets(range) {
+  return G.enemies.filter(e => e.alive && e.spawnT <= 0 && Math.hypot(e.pos.x - player.pos.x, e.pos.z - player.pos.z) < range)
+    .sort((a, b) => a.pos.distanceTo(pet.pos) - b.pos.distanceTo(pet.pos));
+}
+
+function updatePet(dt) {
+  if (!pet.char) return;
+  const def = petDef();
+  const power = PS.dmg * waveScale() * HS.power;
+  const inFight = G.phase === 'fight' && player.alive;
+  const flyH = def.fly || 0;
+  // pick what to do
+  let goal = null, attackPhase = -1;
+  const f = player.facing;
+  // stay at the hero's left side, slightly ahead, so it never blocks the over-the-shoulder camera
+  const home = new THREE.Vector3(player.pos.x + Math.sin(f) * 0.6 + Math.cos(f) * 1.6, 0, player.pos.z + Math.cos(f) * 0.6 - Math.sin(f) * 1.6);
+  pet.cd -= dt * PS.rate / def.rate;
+  if (inFight && (def.kind === 'melee' || def.kind === 'roar')) {
+    if (!pet.target || !pet.target.alive || pet.target.pos.distanceTo(player.pos) > 16) pet.target = petTargets(12)[0] || null;
+    if (pet.target && !pet.target.def.fly) {
+      const t = pet.target;
+      const d = Math.hypot(t.pos.x - pet.pos.x, t.pos.z - pet.pos.z);
+      if (d > t.radius + 0.7) goal = new THREE.Vector3(t.pos.x, 0, t.pos.z);
+      else if (pet.cd <= 0 && pet.atkT < 0) { pet.atkT = 0; pet.cd = 1 / def.rate; }
+      pet.facing = Math.atan2(t.pos.x - pet.pos.x, t.pos.z - pet.pos.z);
+    } else pet.target = null;
+  }
+  if (inFight && (def.kind === 'ranged' || def.kind === 'collector')) {
+    const list = petTargets(def.range);
+    if (list.length && pet.cd <= 0) {
+      pet.cd = 1 / def.rate;
+      const shots = 1 + (PS.perks.has('double') ? 1 : 0);
+      for (let k = 0; k < Math.min(shots, list.length); k++) {
+        const t = list[k];
+        const from = new THREE.Vector3(pet.pos.x, (flyH || 0.5) + 0.4, pet.pos.z);
+        const to = new THREE.Vector3(t.pos.x, t.pos.y + t.height * 0.55, t.pos.z);
+        tracers.spawn(from, to, def.color || 0xffffff, def.id === 'penguin' ? 0.14 : 0.06, 0.12);
+        sparks.emit(to.x, to.y, to.z, 0, 1, 0, 0.3, 0.4, new THREE.Color(def.color || 0xffffff), 3);
+        petDamage(t, power, to);
+      }
+      pet.facing = Math.atan2(list[0].pos.x - pet.pos.x, list[0].pos.z - pet.pos.z);
+      pet.atkT = 0.3;
+    }
+  }
+  if (inFight && def.kind === 'support') {
+    pet.healCd -= dt;
+    if (pet.healCd <= 0) {
+      pet.healCd = 5 / (PS.rate / def.rate);
+      const heal = player.maxHp * 0.08 * (1 + 0.01 * (petRec().level - 1));
+      player.hp = Math.min(player.maxHp, player.hp + heal);
+      G.houseHp = Math.min(G.houseMax, G.houseHp + G.houseMax * 0.02);
+      rings.spawn(pet.pos, 3, 0x6dff9a, 0.6);
+      for (let i = 0; i < 10; i++) sparks.emit(player.pos.x, 0.5 + Math.random() * 1.5, player.pos.z, (Math.random() - 0.5) * 2, 2, (Math.random() - 0.5) * 2, 0.7, 0.3, COL.green, -1);
+      pet.atkT = 0;
+    }
+  }
+  if (inFight && def.kind === 'roar') {
+    pet.roarCd -= dt;
+    if (pet.roarCd <= 0) {
+      const r = 6 * (1 + 0.25 * PS.count('roar'));
+      pet.roarCd = 10 / (1 + 0.3 * PS.count('roar'));
+      rings.spawn(pet.pos, r, 0xffb13a, 0.6);
+      G.shake = Math.max(G.shake, 0.15);
+      for (const e of G.enemies) if (e.alive && e.spawnT <= 0 && e.pos.distanceTo(pet.pos) < r) { petDamage(e, power * 1.2, new THREE.Vector3(e.pos.x, e.pos.y + e.height * 0.5, e.pos.z)); e.chill = { slow: 0.5, t: 2.5 }; }
+    }
+  }
+  // collector: pull coins near the pet too
+  if (def.kind === 'collector') for (const c of G.coins) if (c.state !== 'fly' && c.t > 0.4 && c.mesh.position.distanceTo(pet.pos) < 6 + 5 * PS.count('magnet')) c.state = 'fly';
+
+  // melee hit timing
+  if (pet.atkT >= 0) {
+    pet.atkT += dt * 3;
+    attackPhase = pet.atkT;
+    if ((def.kind === 'melee' || def.kind === 'roar') && pet.target && !pet.hitDone && pet.atkT >= 0.5) {
+      pet.hitDone = true;
+      const t = pet.target;
+      const pt = new THREE.Vector3(t.pos.x, t.pos.y + t.height * 0.4, t.pos.z);
+      petDamage(t, power, pt);
+      if (PS.perks.has('double')) { const o = petTargets(12).find(x => x !== t); if (o) petDamage(o, power * 0.7, new THREE.Vector3(o.pos.x, o.pos.y + o.height * 0.4, o.pos.z)); }
+      sfx.hit(false);
+    }
+    if (pet.atkT >= 1) { pet.atkT = -1; pet.hitDone = false; }
+  }
+  if (!goal && !(pet.atkT >= 0 && (def.kind === 'melee' || def.kind === 'roar'))) {
+    if (Math.hypot(home.x - pet.pos.x, home.z - pet.pos.z) > 1.2) goal = home;
+  }
+  // movement
+  let spd = 0;
+  if (goal) {
+    const dx = goal.x - pet.pos.x, dz = goal.z - pet.pos.z;
+    const d = Math.hypot(dx, dz);
+    const far = Math.hypot(pet.pos.x - player.pos.x, pet.pos.z - player.pos.z);
+    if (far > 30) { pet.pos.set(player.pos.x - 1.2, 0, player.pos.z - 1.2); }
+    else {
+      const sp = Math.min(d * 4, def.speed * (far > 8 ? 1.5 : 1));
+      pet.pos.x += dx / d * sp * dt; pet.pos.z += dz / d * sp * dt;
+      spd = sp;
+      if (!(pet.target && pet.atkT >= 0)) pet.facing = lerpAngle(pet.facing, Math.atan2(dx, dz), Math.min(1, dt * 10));
+    }
+    if (!flyH) collideWorld(pet.pos, 0.3, true);
+  } else if (!pet.target) pet.facing = lerpAngle(pet.facing, player.facing, Math.min(1, dt * 3));
+  pet.speedNow += (spd - pet.speedNow) * Math.min(1, dt * 8);
+  pet.char.root.position.set(pet.pos.x, flyH ? flyH + Math.sin(G.time * 4) * 0.15 : 0, pet.pos.z);
+  pet.char.root.rotation.y = pet.facing;
+  pet.char.pose(dt, pet.speedNow, attackPhase, null, { dance: G.phase === 'cleared' });
+  pet.char.updateFlash(dt, 0);
 }
 
 // ---------------------------------------------------------------- collisions
@@ -946,6 +1112,9 @@ function gainXp(amount, src) {
   const hr = heroRec();
   const hLv = hr.level;
   if (addXp(hr, xp).length) onLevel('hero', heroDef().name, hLv, hr.level);
+  const pr = petRec();
+  const pLv = pr.level;
+  if (addXp(pr, xp).length) onLevel('pet', petDef().name, pLv, pr.level);
   if (src === 'weapon') {
     const wr = weaponRec();
     const wLv = wr.level;
@@ -957,8 +1126,8 @@ function onLevel(kind, name, from, to) {
   const r0 = rarityIndex(from), r1 = rarityIndex(to);
   if (r1 > r0) {
     const r = RARITIES[r1];
-    const ability = kind === 'weapon' ? curWeapon().abilities[r1 - 1] : heroDef().perks[r1 - 1];
-    showBanner(`${name} is now ${r.name.toUpperCase()}!`, `New ${kind === 'weapon' ? 'ability' : 'perk'}: ${ability.name}`, 'rarity', 3.2, r.css);
+    const ability = kind === 'weapon' ? curWeapon().abilities[r1 - 1].name : kind === 'pet' ? PET_NAMES[petDef().perks[r1 - 1]] : heroDef().perks[r1 - 1].name;
+    showBanner(`${name} is now ${r.name.toUpperCase()}!`, `New ${kind === 'weapon' ? 'ability' : 'perk'}: ${ability}`, 'rarity', 3.2, r.css);
     sfx.levelUp(true);
     for (let i = 0; i < 40; i++) sparks.emit(player.pos.x, 1 + Math.random() * 1.5, player.pos.z, (Math.random() - 0.5) * 6, Math.random() * 6, (Math.random() - 0.5) * 6, 1, 0.4, new THREE.Color(r.hex), 3);
     rings.spawn(player.pos, 5, r.hex, 0.8);
@@ -969,6 +1138,9 @@ function onLevel(kind, name, from, to) {
   if (kind === 'weapon') {
     refreshWeapon(player.weaponId);
     if (r1 > r0) equipWeapon(player.weaponId, true);
+  } else if (kind === 'pet') {
+    refreshHero();
+    if (r1 > r0 && pet.ring) pet.ring.material.color.setHex(RARITIES[r1].hex);
   } else {
     const hpFrac = player.hp / player.maxHp;
     refreshHero();
@@ -1108,7 +1280,7 @@ function killEnemy(e, byPlayer = true, noCoins = false) {
   const c = new THREE.Vector3(e.pos.x, e.pos.y + e.height * 0.5, e.pos.z);
   for (let i = 0; i < 14; i++) sparks.emit(c.x, c.y, c.z, (Math.random() - 0.5) * 6, Math.random() * 5, (Math.random() - 0.5) * 6, 0.5, 0.3, COL.purple, 9, 1);
   if (!noCoins) {
-    let v = e.coinValue * HS.coinMult;
+    let v = e.coinValue * coinMult();
     if (HS.perks.has('jackpot') && Math.random() < 0.1) { v *= 3; dmgNums.spawn(c.clone().setY(c.y + 1), 'JACKPOT', 'coin'); }
     dropCoins(e.pos, v, e.def.boss ? 14 : e.def.coins >= 12 ? 5 : 2);
   }
@@ -1369,7 +1541,7 @@ function updateGlobs(dt) {
 function hurtPlayer(dmg) {
   if (!player.alive || G.phase !== 'fight') return;
   if (player.shieldT > 0) { rings.spawn(player.pos, 1.5, 0x5cb8ff, 0.25); return; }
-  dmg *= 1 - HS.armor;
+  dmg *= (1 - HS.armor) * Math.pow(0.9, PS.count('guard'));
   player.hp -= dmg;
   player.lastHurt = G.time;
   G.shake = Math.max(G.shake, 0.25);
@@ -1397,7 +1569,7 @@ function hurtPlayer(dmg) {
 
 function hurtHouse(dmg, from) {
   if (G.phase !== 'fight') return;
-  let mult = 1 - houseVal('armor') / 100;
+  let mult = 1;
   if (save.hero === 'cyra') mult *= 0.9;
   if (HS.perks.has('ironwill')) mult *= 0.85;
   G.houseHp -= dmg * mult;
@@ -1482,7 +1654,7 @@ function dropCoins(pos, total, count) {
 }
 
 function updateCoins(dt, collectAll) {
-  const magnet = HS.magnet;
+  const magnet = HS.magnet + 5 * PS.count('magnet');
   for (let i = G.coins.length - 1; i >= 0; i--) {
     const c = G.coins[i];
     const p = c.mesh.position;
@@ -1528,33 +1700,50 @@ function clearArena() {
   for (const pt of world.portals) { pt.warnTarget = 0; pt.laneShow = 0; }
 }
 
-function startWave() {
-  clearArena();
-  applyUpgradesToWorld();
-  structures.resetForWave(wallMult());
-  G.houseHp = G.houseMax;
-  resetPlayer();
-  refillAmmo();
-  equipWeapon(save.equipped, true);
+// A run starts at the base and keeps going wave after wave until you (or the house) fall.
+function startWave(fresh = true) {
   const n = save.wave;
+  if (fresh) {
+    clearArena();
+    applyUpgradesToWorld();
+    structures.resetForWave(wallMult());
+    G.houseHp = G.houseMax;
+    resetPlayer();
+    setupPet();
+    resetPet();
+    equipWeapon(save.equipped, true);
+    G.run = { startWave: n, kills: 0, coins: 0, xpStart: { weapon: weaponRec().level, hero: heroRec().level, pet: petRec().level } };
+    G.kills = 0;
+    G.runCoins = 0;
+  } else {
+    // next wave in the same run: heal up, repair, rebuild walls
+    const oldMax = G.houseMax;
+    applyUpgradesToWorld();
+    G.houseHp = Math.min(G.houseMax, G.houseHp + (G.houseMax - oldMax) + G.houseMax * 0.35);
+    structures.resetForWave(wallMult());
+    player.hp = player.maxHp;
+    player.charges = HS.perks.has('doubledash') ? 2 : 1;
+    player.abilityCd = 0;
+    player.gunHolder.visible = true;
+    player.reloadT = 0;
+    if (player.char.play) player.char.play('Idle', 0.2);
+  }
+  refillAmmo();
+  updateWeaponHud(true);
   G.queue = buildWave(n);
   G.spawnT = 0;
-  G.kills = 0;
-  G.runCoins = 0;
   G.hitCount = 0;
   G.houseLastHit = -10;
-  G.xpStart = { weapons: Object.fromEntries(ownedWeapons().map(w => [w.id, save.weapons[w.id].level])), hero: heroRec().level };
   world.setActivePortals(portalCount(n));
   const sum = waveSummary(n);
   for (const pt of world.portals) { pt.laneShow = sum.portals.includes(pt.index) ? 1 : 0; pt.warnTarget = pt.laneShow; }
   G.state = 'playing';
   G.phase = 'countdown';
-  G.phaseT = 4;
-  G.lastCount = 5;
+  G.phaseT = fresh ? 4 : 5;
+  G.lastCount = 6;
   showScreen(null);
   $('hud').classList.remove('hidden');
   $('touch').classList.toggle('hidden', !input.isTouch);
-  $('desktopHint').classList.toggle('hidden', input.isTouch);
   $('bossWrap').classList.add('hidden');
   input.setEnabled(true);
   $('waveLabel').textContent = `WAVE ${n}`;
@@ -1565,7 +1754,10 @@ function startWave() {
   updateHeroHud();
   checkRotate();
   writeSave(true);
-  if (!input.isTouch) setTimeout(() => $('desktopHint').classList.add('hidden'), 7000);
+  if (fresh) {
+    $('desktopHint').classList.toggle('hidden', input.isTouch);
+    if (!input.isTouch) setTimeout(() => $('desktopHint').classList.add('hidden'), 7000);
+  }
 }
 
 function updateWave(dt) {
@@ -1592,12 +1784,17 @@ function updateWave(dt) {
       pt.warnTarget = idx === 0 ? 1 : idx > 0 ? 0.55 : 0;
       pt.laneShow = idx >= 0 ? (idx === 0 ? 1 : 0.5) : 0;
     }
-    const regen = houseVal('regen') + (HS.perks.has('basekit') ? 6 : 0);
+    const regen = (HS.perks.has('basekit') ? 6 : 0) + 5 * PS.count('repair');
     G.houseHp = Math.min(G.houseMax, G.houseHp + regen * dt);
     if (!G.queue.length && !G.enemies.some(e => e.alive)) waveCleared();
     return;
   }
-  if (G.phase === 'cleared' || G.phase === 'failed') {
+  if (G.phase === 'cleared') {
+    G.phaseT -= dt;
+    if (G.phaseT <= 0) startWave(false);
+    return;
+  }
+  if (G.phase === 'failed') {
     G.phaseT -= dt;
     if (G.phaseT <= 0) showResults();
   }
@@ -1613,31 +1810,28 @@ function processNovas() {
 
 function waveCleared() {
   G.phase = 'cleared';
-  G.phaseT = 3;
-  G.bonus = waveBonus(save.wave);
-  save.coins += G.bonus;
-  G.clearedWave = save.wave;
+  G.phaseT = 3.2;
+  const bonus = waveBonus(save.wave);
+  save.coins += bonus;
+  G.runCoins += bonus;
   save.wave++;
   save.best = Math.max(save.best, save.wave);
   writeSave(true);
   sfx.victory();
-  showBanner('WAVE CLEARED!', `+${G.bonus} bonus coins`, 'gold', 2.8);
+  showBanner(`WAVE ${save.wave - 1} CLEARED!`, `+${bonus} coins · next wave coming up`, 'gold', 2.6);
   if (player.char.play) player.char.play('Dance', 0.3);
-  player.gunHolder.visible = false;
-  input.setEnabled(false);
   for (const pt of world.portals) { pt.warnTarget = 0; pt.laneShow = 0; }
 }
 
 function failWave(reason) {
-  if (G.phase !== 'fight') return;
+  if (G.phase !== 'fight' && G.phase !== 'countdown') return;
   G.phase = 'failed';
   G.phaseT = 3;
   G.failReason = reason;
-  G.bonus = 0;
   writeSave(true);
   sfx.defeat();
-  const title = { house: 'HOUSE DESTROYED', player: 'YOU WERE DEFEATED', quit: 'WAVE ABANDONED' }[reason];
-  showBanner(title, 'Upgrade and try again!', 'red', 2.8);
+  const title = { house: 'HOUSE DESTROYED', player: 'YOU WERE DEFEATED', quit: 'RUN ENDED' }[reason];
+  showBanner(title, 'Back to base to swap gear and try again', 'red', 2.8);
   input.setEnabled(false);
 }
 
@@ -1645,25 +1839,21 @@ function showResults() {
   for (const c of G.coins) { save.coins += c.value; G.runCoins += c.value; scene.remove(c.mesh); }
   G.coins.length = 0;
   writeSave(true);
-  const won = G.phase === 'cleared';
-  $('resTitle').textContent = won ? `WAVE ${G.clearedWave} CLEARED` : 'WAVE FAILED';
-  $('resSub').textContent = won ? 'Nice defending! Spend your coins at the base.' : `You keep all ${G.runCoins} coins and all XP. Upgrade and retry wave ${save.wave}!`;
+  const cleared = save.wave - G.run.startWave;
+  $('resTitle').textContent = `WAVE ${save.wave} FAILED`;
+  $('resSub').textContent = cleared > 0
+    ? `You cleared ${cleared} wave${cleared > 1 ? 's' : ''} this run. You keep every coin and all XP. Swap gear and retry wave ${save.wave}!`
+    : `You keep every coin and all XP. Swap your gear, build defenses and retry wave ${save.wave}!`;
   $('resKills').textContent = G.kills;
   $('resCoins').textContent = G.runCoins;
-  $('resBonus').textContent = G.bonus;
-  $('resBonusRow').classList.toggle('hidden', !won);
+  $('resBonus').textContent = cleared;
   $('resTotal').textContent = save.coins.toLocaleString();
   const rows = [];
-  const hr = heroRec();
-  rows.push(levelRow(heroDef().name, G.xpStart.hero, hr.level, hr));
-  for (const w of ownedWeapons()) {
-    const from = G.xpStart.weapons[w.id];
-    if (from === undefined) continue;
-    const rec = save.weapons[w.id];
-    if (rec.level !== from || w.id === player.weaponId) rows.push(levelRow(w.name, from, rec.level, rec));
-  }
+  rows.push(levelRow(heroDef().name, G.run.xpStart.hero, heroRec().level, heroRec()));
+  rows.push(levelRow(curWeapon().name, G.run.xpStart.weapon, weaponRec().level, weaponRec()));
+  rows.push(levelRow(petDef().name, G.run.xpStart.pet, petRec().level, petRec()));
   $('resLevels').innerHTML = rows.join('');
-  $('resBtn').textContent = won ? 'TO THE BASE' : 'UPGRADE & RETRY';
+  $('resBtn').textContent = 'TO THE BASE';
   G.phase = 'results';
   showScreen('results');
   $('hud').classList.add('hidden');
@@ -1678,13 +1868,15 @@ function levelRow(name, from, to, rec) {
 
 function goToShop() {
   clearArena();
-  structures.resetForWave(wallMult());
   G.state = 'shop';
   G.phase = 'idle';
   input.setEnabled(false);
   applyUpgradesToWorld();
+  structures.resetForWave(wallMult());
   setupHeroModel();
   resetPlayer();
+  setupPet();
+  resetPet();
   if (player.char.play) player.char.play(save.wave > 1 ? 'Idle' : 'Wave', 0.2);
   world.setActivePortals(0);
   $('hud').classList.add('hidden');
@@ -1755,6 +1947,9 @@ function updateHeroHud() {
   const h = heroDef(), rec = heroRec(), r = rarityOf(rec.level);
   $('heroName').textContent = `${h.name} · Lv ${rec.level}`;
   $('heroName').style.color = r.css;
+  const pd = petDef(), prc = petRec(), pr = rarityOf(prc.level);
+  $('petName').textContent = `${pd.name} · Lv ${prc.level}`;
+  $('petName').style.color = pr.css;
   $('abilityName').textContent = h.active.name;
   $('abilityBtn').style.setProperty('--rc', r.css);
 }
@@ -1889,6 +2084,8 @@ function openMenu() {
   applyUpgradesToWorld();
   setupHeroModel();
   resetPlayer();
+  setupPet();
+  resetPet();
   world.setActivePortals(0);
   const h = heroDef(), hr = heroRec();
   $('menuStats').innerHTML = save.wave > 1 || save.kills > 0
@@ -1961,7 +2158,7 @@ function bindUi() {
   click('pauseBtn', () => pauseGame());
   click('resumeBtn', () => resumeGame());
   click('pauseSettingsBtn', () => { syncSettingsUi(); showModal('settings'); });
-  click('quitBtn', () => confirmBox('Abandon wave?', 'You keep the coins and XP earned so far.', () => {
+  click('quitBtn', () => confirmBox('End this run?', 'You go back to the base and keep all coins and XP. You will retry the wave you are on.', () => {
     hideModal('pause');
     G.state = 'playing';
     G.phase = 'fight';
@@ -2034,6 +2231,7 @@ function frame() {
         if (G.phase === 'countdown' || G.phase === 'fight') updatePlayer(dt);
         else { player.char.pose(dt, 0, -1, null, { cheer: G.phase === 'cleared' || G.phase === 'results' }); player.char.updateFlash(dt, 0); }
         updateWave(dt);
+        updatePet(dt);
         updateEnemies(dt);
         updateStructures(dt);
         updateRockets(dt);
@@ -2050,6 +2248,7 @@ function frame() {
       player.char.pose(dt, 0, -1);
       player.char.updateFlash(dt, 0);
       structures.update(dt);
+      if (G.state !== 'loading') updatePet(dt);
       if (G.state === 'shop' && player.char.current === 'Wave' && !player.char.actions.Wave.isRunning()) player.char.play('Idle', 0.3);
     }
     sparks.update(dt);
@@ -2127,6 +2326,7 @@ async function boot() {
   refreshAllWeapons();
   setupHeroModel();
   resetPlayer();
+  setupPet();
   updateThumbs();
   try { renderer.compile(scene, camera); } catch (e) { /* not critical */ }
   frame();
@@ -2139,6 +2339,6 @@ boot();
 window.__game = {
   G, player, input, camera, renderer, scene, THREE, get world() { return world; }, get structures() { return structures; },
   killAll: () => { G.queue.length = 0; G.enemies.forEach(e => e.alive && killEnemy(e)); },
-  save: () => save, startWave, spawnEnemy, goToShop, enterBuild, exitBuild, useAbility,
+  save: () => save, pet, startWave, spawnEnemy, goToShop, enterBuild, exitBuild, useAbility,
   addXpTo: (kind, id, n) => { const r = kind === 'hero' ? save.heroes[id] : save.weapons[id]; const from = r.level; addXp(r, n); onLevel(kind, kind === 'hero' ? heroById(id).name : weaponById(id).name, from, r.level); },
 };

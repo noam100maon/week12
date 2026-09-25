@@ -9,6 +9,7 @@ export const MODEL_NAMES = [
   'enemy-flying', 'blaster', 'blaster-repeater', 'blaster-a',
   'house-3', 'house-4', 'house-5', 'house1', 'house-7', 'house-18', 'tower',
   'tree-big', 'tree-small', 'formation-large-rock', 'formation-rock', 'formation-stone', 'grass', 'coin',
+  'pet-chick', 'pet-dog', 'pet-cat', 'pet-penguin', 'pet-bee', 'pet-panda', 'pet-parrot', 'pet-fox', 'pet-tiger', 'pet-lion',
 ];
 
 export const M = {};
@@ -380,6 +381,47 @@ export class DroneChar extends Char {
     this.body.position.y = Math.sin(this.phase) * 0.25;
     this.body.rotation.x = Math.min(0.35, speed * 0.06) + (attack >= 0 ? -0.2 : 0);
     this.body.rotation.z = Math.sin(this.phase * 0.7) * 0.08;
+  }
+}
+
+// ---------------------------------------------------------------- pets (Kenney Cube Pets, clip animation)
+export class PetChar extends Char {
+  constructor(modelName, { height = 0.9 } = {}) {
+    super();
+    const src = M[modelName];
+    const model = SkeletonUtils.clone(src.scene);
+    const box = new THREE.Box3().setFromObject(src.scene);
+    const s = height / (box.max.y - box.min.y);
+    model.scale.setScalar(s);
+    model.position.y = -box.min.y * s;
+    this.model = model;
+    this.body.add(model);
+    this.mats = cloneMaterials(model);
+    this.mixer = new THREE.AnimationMixer(model);
+    this.actions = {};
+    for (const clip of src.animations) this.actions[clip.name] = this.mixer.clipAction(clip);
+    this.current = null;
+    this.height = height;
+    addBlob(this.root, height * 0.9);
+    this.play('idle');
+  }
+  play(name, fade = 0.15, speed = 1) {
+    const next = this.actions[name];
+    if (!next) return;
+    if (this.current === name) { next.timeScale = speed; return; }
+    next.reset(); next.timeScale = speed; next.setEffectiveWeight(1); next.fadeIn(fade).play();
+    if (this.current) this.actions[this.current].fadeOut(fade);
+    this.current = name;
+  }
+  pose(dt, speed, attack, aim = null, extra = {}) {
+    if (extra.dance) this.play('dance', 0.2);
+    else if (speed > 6) this.play('run', 0.15, speed / 9);
+    else if (speed > 0.3) this.play('walk', 0.15, Math.max(0.7, speed / 3));
+    else this.play('idle', 0.25);
+    this.mixer.update(dt);
+    // hop when attacking
+    this.body.position.y = attack >= 0 ? Math.sin(Math.min(1, attack) * Math.PI) * 0.45 : 0;
+    this.body.rotation.x = attack >= 0 ? -Math.sin(Math.min(1, attack) * Math.PI) * 0.35 : 0;
   }
 }
 
