@@ -186,7 +186,7 @@ export class Shop {
     h += '</div>';
     const lv = rec ? rec.level : 1;
     const st = petStats(sel, lv);
-    const role = { melee: 'Fighter', ranged: 'Shooter', support: 'Healer', collector: 'Collector', roar: 'Brawler' }[sel.kind];
+    const role = { melee: 'Fighter', ranged: 'Shooter', support: 'Healer', collector: 'Collector', roar: 'Brawler', builder: 'Builder' }[sel.kind];
     let btn;
     if (!rec) btn = `<button class="buy ${s.coins >= sel.cost ? '' : 'cant'}" data-act="buyPet" data-key="${sel.id}">ADOPT ${coin(sel.cost)}</button>`;
     else if (s.pet === sel.id) btn = '<button class="buy equipped">WITH YOU</button>';

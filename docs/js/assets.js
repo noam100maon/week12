@@ -10,6 +10,8 @@ export const MODEL_NAMES = [
   'house-3', 'house-4', 'house-5', 'house1', 'house-7', 'house-18', 'tower',
   'tree-big', 'tree-small', 'formation-large-rock', 'formation-rock', 'formation-stone', 'grass', 'coin',
   'pet-chick', 'pet-dog', 'pet-cat', 'pet-penguin', 'pet-bee', 'pet-panda', 'pet-parrot', 'pet-fox', 'pet-tiger', 'pet-lion',
+  'pet-beaver', 'pet-bunny', 'pet-caterpillar', 'pet-cow', 'pet-crab', 'pet-deer', 'pet-elephant', 'pet-fish', 'pet-giraffe',
+  'pet-hog', 'pet-koala', 'pet-monkey', 'pet-pig', 'pet-polar', 'skater-female',
 ];
 
 export const M = {};
@@ -362,12 +364,12 @@ export class RobotChar extends Char {
 
 // ---------------------------------------------------------------- drone
 export class DroneChar extends Char {
-  constructor({ height = 1.2 } = {}) {
+  constructor({ height = 1.2, tint = null } = {}) {
     super();
     const m = cloneStatic('enemy-flying', { height });
     this.model = m;
     this.body.add(m);
-    this.mats = cloneMaterials(m);
+    this.mats = cloneMaterials(m, tint ? (mt) => { mt.color.multiply(new THREE.Color(tint)); if (mt.emissive) { mt.emissive.setHex(tint); mt.emissiveIntensity = 0.15; } } : null);
     this.height = height;
     this.blob = addBlob(this.root, 1.2);
   }
@@ -483,10 +485,12 @@ export function makeGun(w, rarityHex, rarityIdx) {
       g.add(sc, lens);
     }
   }
-  // tint the gun body toward its rarity
+  // tint the gun body toward its rarity (and the weapon's own colour)
+  const tint = w.tint ? new THREE.Color(w.tint).lerp(new THREE.Color(0xffffff), 0.35) : null;
   g.traverse(o => {
     if (o.isMesh && o.material !== glowMat && o.material.emissive) {
       o.material = o.material.clone();
+      if (tint) o.material.color.multiply(tint);
       o.material.emissive.setHex(rarityHex);
       o.material.emissiveIntensity = 0.04 + rarityIdx * 0.035;
     }

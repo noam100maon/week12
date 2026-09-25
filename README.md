@@ -31,14 +31,20 @@ that opens straight from disk; regenerate it with `tools/build_single.sh`.
 - **Guns and heroes level up by use, 1 → 160.** Rarity climbs Common → Uncommon → Rare → Epic → Legendary → Mythic,
   the gun changes color, and every new rarity unlocks a new ability (crits, burn, freeze, chain lightning, explosive rounds,
   lifesteal, orbital strikes, multishot, chain-reaction kills...). Each gun has its own set.
-- **6 heroes** (Rex, Bolt, Nova, Cyra, Doc, Skye), each with a unique active ability (grenade, overshield, dash,
-  deployable turret, heal pulse, lightning), a passive and 5 rarity perks.
-- **6 guns:** Pistol, SMG, Shotgun, Assault Rifle, Sniper, Rocket Launcher.
-- **10 pets** (Kenney Cube Pets): fighters, shooters, a healer, a coin collector and a roaring lion. Pets follow you,
-  fight, and level to 160 with rarity perks too.
-- **9 enemy types:** Husk, Runner, Spitter (ranged acid), Exploder, Smasher, Storm Drone (flies over walls),
-  Riot Husk (shield blocks frontal shots), Warden (heals allies) and the Storm King boss every 5th wave.
-- **Edit Base mode:** build wood/brick/metal walls, spike traps, freeze traps and turret towers on a grid.
+- **9 heroes** (Rex, Bolt, Nova, Cyra, Doc, Skye, Luna, Zed, Titan), each with a unique active ability (grenade,
+  overshield, dash, deployable turret, heal pulse, lightning, bullet storm, plague cloud, homing missile barrage),
+  a passive and 5 rarity perks.
+- **17 guns:** Pistol, SMG, Shotgun, Assault Rifle, Sniper, Rocket Launcher, Revolver, Burst Rifle, Flamethrower,
+  Freeze Ray, Tesla Gun, Double Barrel, Crossbow, Minigun, Grenade Launcher, Railgun, Plasma Cannon.
+- **24 pets** (Kenney Cube Pets): fighters, shooters, healers, coin collectors, roarers and a wall-repairing beaver.
+  Pets follow you, fight, and level to 160 with rarity perks too.
+- **31 enemy types**, including 22 new specials: Crawler, Berserker (enrages), Splitter (splits into crawlers),
+  Frost Husk (slows you), Leaper (jumps walls), Pyro (burns, explodes on death), Juggernaut and Iron Knight (armored),
+  Bomber Drone, Toxic Husk (poison cloud), Phantom (teleports), Siege Husk (hunts walls), Sharpshooter (laser),
+  Troll (regenerates), Howler (speeds allies), Ghost (phases out), Swarm Bot, Necromancer (summons), Bulwark (shields
+  allies), Rocket Mech, Loot Goblin (runs away with big coins) and the Hive Queen boss, plus the originals
+  and the Storm King boss.
+- **Edit Base mode:** walls, spike/freeze/flame traps, healing pads, turret towers, tesla coils and mortar towers.
 - **Warnings:** portal beams, red lane arrows, "next enemy from" text, off-screen arrows and a minimap show where
   enemies come from and will come from next; the base screen previews the next wave.
 - No coin upgrades to grind: the house grows on its own with the wave (bungalow → fortified home), and walls,

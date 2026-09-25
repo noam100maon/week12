@@ -104,6 +104,14 @@ export class Structures {
       freezePlate: new THREE.MeshStandardMaterial({ color: 0x2a5a78, emissive: 0x1a6a9a, emissiveIntensity: 0.6, roughness: 0.5 }),
       spike: new THREE.MeshStandardMaterial({ color: 0xe4ebf2, metalness: 0.5, roughness: 0.3 }),
       crystal: new THREE.MeshStandardMaterial({ color: 0xaaf0ff, emissive: 0x3cc8ff, emissiveIntensity: 1.2, transparent: true, opacity: 0.9 }),
+      grate: new THREE.MeshStandardMaterial({ color: 0x2a2420, metalness: 0.6, roughness: 0.5 }),
+      ember: new THREE.MeshStandardMaterial({ color: 0xff7a2a, emissive: 0xff5a10, emissiveIntensity: 1.6 }),
+      healPlate: new THREE.MeshStandardMaterial({ color: 0x2a6a4a, emissive: 0x1a8a4a, emissiveIntensity: 0.5, roughness: 0.5 }),
+      healGlow: new THREE.MeshStandardMaterial({ color: 0x9dffbf, emissive: 0x3cff7a, emissiveIntensity: 1.6 }),
+      coil: new THREE.MeshStandardMaterial({ color: 0xb87333, metalness: 0.8, roughness: 0.3 }),
+      zap: new THREE.MeshStandardMaterial({ color: 0xdff4ff, emissive: 0x7fd0ff, emissiveIntensity: 2 }),
+      steel: new THREE.MeshStandardMaterial({ color: 0x4a5058, metalness: 0.7, roughness: 0.4 }),
+      gold: new THREE.MeshStandardMaterial({ color: 0xffc02e, emissive: 0xffa000, emissiveIntensity: 0.8 }),
     };
   }
 
@@ -143,6 +151,61 @@ export class Structures {
       const s = new THREE.Mesh(g.crystals, this.mats.crystal);
       grp.add(p, s);
       grp.userData.spikes = s;
+    } else if (piece.id === 'flame') {
+      const p = new THREE.Mesh(g.plate, this.mats.grate);
+      grp.add(p);
+      for (let k = -2; k <= 2; k++) {
+        const bar = new THREE.Mesh(new THREE.BoxGeometry(CELL * 0.8, 0.06, 0.1), this.mats.ember);
+        bar.position.set(0, 0.14, k * 0.34);
+        grp.add(bar);
+      }
+      for (const [x, z] of [[-0.6, -0.6], [0.6, -0.6], [-0.6, 0.6], [0.6, 0.6]]) {
+        const n = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.14, 0.25, 8), this.mats.steel);
+        n.position.set(x, 0.2, z);
+        grp.add(n);
+      }
+    } else if (piece.kind === 'pad') {
+      const p = new THREE.Mesh(g.plate, this.mats.healPlate);
+      const a = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.08, 0.34), this.mats.healGlow);
+      a.position.y = 0.14;
+      const b = a.clone(); b.rotation.y = Math.PI / 2;
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.78, 0.05, 6, 32), this.mats.healGlow);
+      ring.rotation.x = Math.PI / 2; ring.position.y = 0.14;
+      grp.add(p, a, b, ring);
+      grp.userData.top = ring;
+    } else if (piece.style === 'tesla') {
+      const base = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.9, 0.5, 12), this.mats.steel);
+      base.position.y = 0.25;
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.3, 2.6, 10), this.mats.steel);
+      pole.position.y = 1.8;
+      grp.add(base, pole);
+      for (let k = 0; k < 5; k++) {
+        const t = new THREE.Mesh(new THREE.TorusGeometry(0.5 - k * 0.04, 0.09, 6, 20), this.mats.coil);
+        t.rotation.x = Math.PI / 2; t.position.y = 1.0 + k * 0.45;
+        grp.add(t);
+      }
+      const top = new THREE.Group();
+      const orb = new THREE.Mesh(new THREE.SphereGeometry(0.42, 16, 10), this.mats.zap);
+      const halo = new THREE.Mesh(new THREE.TorusGeometry(0.7, 0.05, 6, 24), this.mats.zap);
+      halo.rotation.x = Math.PI / 2.4;
+      top.add(orb, halo);
+      top.position.y = 3.5;
+      grp.add(top);
+      grp.userData.top = top; grp.userData.topY = 3.5;
+    } else if (piece.style === 'mortar') {
+      const tower = cloneStatic('tower', { height: 2.2 });
+      tower.scale.x = tower.scale.z = 0.7;
+      grp.add(tower);
+      const top = new THREE.Group();
+      const ringB = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.75, 0.3, 14), this.mats.steel);
+      const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.38, 1.2, 12), this.mats.steel);
+      barrel.rotation.x = -0.6; barrel.position.set(0, 0.55, 0.15);
+      const band = new THREE.Mesh(new THREE.CylinderGeometry(0.33, 0.33, 0.12, 12), this.mats.gold);
+      band.rotation.x = -0.6; band.position.set(0, 0.95, 0.4);
+      top.add(ringB, barrel, band);
+      top.position.y = 2.4;
+      grp.add(top);
+      grp.userData.top = top; grp.userData.topY = 3.4;
     } else if (piece.kind === 'turret') {
       const tower = cloneStatic('tower', { height: 3.4 });
       tower.scale.x = tower.scale.z = 0.62;
@@ -168,6 +231,7 @@ export class Structures {
       s.bar = makeBar(mesh, 3.1);
     }
     if (piece.kind === 'turret') { s.hx = s.hz = 0.9; }
+    if (piece.kind === 'pad') { s.hx = s.hz = 0; }
     this.list.push(s);
     if (!temporary) this.byCell.set(cellKey(i, j), s);
     return s;
@@ -215,7 +279,7 @@ export class Structures {
 
   wallAt(x, z, r) {
     for (const s of this.list) {
-      if (!s.alive || s.piece.kind === 'trap') continue;
+      if (!s.alive || s.piece.kind === 'trap' || s.piece.kind === 'pad') continue;
       if (Math.abs(x - s.x) < s.hx + r && Math.abs(z - s.z) < s.hz + r) return s;
     }
     return null;
@@ -224,7 +288,7 @@ export class Structures {
   // push a circle out of all solid structures
   collide(p, r) {
     for (const s of this.list) {
-      if (!s.alive || s.piece.kind === 'trap') continue;
+      if (!s.alive || s.piece.kind === 'trap' || s.piece.kind === 'pad') continue;
       const dx = p.x - s.x, dz = p.z - s.z;
       const ox = s.hx + r - Math.abs(dx), oz = s.hz + r - Math.abs(dz);
       if (ox > 0 && oz > 0) {
@@ -248,6 +312,8 @@ export class Structures {
 
   revive(s) { s.alive = true; s.hp = s.max; s.mesh.visible = true; updateBar(s); }
 
+  heal(s, amount) { if (!s.alive) return; s.hp = Math.min(s.max, s.hp + amount); updateBar(s); }
+
   update(dt) {
     for (const s of this.list) {
       if (s.shake > 0) {
@@ -255,7 +321,12 @@ export class Structures {
         s.mesh.position.x = s.x + (Math.random() - 0.5) * s.shake * 0.2;
         s.mesh.position.z = s.z + (Math.random() - 0.5) * s.shake * 0.2;
       }
-      if (s.recoil > 0) { s.recoil = Math.max(0, s.recoil - dt * 6); s.mesh.userData.head.userData.barrel.position.z = 0.55 - s.recoil * 0.15; }
+      if (s.recoil > 0) {
+        s.recoil = Math.max(0, s.recoil - dt * 6);
+        const head = s.mesh.userData.head;
+        if (head) head.userData.barrel.position.z = 0.55 - s.recoil * 0.15;
+        else if (s.mesh.userData.top) s.mesh.userData.top.position.y = 2.4 - s.recoil * 0.2;
+      }
       if (s.pop > 0) { s.pop = Math.max(0, s.pop - dt * 3); const sp = s.mesh.userData.spikes; if (sp) sp.position.y = s.pop * 0.25; }
     }
   }

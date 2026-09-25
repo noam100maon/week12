@@ -307,12 +307,13 @@ body.desktop .ability::after { content: 'E'; position: absolute; top: -6px; left
 #toast.lvl { box-shadow: 0 0 0 2px rgba(255,192,46,.6); }
 
 /* shop v2 */
-.shop-tip { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 13px; }
+.shop-tip { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 13px; min-width: 0; flex: 1 1 0; }
 .shop-tip b { color: #fff; }
 .shop-tip .bossw { color: #ff9aa3; }
 .warnico { color: #ffcf2e; font-size: 16px; }
-.echips { display: flex; gap: 4px; flex-wrap: wrap; width: 100%; }
-.echip { font-size: 11px; font-weight: 800; background: rgba(255,77,94,.16); color: #ffc3c9; padding: 2px 8px; border-radius: 8px; }
+.echips { display: flex; gap: 4px; flex-wrap: nowrap; overflow-x: auto; width: 100%; scrollbar-width: none; touch-action: pan-x; }
+.echips::-webkit-scrollbar { display: none; }
+.echip { flex: none; font-size: 11px; font-weight: 800; background: rgba(255,77,94,.16); color: #ffc3c9; padding: 2px 8px; border-radius: 8px; }
 .echip.boss { background: rgba(176,112,255,.3); color: #e6c8ff; }
 .btn-build { background: linear-gradient(180deg, #7ad8ff, #2c8fd6); color: #03253b; box-shadow: 0 5px 0 #145a8a; font-size: 18px; padding: 12px 18px; display: flex; align-items: center; gap: 6px; }
 .btn-build:active { box-shadow: 0 2px 0 #145a8a; }
