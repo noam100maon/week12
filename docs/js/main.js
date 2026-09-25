@@ -18,6 +18,7 @@ import {
   loadSave, parseSave, writeLocal, clearSave, defaultSave,
 } from './data.js';
 import { Shop } from './ui.js';
+import { Net } from './net.js';
 
 const $ = (id) => document.getElementById(id);
 const PET_NAMES = PET_PERK_NAMES;
@@ -184,7 +185,18 @@ function refreshWeapon(id) { WS[id] = weaponStats(weaponById(id), save.weapons[i
 function curWeapon() { return weaponById(player.weaponId); }
 function curStats() { return WS[player.weaponId] || refreshWeapon(player.weaponId); }
 function ownedWeapons() { return WEAPONS.filter(w => save.weapons[w.id]?.owned); }
-const waveScale = () => Math.sqrt(waveHpMult(save.wave));
+// ---------------------------------------------------------------- co-op state
+const net = new Net();
+const NET = {
+  lastSend: 0, wave: 1, remote: null, avatar: null, host: null, mirror: new Map(), idSeq: 1,
+  dmgOut: new Map(), applied: new Map(), hurtOut: 0, hurtSeen: 0, coinsOut: 0, coinsSeen: null, structKey: '', shots: 0,
+  hostRun: 0, guestRun: -1, wasLinked: false, usingHostBase: false,
+};
+const ENEMY_KEYS = Object.keys(ENEMIES);
+const isGuest = () => net.role === 'guest';
+const isHost = () => net.role === 'host' && net.linked;
+const curWave = () => isGuest() ? NET.wave : save.wave;
+const waveScale = () => Math.sqrt(waveHpMult(curWave()));
 
 // ---------------------------------------------------------------- shop / ui hooks
 const shop = new Shop({
@@ -241,13 +253,13 @@ function onSaveReplaced() {
 function refreshAllWeapons() { for (const w of ownedWeapons()) refreshWeapon(w.id); }
 
 function applyUpgradesToWorld() {
-  world.house.setTier(houseTier(save.wave));
-  G.houseMax = houseMaxHp(save.wave);
+  world.house.setTier(houseTier(curWave()));
+  G.houseMax = houseMaxHp(curWave());
   refreshHero();
 }
 
 function wallMult() {
-  let m = 1 + 0.08 * (save.wave - 1);
+  let m = 1 + 0.08 * (curWave() - 1);
   if (save.hero === 'cyra') m *= 1.3;
   if (HS.perks.has('fortify')) m *= 1.3;
   return m;
@@ -409,8 +421,9 @@ function aimRay(out) {
 function resetPlayer() {
   if (player.char) player.char.body.visible = true;
   if (player.gun && player.gun.parent === viewModel) { player.gunHolder.add(player.gun); player.gun.position.set(0, 0, 0); player.gun.rotation.set(0, 0, 0); player.gun.scale.setScalar(1); }
-  player.pos.set(0, 0, world.houseHalf.z + 4);
+  player.pos.set(isGuest() ? 3 : 0, 0, world.houseHalf.z + 4);
   player.vel.set(0, 0, 0);
+  player.respawnT = 0;
   player.yaw = Math.PI; player.pitch = -0.1; player.facing = 0;
   refreshHero();
   player.hp = player.maxHp;
@@ -430,7 +443,15 @@ function resetPlayer() {
 
 function updatePlayer(dt) {
   const ch = player.char;
-  if (!player.alive) { ch.pose(dt, 0, -1); ch.updateFlash(dt, 0); return; }
+  if (!player.alive) {
+    ch.pose(dt, 0, -1); ch.updateFlash(dt, 0);
+    if (player.respawnT > 0 && G.phase === 'fight') {
+      player.respawnT -= dt;
+      setText('incomingText', `Respawning in ${Math.ceil(player.respawnT)}…`);
+      if (player.respawnT <= 0) respawnPlayer();
+    }
+    return;
+  }
   input.update();
   const sens = save.settings.sens * (input.isTouch ? 0.0055 : 0.0036);
   player.yaw -= input.lookDX * sens;
@@ -697,7 +718,10 @@ function updateClouds(dt) {
         if (!e.alive || e.spawnT > 0) continue;
         if (Math.hypot(e.pos.x - c.pos.x, e.pos.z - c.pos.z) < c.r + e.radius) damageEnemy(e, c.dps * dt, { src: 'ability', quiet: true });
       }
-    } else if (Math.hypot(player.pos.x - c.pos.x, player.pos.z - c.pos.z) < c.r) hurtPlayer(c.dps * dt, true);
+    } else {
+      if (Math.hypot(player.pos.x - c.pos.x, player.pos.z - c.pos.z) < c.r) hurtPlayer(c.dps * dt, true);
+      hurtRemoteNear(c.pos.x, c.pos.z, c.r, c.dps * dt);
+    }
   }
 }
 
@@ -1047,6 +1071,7 @@ function fire(w, st) {
   const rateMult = (player.adrenalineT > 0 ? 1.3 : 1) * (player.stormT > 0 ? 1.5 : 1) * (save.hero === 'luna' ? 1.15 : 1);
   player.fireCd = 1 / (st.rate * rateMult);
   player.lastShot = G.time;
+  NET.shots++;
   G.kick += w.recoil;
   player.bloom = Math.min(1.5, player.bloom + 0.25);
   sfx.shot(w.sound);
@@ -1356,7 +1381,7 @@ function makeEnemyChar(def) {
 let shieldGeo = null;
 function spawnEnemy(type, portalIndex, at = null) {
   const def = ENEMIES[type];
-  const n = save.wave;
+  const n = curWave();
   const portal = world.portals[portalIndex] || world.portals[0];
   const char = makeEnemyChar(def);
   let pos;
@@ -1397,6 +1422,7 @@ function spawnEnemy(type, portalIndex, at = null) {
     haste: 1, shielded: false, enraged: false, life: 0, wander: null, hop: Math.random() * 6,
   };
   if (def.phase) for (const m of char.mats) { m.transparent = true; m.opacity = 0.7; m.depthWrite = false; }
+  e.id = NET.idSeq++;
   if (!def.boss) e.hpBar = makeHpBar(char.root, def.height + 0.35 + (def.fly ? 0.3 : 0));
   G.enemies.push(e);
   sfx.portal();
@@ -1440,6 +1466,7 @@ function damageEnemy(e, amount, opts = {}) {
   const src = opts.src || 'weapon';
   const byPlayer = src === 'weapon' || src === 'ability';
   if (e.phased) return 0;
+  if (e.mirror && src !== 'remote') NET.dmgOut.set(e.id, (NET.dmgOut.get(e.id) || 0) + amount);
   let blocked = false;
   e.lastHit = G.time;
   if (e.def.armor) amount *= 1 - e.def.armor;
@@ -1462,6 +1489,11 @@ function damageEnemy(e, amount, opts = {}) {
   if (opts.point && !opts.quiet) {
     const col = blocked ? COL.white : e.def.model === 'robot' || e.def.fly ? COL.spark : COL.blood;
     for (let i = 0; i < (opts.head ? 7 : 4); i++) sparks.emit(opts.point.x, opts.point.y, opts.point.z, (Math.random() - 0.5) * 4, Math.random() * 3, (Math.random() - 0.5) * 4, 0.3, 0.2, col, 8);
+  }
+  if (e.mirror) {
+    if (e.hp <= 0 && src === 'weapon' && !opts.quiet) showHitmarker('kill');
+    else if (src === 'weapon' && !opts.quiet) showHitmarker(opts.head ? 'head' : '');
+    return dealt;
   }
   if (e.hp <= 0) {
     killEnemy(e, byPlayer || src === 'trap');
@@ -1488,6 +1520,7 @@ function killEnemy(e, byPlayer = true, noCoins = false) {
     dropCoins(e.pos, v, e.def.boss ? 14 : e.def.coins >= 12 ? 5 : 2);
   }
   if (byPlayer && HS.perks.has('adrenaline')) player.adrenalineT = 4;
+  if (e.mirror) return;
   if (e.def.explode && byPlayer) explode(c, e.dmg * 0.8, e.def.explode, { src: 'weapon', noAbilities: true, color: COL.spark, exclude: e });
   const def = e.def;
   if (def.split) {
@@ -1500,6 +1533,7 @@ function killEnemy(e, byPlayer = true, noCoins = false) {
   if (def.deathFire) {
     explode(c, 0, def.deathFire, { color: COL.fire, small: true });
     if (Math.hypot(player.pos.x - c.x, player.pos.z - c.z) < def.deathFire) { hurtPlayer(e.dmg * 0.8); burnPlayer(e.dmg * 0.25, 2.5); }
+    hurtRemoteNear(c.x, c.z, def.deathFire, e.dmg * 0.8);
     for (const s of structures.list) if (s.alive && s.piece.kind === 'wall' && Math.hypot(s.x - c.x, s.z - c.z) < def.deathFire + 0.5) hitStructure(s, e.dmg * 2);
   }
   if (def.deathCloud) { spawnCloud(e.pos.clone().setY(0), def.deathCloud, e.dmg * 0.9, 5, false); rings.spawn(e.pos, def.deathCloud, 0x9aff4a, 0.5); }
@@ -1675,7 +1709,7 @@ function updateEnemies(dt) {
         e.summonT = 11;
         for (let k = 0; k < 3; k++) {
           const a = Math.random() * TAU;
-          spawnEnemy(k === 2 && save.wave >= 10 ? 'runner' : 'husk', 0, new THREE.Vector3(e.pos.x + Math.cos(a) * 3, 0, e.pos.z + Math.sin(a) * 3));
+          spawnEnemy(k === 2 && curWave() >= 10 ? 'runner' : 'husk', 0, new THREE.Vector3(e.pos.x + Math.cos(a) * 3, 0, e.pos.z + Math.sin(a) * 3));
         }
         rings.spawn(e.pos, 6, 0xb070ff, 0.6);
       }
@@ -1683,17 +1717,22 @@ function updateEnemies(dt) {
     if (e.def.explode && Math.random() < dt * 3) sfx.beep();
 
     // target selection
-    const dpx = player.pos.x - e.pos.x, dpz = player.pos.z - e.pos.z;
-    const dp = Math.hypot(dpx, dpz);
+    let dp = Math.hypot(player.pos.x - e.pos.x, player.pos.z - e.pos.z);
+    let tgtPos = player.pos, tgtKind = 'player', tgtOk = player.alive && (player.shieldT <= 0 || e.def.boss);
+    const RM = NET.remote;
+    if (RM && RM.alive) {
+      const dr = Math.hypot(RM.pos.x - e.pos.x, RM.pos.z - e.pos.z);
+      if (!tgtOk || dr < dp) { dp = dr; tgtPos = RM.pos; tgtKind = 'remote'; tgtOk = true; }
+    }
     const aggro = e.def.boss ? 9 : e.def.fast ? 8 : e.def.ranged ? e.def.ranged * 0.8 : 6.5;
     let targetKind;
     const hunt = hostileTarget(e, e.def);
-    if (player.alive && dp < aggro && (player.shieldT <= 0 || e.def.boss)) { TP.set(player.pos.x, 0, player.pos.z); targetKind = 'player'; }
+    if (tgtOk && dp < aggro) { TP.set(tgtPos.x, 0, tgtPos.z); targetKind = tgtKind; }
     else if (hunt) { TP.set(clamp(e.pos.x, hunt.x - hunt.hx, hunt.x + hunt.hx), 0, clamp(e.pos.z, hunt.z - hunt.hz, hunt.z + hunt.hz)); targetKind = 'wall'; }
     else { housePoint(e.pos.x, e.pos.z, TP); TP.y = 0; targetKind = 'house'; }
     let dx = TP.x - e.pos.x, dz = TP.z - e.pos.z;
     const dist = Math.hypot(dx, dz) || 0.001;
-    const reach = e.def.reach + (targetKind === 'player' ? player.radius : 0) + e.radius * 0.6;
+    const reach = e.def.reach + (targetKind === 'player' || targetKind === 'remote' ? player.radius : 0) + e.radius * 0.6;
     const stopAt = e.def.ranged ? e.def.ranged : e.def.keepAway && targetKind === 'house' ? e.def.keepAway : reach;
 
     let attackTarget = null;
@@ -1723,7 +1762,7 @@ function updateEnemies(dt) {
       e.facing = lerpAngle(e.facing, Math.atan2(dx, dz), Math.min(1, dt * 6));
     }
     if (attackTarget && attackTarget !== 'idle') {
-      if (attackTarget !== 'player' && attackTarget !== 'house') { dx = attackTarget.x - e.pos.x; dz = attackTarget.z - e.pos.z; }
+      if (attackTarget !== 'player' && attackTarget !== 'house' && attackTarget !== 'remote') { dx = attackTarget.x - e.pos.x; dz = attackTarget.z - e.pos.z; }
       e.facing = lerpAngle(e.facing, Math.atan2(dx, dz), Math.min(1, dt * 8));
       e.atkCd -= dt * slow;
       if (e.atkCd <= 0 && e.atkT < 0) {
@@ -1800,6 +1839,7 @@ function applyEnemyHit(e) {
     const c = new THREE.Vector3(e.pos.x, 0.8, e.pos.z);
     explode(c, 0, def.explode, { color: COL.spark });
     if (Math.hypot(player.pos.x - c.x, player.pos.z - c.z) < def.explode) hurtPlayer(e.dmg * 0.6);
+    hurtRemoteNear(c.x, c.z, def.explode, e.dmg * 0.6);
     const hp = housePoint(c.x, c.z, V2);
     if (Math.hypot(hp.x - c.x, hp.z - c.z) < def.explode) hurtHouse(e.dmg, c);
     for (const s of structures.list) if (s.alive && s.piece.kind !== 'trap' && Math.hypot(s.x - c.x, s.z - c.z) < def.explode + 0.5) hitStructure(s, e.dmg * 1.5);
@@ -1807,7 +1847,7 @@ function applyEnemyHit(e) {
     return;
   }
   if (def.ranged) {
-    const target = t === 'player' ? player.pos.clone().setY(1) : t === 'house' ? housePoint(e.pos.x, e.pos.z, new THREE.Vector3()).setY(2) : new THREE.Vector3(t.x, 1.3, t.z);
+    const target = t === 'player' ? player.pos.clone().setY(1) : t === 'remote' && NET.remote ? NET.remote.pos.clone().setY(1) : t === 'house' ? housePoint(e.pos.x, e.pos.z, new THREE.Vector3()).setY(2) : new THREE.Vector3(t.x, 1.3, t.z);
     const from = new THREE.Vector3(e.pos.x, e.pos.y + e.height * 0.8, e.pos.z);
     if (def.bomb) {
       const drop = target.clone(); drop.y = 0;
@@ -1848,6 +1888,9 @@ function hitTarget(e, t, dmg) {
       if (e.def.slowOnHit) player.slowT = 2.5;
       if (e.def.burnOnHit) burnPlayer(e.dmg * 0.3, 3);
     }
+  } else if (t === 'remote') {
+    const R2 = NET.remote;
+    if (R2 && R2.alive && Math.hypot(R2.pos.x - e.pos.x, R2.pos.z - e.pos.z) < (e.def.ranged || e.def.reach + player.radius + e.radius + 0.7) + 1) NET.hurtOut += dmg;
   } else if (t === 'house') hurtHouse(dmg, e.pos);
   else if (t && t.alive) hitStructure(t, dmg * (e.def.wallMult || 1));
 }
@@ -1890,6 +1933,7 @@ function updateGlobs(dt) {
       const c = p.clone(); c.y = Math.max(0.3, c.y);
       explode(c, 0, g.splash, { small: true });
       if (Math.hypot(player.pos.x - c.x, player.pos.z - c.z) < g.splash && c.y < 3.5) hurtPlayer(g.dmg);
+      if (c.y < 3.5) hurtRemoteNear(c.x, c.z, g.splash, g.dmg);
       const hp = housePoint(c.x, c.z, V2);
       if (Math.hypot(hp.x - c.x, hp.z - c.z) < g.splash) hurtHouse(g.dmg, c);
       for (const s of structures.list) if (s.alive && s.piece.kind === 'wall' && Math.hypot(s.x - c.x, s.z - c.z) < g.splash + 0.6) hitStructure(s, g.dmg * g.wallMult);
@@ -1903,6 +1947,7 @@ function updateGlobs(dt) {
     if (p.y <= 0.1 || hitHouse || (wall && p.y < 2.6) || g.life <= 0) {
       for (let k = 0; k < 10; k++) sparks.emit(p.x, Math.max(0.2, p.y), p.z, (Math.random() - 0.5) * 4, Math.random() * 3, (Math.random() - 0.5) * 4, 0.4, 0.3, COL.acid, 8);
       if (Math.hypot(player.pos.x - p.x, player.pos.z - p.z) < 1.8 && p.y < 2.5) hurtPlayer(g.dmg);
+      if (p.y < 2.5) hurtRemoteNear(p.x, p.z, 1.8, g.dmg);
       const hp = housePoint(p.x, p.z, V2);
       if (hitHouse || Math.hypot(hp.x - p.x, hp.z - p.z) < 1.2) hurtHouse(g.dmg, p);
       if (wall && wall.alive) hitStructure(wall, g.dmg);
@@ -1946,6 +1991,12 @@ function hurtPlayer(dmg, dot = false) {
     player.alive = false;
     player.gunHolder.visible = false;
     player.char.die();
+    if (net.linked) {
+      player.respawnT = 10;
+      showBanner('YOU ARE DOWN', 'Your partner has to hold on: respawning in 10s', 'red', 2.4);
+      if (isHost() && !(NET.remote && NET.remote.alive)) failWave('player');
+      return;
+    }
     failWave('player');
   }
 }
@@ -1972,6 +2023,10 @@ function hurtHouse(dmg, from) {
 // ---------------------------------------------------------------- traps & turrets
 function updateStructures(dt) {
   structures.update(dt);
+  if (isGuest()) {
+    for (const s of structures.list) if (s.alive && s.piece.kind === 'pad' && player.alive && G.phase === 'fight' && Math.abs(player.pos.x - s.x) < 1.2 && Math.abs(player.pos.z - s.z) < 1.2) player.hp = Math.min(player.maxHp, player.hp + 12 * dt);
+    return;
+  }
   const tm = trapMult();
   for (const s of [...structures.list]) {
     if (!s.alive) continue;
@@ -2098,6 +2153,7 @@ function updateCoins(dt, collectAll) {
       if (d < 0.8) {
         save.coins += c.value;
         G.runCoins += c.value;
+        NET.coinsOut += c.value;
         sfx.coin();
         const pill = $('coinPill');
         pill.classList.add('pop');
@@ -2125,7 +2181,7 @@ function clearArena() {
 
 // A run starts at the base and keeps going wave after wave until you (or the house) fall.
 function startWave(fresh = true) {
-  const n = save.wave;
+  const n = curWave();
   if (fresh) {
     clearArena();
     applyUpgradesToWorld();
@@ -2135,6 +2191,7 @@ function startWave(fresh = true) {
     setupPet();
     resetPet();
     equipWeapon(save.equipped, true);
+    if (!isGuest()) G.runId = (G.runId || 0) + 1;
     G.run = { startWave: n, kills: 0, coins: 0, xpStart: { weapon: weaponRec().level, hero: heroRec().level, pet: petRec().level } };
     G.kills = 0;
     G.runCoins = 0;
@@ -2150,12 +2207,13 @@ function startWave(fresh = true) {
     player.gunHolder.visible = true;
     player.reloadT = 0;
     player.rebootUsed = false; player.burnT = 0; player.slowT = 0;
+    if (!player.alive) respawnPlayer();
     G.clouds.length = 0;
     if (player.char.play) player.char.play('Idle', 0.2);
   }
   refillAmmo();
   updateWeaponHud(true);
-  G.queue = buildWave(n);
+  G.queue = isGuest() ? [] : buildWave(n);
   G.spawnT = 0;
   G.hitCount = 0;
   G.houseLastHit = -10;
@@ -2187,6 +2245,7 @@ function startWave(fresh = true) {
 }
 
 function updateWave(dt) {
+  if (isGuest()) { updateGuestWave(dt); return; }
   if (G.phase === 'countdown') {
     G.phaseT -= dt;
     const c = Math.ceil(G.phaseT);
@@ -2240,6 +2299,7 @@ function waveCleared() {
   const bonus = waveBonus(save.wave);
   save.coins += bonus;
   G.runCoins += bonus;
+  NET.coinsOut += bonus;
   save.wave++;
   save.best = Math.max(save.best, save.wave);
   writeSave(true);
@@ -2261,14 +2321,15 @@ function failWave(reason) {
 
 function showResults() {
   $('lockHint').classList.add('hidden');
-  for (const c of G.coins) { save.coins += c.value; G.runCoins += c.value; scene.remove(c.mesh); }
+  for (const c of G.coins) { save.coins += c.value; G.runCoins += c.value; NET.coinsOut += c.value; scene.remove(c.mesh); }
   G.coins.length = 0;
   writeSave(true);
-  const cleared = save.wave - G.run.startWave;
-  $('resTitle').textContent = `WAVE ${save.wave} FAILED`;
-  $('resSub').textContent = cleared > 0
-    ? `You cleared ${cleared} wave${cleared > 1 ? 's' : ''} this run. You keep every coin and all XP. Swap gear and retry wave ${save.wave}!`
-    : `You keep every coin and all XP. Swap your gear, build defenses and retry wave ${save.wave}!`;
+  const cw = curWave();
+  const cleared = cw - G.run.startWave;
+  $('resTitle').textContent = G.failReason === 'left' ? 'CO-OP ENDED' : `WAVE ${cw} FAILED`;
+  $('resSub').textContent = G.failReason === 'left' ? 'Your partner left the game. You keep every coin and all XP.' : cleared > 0
+    ? `You cleared ${cleared} wave${cleared > 1 ? 's' : ''} this run. You keep every coin and all XP. Swap gear and retry wave ${cw}!`
+    : `You keep every coin and all XP. Swap your gear, build defenses and retry wave ${cw}!`;
   $('resKills').textContent = G.kills;
   $('resCoins').textContent = G.runCoins;
   $('resBonus').textContent = cleared;
@@ -2293,6 +2354,7 @@ function levelRow(name, from, to, rec) {
 
 function goToShop() {
   clearArena();
+  if (NET.usingHostBase) { NET.usingHostBase = false; NET.structKey = ''; structures.loadFrom(save.structures); }
   G.state = 'shop';
   G.phase = 'idle';
   input.setEnabled(false);
@@ -2309,10 +2371,12 @@ function goToShop() {
   updateThumbs();
   shop.render();
   showScreen('shop');
+  syncShopCoop();
 }
 
 // ---------------------------------------------------------------- edit mode
 function enterBuild() {
+  if (isGuest()) { toast('The host builds the base in 2 player'); return; }
   G.state = 'build';
   showScreen('buildUI');
   buildMode.enter();
@@ -2413,6 +2477,7 @@ function updateHud(force) {
     $('bossWrap').classList.remove('hidden');
     const hp = bosses.reduce((s, b) => s + Math.max(0, b.hp), 0), max = bosses.reduce((s, b) => s + b.maxHp, 0);
     setWidth('bossFill', hp / max);
+    setText('bossName', [...new Set(bosses.map(b => b.def.name.toUpperCase()))].join(' + '));
   } else $('bossWrap').classList.add('hidden');
   updateOffscreen();
   drawMinimap();
@@ -2524,6 +2589,7 @@ function openMenu() {
 
 function pauseGame() {
   if (G.state !== 'playing' || !['countdown', 'fight'].includes(G.phase)) return;
+  if (net.linked) { confirmBox('Leave 2 player?', 'There is no pausing in 2 player: the fight keeps going while this is open.', () => leaveCoop()); return; }
   G.state = 'paused';
   input.setEnabled(false);
   writeSave(true);
@@ -2576,7 +2642,9 @@ function bindUi() {
   click('howBtn', () => showModal('how'));
   click('menuSettingsBtn', () => { syncSettingsUi(); showModal('settings'); });
   document.querySelectorAll('.close-modal').forEach(b => b.addEventListener('click', () => { sfx.click(); b.closest('.screen').classList.remove('show'); }));
-  click('startWaveBtn', () => { if (input.isTouch) requestFullscreen(); startWave(); });
+  click('startWaveBtn', () => { if (isGuest()) return; if (input.isTouch) requestFullscreen(); startWave(); });
+  click('coopBtn', () => openCoop());
+  click('shopCoopBtn', () => openCoop());
   click('buildBtn', () => enterBuild());
   click('buildDone', () => exitBuild());
   click('shopHomeBtn', () => openMenu());
@@ -2642,6 +2710,459 @@ function bindUi() {
   window.addEventListener('pointerdown', () => sfx.unlock(), { passive: true });
 }
 
+// ---------------------------------------------------------------- co-op (2 players)
+function hurtRemoteNear(x, z, r, dmg) {
+  const R = NET.remote;
+  if (R && R.alive && Math.hypot(R.pos.x - x, R.pos.z - z) < r) NET.hurtOut += dmg;
+}
+
+function respawnPlayer() {
+  player.alive = true;
+  player.hp = player.maxHp;
+  player.shieldT = 2;
+  player.burnT = 0; player.slowT = 0;
+  player.pos.set(isGuest() ? 3 : 0, 0, world.houseHalf.z + 4);
+  player.vel.set(0, 0, 0);
+  const ch = player.char;
+  ch.dead = false; ch.deadT = 0; ch.body.rotation.set(0, 0, 0); ch.body.position.set(0, 0, 0);
+  if (ch.play) { ch.current = null; ch.mixer.stopAllAction(); ch.play('Idle', 0.1); }
+  player.gunHolder.visible = true;
+  rings.spawn(player.pos, 4, 0x6dff9a, 0.6);
+  showBanner('BACK IN THE FIGHT', '', 'gold', 1.2);
+}
+
+const r1 = (v) => Math.round(v * 10);
+const r2 = (v) => Math.round(v * 100);
+
+function playerSnap() {
+  const ch = player.char;
+  return {
+    x: r2(player.pos.x), z: r2(player.pos.z), f: r2(player.facing), yw: r2(player.yaw), pt: r2(player.pitch),
+    h: save.hero, w: player.weaponId, r: player.gun ? player.gun.userData.rarity : 0, sc: NET.shots,
+    al: player.alive ? 1 : 0, hp: Math.round(player.hp / player.maxHp * 100), sp: r1(Math.hypot(player.vel.x, player.vel.z)),
+    a: G.time - player.lastShot < 0.9 ? 1 : 0, pl: G.state === 'playing' ? 1 : 0, run: isGuest() ? NET.guestRun : G.runId || 0,
+    fp: ch && !ch.body.visible ? 1 : 0,
+  };
+}
+
+function hostSnapshot() {
+  const es = [];
+  const push = (e) => {
+    let fl = 0;
+    if (!e.alive) fl |= 1;
+    if (e.atkT >= 0) fl |= 2;
+    if (e.phased) fl |= 4;
+    if (e.shielded) fl |= 8;
+    if (e.enraged) fl |= 16;
+    if (e.burn) fl |= 32;
+    if (e.chill) fl |= 64;
+    if (e.spawnT > 0) fl |= 128;
+    es.push([e.id, ENEMY_KEYS.indexOf(e.type), r1(e.pos.x), r1(e.pos.z), r1(e.pos.y), r2(e.facing), Math.round(clamp(e.hp / e.maxHp, 0, 1) * 1000), fl]);
+  };
+  for (const e of G.enemies) if (e.alive && es.length < 46) push(e);
+  for (const e of G.enemies) if (!e.alive && e.state === 'dying' && e.dieT < 0.5 && es.length < 52) push(e);
+  const st = structures.list.filter(x => !x.temporary).map(x => `${BUILD_PIECES.indexOf(x.piece)}.${x.i}.${x.j}.${x.rot}.${x.alive ? Math.max(1, Math.round(x.hp / x.max * 99)) : 0}`).join(',');
+  return {
+    w: save.wave, ph: G.state === 'playing' ? G.phase : 'base', pt: Math.round(G.phaseT * 10), run: G.runId || 0, fr: G.failReason || '',
+    hh: Math.round(G.houseHp), hm: Math.round(G.houseMax), e: es, st, hu: Math.round(NET.hurtOut), co: Math.round(NET.coinsOut), q: G.queue.length,
+  };
+}
+
+function sendNet() {
+  if (!net.active || G.time - NET.lastSend < 1 / 15) return;
+  NET.lastSend = G.time;
+  if (net.role === 'host') {
+    let s = hostSnapshot();
+    if (JSON.stringify(s).length > 3300) { s.e = s.e.slice(0, 30); }
+    net.send({ p: playerSnap(), s });
+  } else {
+    const d = [];
+    for (const [id, v] of NET.dmgOut) if (NET.mirror.has(id)) d.push([id, r1(v)]); else NET.dmgOut.delete(id);
+    net.send({ p: playerSnap(), d: d.slice(0, 60) });
+  }
+}
+
+// ---- partner avatar (shown on both screens)
+function nameTag(text, color) {
+  const c = document.createElement('canvas'); c.width = 256; c.height = 64;
+  const g = c.getContext('2d');
+  g.font = 'bold 40px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.lineWidth = 8; g.strokeStyle = 'rgba(0,0,0,.7)'; g.strokeText(text, 128, 32);
+  g.fillStyle = color; g.fillText(text, 128, 32);
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), depthTest: false, transparent: true }));
+  sp.scale.set(2, 0.5, 1); sp.renderOrder = 12;
+  return sp;
+}
+
+function removeAvatar() {
+  const A = NET.avatar;
+  if (!A) return;
+  scene.remove(A.char.root);
+  A.char.dispose();
+  NET.avatar = null;
+}
+
+function updateAvatar(dt, pp) {
+  const show = pp && pp.pl && G.state === 'playing' && pp.run === (isGuest() ? NET.guestRun : G.runId);
+  if (!show) { removeAvatar(); NET.remote = null; return; }
+  let A = NET.avatar;
+  const def = heroById(pp.h) || HEROES[0];
+  if (!A || A.hero !== def.id) {
+    removeAvatar();
+    const ch = def.model === 'robot' ? new RobotChar({ color: def.color || 0x3d8bff, height: 2.0, eyes: def.color ? 0xffc02e : 0x3ce0ff }) : new KenneyChar(def.model, { height: 1.85 });
+    scene.add(ch.root);
+    const holder = new THREE.Group();
+    ch.root.add(holder);
+    const tag = nameTag(isGuest() ? 'HOST' : 'FRIEND', '#6dff9a');
+    tag.position.y = 2.5;
+    ch.root.add(tag);
+    const ring = new THREE.Mesh(new THREE.RingGeometry(0.62, 0.78, 40), new THREE.MeshBasicMaterial({ color: 0x6dff9a, transparent: true, opacity: 0.7, blending: THREE.AdditiveBlending, depthWrite: false }));
+    ring.rotation.x = -Math.PI / 2; ring.position.y = 0.05;
+    ch.root.add(ring);
+    A = NET.avatar = { char: ch, hero: def.id, holder, gunKey: '', gun: null, pos: new THREE.Vector3(pp.x / 100, 0, pp.z / 100), facing: pp.f / 100, sc: pp.sc, alive: true, speed: 0 };
+  }
+  const gk = pp.w + ':' + pp.r;
+  if (A.gunKey !== gk && weaponById(pp.w)) {
+    if (A.gun) A.holder.remove(A.gun);
+    const ri = clamp(pp.r | 0, 0, RARITIES.length - 1);
+    A.gun = makeGun(weaponById(pp.w), RARITIES[ri].hex, ri);
+    A.holder.add(A.gun);
+    A.gunKey = gk;
+  }
+  const k = Math.min(1, dt * 12);
+  const tx = pp.x / 100, tz = pp.z / 100;
+  if (Math.hypot(tx - A.pos.x, tz - A.pos.z) > 8) A.pos.set(tx, 0, tz);
+  A.pos.x += (tx - A.pos.x) * k; A.pos.z += (tz - A.pos.z) * k;
+  A.facing = lerpAngle(A.facing, pp.f / 100, k);
+  const ch = A.char;
+  if (!pp.al && A.alive) { A.alive = false; ch.die(); A.holder.visible = false; }
+  else if (pp.al && !A.alive) {
+    A.alive = true; ch.dead = false; ch.deadT = 0; ch.body.rotation.set(0, 0, 0); ch.body.position.set(0, 0, 0);
+    if (ch.play) { ch.current = null; ch.mixer.stopAllAction(); ch.play('Idle', 0.1); }
+    A.holder.visible = true;
+  }
+  ch.root.position.copy(A.pos);
+  ch.root.rotation.y = A.facing;
+  const aimP = pp.a && A.alive ? pp.pt / 100 + 0.06 : null;
+  ch.pose(dt, pp.sp / 10, -1, aimP);
+  ch.updateFlash(dt, 0);
+  if (A.alive && A.gun) {
+    ch.root.updateMatrixWorld(true);
+    ch.handWorld(HAND);
+    ch.root.worldToLocal(HAND);
+    A.holder.position.copy(HAND);
+    A.holder.position.y += 0.02;
+    A.holder.rotation.set(aimP !== null ? -aimP : 0.25, 0, 0);
+  }
+  // partner's shots
+  if (pp.sc > A.sc && A.gun && A.alive) {
+    const n = Math.min(2, pp.sc - A.sc);
+    const from = A.gun.userData.muzzle.getWorldPosition(new THREE.Vector3());
+    const yw = pp.yw / 100, pt = pp.pt / 100;
+    const dir = new THREE.Vector3(-Math.sin(yw) * Math.cos(pt), Math.sin(pt), -Math.cos(yw) * Math.cos(pt));
+    const w = weaponById(pp.w);
+    const col = pp.r > 0 ? RARITIES[pp.r].hex : (w && w.beamColor) || 0xffe08a;
+    for (let i = 0; i < n; i++) {
+      const d = dir.clone();
+      d.x += (Math.random() - 0.5) * 0.03; d.y += (Math.random() - 0.5) * 0.03; d.z += (Math.random() - 0.5) * 0.03;
+      const len = Math.min(w ? w.range : 50, worldHitT(from, d.normalize(), w ? w.range : 50));
+      if (w && w.flame) sparks.emit(from.x, from.y, from.z, d.x * 14, d.y * 14 + 1, d.z * 14, 0.5, 0.7, COL.fire, -2, 2.5);
+      else tracers.spawn(from, from.clone().addScaledVector(d, len), col, w && w.beamWidth ? w.beamWidth : 0.045, 0.08);
+    }
+    const fl = A.gun.userData.flash;
+    fl.visible = true; A.flashT = 0.05;
+  }
+  A.sc = pp.sc;
+  if (A.flashT > 0) { A.flashT -= dt; if (A.flashT <= 0 && A.gun) A.gun.userData.flash.visible = false; }
+  NET.remote = { pos: A.pos, alive: A.alive && !!pp.al, hp: pp.hp };
+}
+
+// ---- host: apply the guest's damage, fail only when both players are down
+function hostReceive(pp) {
+  if (!pp || !pp.d || G.state !== 'playing') return;
+  const byId = new Map();
+  for (const e of G.enemies) byId.set(e.id, e);
+  for (const pair of pp.d) {
+    if (!Array.isArray(pair)) continue;
+    const id = pair[0] | 0, cum = (+pair[1] || 0) / 10;
+    const e = byId.get(id);
+    if (!e) continue;
+    const prev = NET.applied.get(id) || 0;
+    if (cum > prev) {
+      NET.applied.set(id, cum);
+      if (e.alive && e.spawnT <= 0) damageEnemy(e, cum - prev, { src: 'remote', quiet: true });
+    }
+  }
+  if (NET.applied.size > 300) for (const id of [...NET.applied.keys()]) if (!byId.has(id)) NET.applied.delete(id);
+}
+
+// ---- guest: mirror the host's world
+function guestSyncStructures(st) {
+  const parts = st ? st.split(',').filter(Boolean).map(t => t.split('.').map(Number)) : [];
+  const key = parts.map(a => a.slice(0, 4).join('.')).join(',');
+  if (key !== NET.structKey || !NET.usingHostBase) {
+    NET.structKey = key;
+    NET.usingHostBase = true;
+    structures.loadFrom(parts.filter(a => BUILD_PIECES[a[0]]).map(a => ({ p: BUILD_PIECES[a[0]].id, i: a[1], j: a[2], r: a[3] })));
+    structures.resetForWave(wallMult());
+  }
+  const list = structures.list.filter(x => !x.temporary);
+  parts.forEach((a, idx) => {
+    const s = list[idx];
+    if (!s || s.piece.kind !== 'wall') return;
+    const f = a[4] / 99;
+    if (f <= 0 && s.alive) structures.damage(s, s.hp + 1);
+    else if (f > 0) { if (!s.alive) structures.revive(s); s.hp = s.max * f; structures.heal(s, 0); }
+  });
+}
+
+function guestSyncEnemies(es) {
+  const seen = new Set();
+  for (const a of es || []) {
+    if (!Array.isArray(a) || a.length < 8) continue;
+    const [id, ti, x, z, y, f, hp, fl] = a;
+    const type = ENEMY_KEYS[ti];
+    if (!type) continue;
+    seen.add(id);
+    let e = NET.mirror.get(id);
+    if (!e) {
+      if (fl & 1) continue;
+      e = spawnEnemy(type, 0, new THREE.Vector3(x / 10, 0, z / 10));
+      e.id = id; e.mirror = true;
+      e.tx = x / 10; e.tz = z / 10; e.ty = y / 10; e.tf = f / 100;
+      NET.mirror.set(id, e);
+    }
+    e.tx = x / 10; e.tz = z / 10; e.ty = y / 10; e.tf = f / 100;
+    e.netFl = fl;
+    const hostHp = hp / 1000 * e.maxHp;
+    if (G.time - (e.lastHit || -10) > 0.5 || hostHp < e.hp) e.hp = hostHp;
+    e.phased = !!(fl & 4); e.shielded = !!(fl & 8);
+    if ((fl & 1) && e.alive) killEnemy(e, false, true);
+  }
+  for (const [id, e] of NET.mirror) {
+    if (seen.has(id)) continue;
+    if (e.alive) killEnemy(e, false, true);
+    NET.mirror.delete(id);
+  }
+}
+
+function updateMirrorEnemies(dt) {
+  const list = G.enemies;
+  for (let i = list.length - 1; i >= 0; i--) {
+    const e = list[i];
+    const ch = e.char;
+    if (e.state === 'dying') {
+      e.dieT += dt;
+      ch.pose(dt, 0, -1);
+      ch.updateFlash(dt, 0);
+      if (e.def.fly) { e.pos.y = Math.max(0.3, e.pos.y - dt * 6); ch.root.position.y = e.pos.y; }
+      if (e.dieT > 1.3) ch.root.position.y -= dt * 1.4;
+      if (e.dieT > 2.5) { removeEnemy(e); list.splice(i, 1); NET.mirror.delete(e.id); }
+      continue;
+    }
+    if (e.spawnT > 0) {
+      e.spawnT -= dt;
+      ch.root.scale.setScalar(clamp(1 - e.spawnT / 0.7, 0.01, 1));
+      if (e.spawnT <= 0) ch.root.scale.setScalar(1);
+    }
+    const fl = e.netFl || 0;
+    if (e.burn) {
+      e.burn.t -= dt;
+      damageEnemy(e, e.burn.dps * dt, { src: 'weapon', quiet: true });
+      if (Math.random() < dt * 14) sparks.emit(e.pos.x + (Math.random() - 0.5) * 0.5, e.pos.y + Math.random() * e.height, e.pos.z + (Math.random() - 0.5) * 0.5, 0, 2, 0, 0.4, 0.35, COL.fire, -1);
+      if (e.burn.t <= 0) e.burn = null;
+    }
+    if (e.chill) { e.chill.t -= dt; if (e.chill.t <= 0) e.chill = null; }
+    const k = Math.min(1, dt * 10);
+    const dx = e.tx - e.pos.x, dz = e.tz - e.pos.z;
+    if (Math.hypot(dx, dz) > 10) { e.pos.x = e.tx; e.pos.z = e.tz; }
+    else { e.pos.x += dx * k; e.pos.z += dz * k; }
+    e.pos.y += (e.ty - e.pos.y) * k;
+    e.speedNow += (Math.min(9, Math.hypot(dx, dz) * 5) - e.speedNow) * Math.min(1, dt * 6);
+    e.facing = lerpAngle(e.facing, e.tf, k);
+    if (e.def.phase) { const want = e.phased ? 0.18 : 0.7; if (e.lastOp !== want) { e.lastOp = want; for (const m of ch.mats) m.opacity = want; } }
+    let attackPhase = -1;
+    if (fl & 2) { e.atkAnim = ((e.atkAnim || 0) + dt / Math.min(0.9, e.def.rate * 0.8)); if (e.atkAnim >= 1) e.atkAnim = 0; attackPhase = e.atkAnim; }
+    else e.atkAnim = 0;
+    const statusCol = (fl & 32) || e.burn ? 0x5a2000 : (fl & 64) || e.chill ? 0x2a7aa8 : (fl & 16) ? 0x6a0000 : (fl & 8) ? 0x0a3a6a : 0;
+    ch.updateFlash(dt, statusCol);
+    if (e.spawnT <= 0) {
+      const clip = ch.actions && ch.actions.Punch ? ch.actions.Punch.getClip() : null;
+      ch.pose(dt, e.speedNow, attackPhase, null, { attackSpeed: clip ? clip.duration / Math.max(0.4, e.def.rate) : 1 });
+    } else ch.pose(dt, 0, -1);
+    ch.root.position.set(e.pos.x, e.pos.y, e.pos.z);
+    ch.root.rotation.y = e.facing;
+    updateHpBar(e);
+  }
+}
+
+function guestFollow(dt, hs) {
+  if (!hs) return;
+  NET.wave = Math.max(1, hs.w | 0);
+  // join the host's run when it starts
+  const hostPlaying = ['countdown', 'fight', 'cleared'].includes(hs.ph);
+  const idle = G.state === 'shop' || G.state === 'menu' || (G.state === 'playing' && G.phase === 'results');
+  if (hostPlaying && idle && hs.run !== NET.guestRun) {
+    NET.guestRun = hs.run;
+    NET.lastWave = NET.wave;
+    NET.hurtSeen = hs.hu | 0;
+    for (const id of ['how', 'settings', 'coop', 'confirm']) if ($(id)) hideModal(id);
+    NET.mirror.clear();
+    startWave(true);
+    return;
+  }
+  if (G.state !== 'playing' || hs.run !== NET.guestRun) return;
+  if (!['countdown', 'fight', 'cleared'].includes(G.phase)) return;
+  if (hostPlaying) {
+    if (NET.wave !== NET.lastWave) { NET.lastWave = NET.wave; startWave(false); }
+    G.phase = hs.ph;
+    if (hs.ph === 'countdown') G.phaseT = hs.pt / 10;
+    if (hs.ph === 'cleared' && !player.alive) respawnPlayer();
+    G.houseMax = hs.hm || G.houseMax;
+    G.houseHp = hs.hh;
+    guestSyncStructures(hs.st);
+    guestSyncEnemies(hs.e);
+    const hu = hs.hu | 0;
+    if (hu > NET.hurtSeen) { hurtPlayer(hu - NET.hurtSeen); NET.hurtSeen = hu; }
+    else NET.hurtSeen = hu;
+  } else {
+    // the host's run ended
+    G.failReason = hs.fr === 'player' ? 'player' : hs.fr === 'quit' ? 'quit' : 'house';
+    G.phase = 'failed';
+    G.phaseT = 3;
+    sfx.defeat();
+    showBanner(G.failReason === 'house' ? 'HOUSE DESTROYED' : 'TEAM DEFEATED', 'Back to base to swap gear and try again', 'red', 2.8);
+    input.setEnabled(false);
+  }
+}
+
+function updateGuestWave(dt) {
+  if (G.phase === 'failed') {
+    G.phaseT -= dt;
+    if (G.phaseT <= 0) showResults();
+  }
+}
+
+function syncCoins(hs) {
+  if (!hs) return;
+  const co = hs.co | 0;
+  if (NET.coinsSeen === null || co < NET.coinsSeen) { NET.coinsSeen = co; return; }
+  if (co > NET.coinsSeen) {
+    const d = co - NET.coinsSeen;
+    NET.coinsSeen = co;
+    save.coins += d;
+    if (G.state === 'playing') G.runCoins += d;
+    NET.coinDirty = true;
+  }
+}
+
+let coopStatusKey = '';
+function updateNet(dt) {
+  if (!net.active) { if (NET.avatar) removeAvatar(); NET.remote = null; return; }
+  const pr = net.poll(dt);
+  const linked = net.linked;
+  if (linked && !NET.wasLinked) { toast(net.role === 'host' ? 'Your friend joined!' : 'Connected to the host!'); sfx.levelUp(false); NET.coinsSeen = null; }
+  if (!linked && NET.wasLinked) {
+    toast(net.role === 'host' ? 'Your friend left' : 'Lost the host');
+    if (isGuest() && G.state === 'playing' && ['countdown', 'fight', 'cleared'].includes(G.phase)) {
+      G.failReason = 'left'; G.phase = 'failed'; G.phaseT = 1.5; input.setEnabled(false);
+    }
+  }
+  NET.wasLinked = linked;
+  if (linked) {
+    updateAvatar(dt, pr.p);
+    if (net.role === 'host') {
+      hostReceive(pr);
+      if (G.state === 'playing' && G.phase === 'fight' && !player.alive && !(NET.remote && NET.remote.alive)) failWave('player');
+    } else {
+      syncCoins(pr.s);
+      guestFollow(dt, pr.s);
+    }
+  } else { removeAvatar(); NET.remote = null; }
+  if (NET.coinDirty && G.time - (NET.coinSaveT || 0) > 3) { NET.coinDirty = false; NET.coinSaveT = G.time; writeSave(); }
+  sendNet();
+  // lobby / shop status
+  const key = `${net.role}|${net.code}|${linked}|${G.state}|${net.connected()}`;
+  if (key !== coopStatusKey) { coopStatusKey = key; renderCoop(); syncShopCoop(); }
+  if (G.state === 'playing') {
+    const R = NET.remote;
+    setText('coopHud', linked ? `${isGuest() ? 'Host' : 'Friend'}: ${R ? (R.alive ? R.hp + '%' : 'DOWN') : 'at base'}` : 'Partner disconnected');
+  }
+}
+
+function syncShopCoop() {
+  const guest = isGuest();
+  $('buildBtn').classList.toggle('hidden', guest);
+  $('startWaveBtn').disabled = guest;
+  if (guest) $('startWaveBtn').textContent = net.linked ? 'HOST STARTS THE WAVE' : 'FINDING HOST…';
+  else if (G.state === 'shop') $('startWaveBtn').textContent = `START WAVE ${save.wave}`;
+  $('shopCoopBtn').classList.toggle('on', net.active);
+  $('shopCoopBtn').classList.toggle('linked', net.linked);
+  $('coopHud').classList.toggle('hidden', !net.active);
+}
+
+function renderCoop() {
+  const b = $('coopBody');
+  if (!b) return;
+  let html;
+  if (!net.available) {
+    html = `<p class="coop-msg">Two player works in the online version of the game. Open the game from its claude.ai link (not a downloaded file), then tap <b>2 PLAYER</b> again.</p>
+      <p class="coop-small">Your friend needs access to the same link. Share it from the Share menu.</p>`;
+  } else if (!net.role) {
+    html = `<p class="coop-msg">Play together! One player hosts and sends a code, the other joins with it.</p>
+      <button id="coopHost" class="btn btn-play">HOST A GAME</button>
+      <div class="coop-join"><input id="coopCode" maxlength="4" placeholder="CODE" autocomplete="off" autocapitalize="characters" spellcheck="false"><button id="coopJoin" class="btn btn-build">JOIN</button></div>
+      <p class="coop-small">Both players open this same game link. You each use your own hero, gun and pet, and you both earn the coins.</p>`;
+  } else if (net.role === 'host') {
+    html = `<p class="coop-msg">Send this code to your friend:</p>
+      <div class="coop-code" id="coopCodeBig">${net.code}</div>
+      <button id="coopCopy" class="btn btn-ghost small">Copy code</button>
+      <p class="coop-status ${net.linked ? 'ok' : ''}">${net.linked ? 'Friend connected! Press START WAVE to play together.' : net.connected() ? 'Waiting for your friend to join…' : 'Connecting…'}</p>
+      <p class="coop-small">They open this game's link, tap <b>2 PLAYER</b>, type the code and tap JOIN. You run the base, the build and the waves.</p>
+      <button id="coopLeave" class="btn btn-ghost small">Stop hosting</button>`;
+  } else {
+    html = `<p class="coop-msg">Joining game <b>${net.code}</b></p>
+      <p class="coop-status ${net.linked ? 'ok' : ''}">${net.linked ? 'Connected! The host will start the wave.' : net.connected() ? 'Looking for the host… (make sure the code is right and they are hosting)' : 'Connecting…'}</p>
+      <button id="coopLeave" class="btn btn-ghost small">Leave</button>`;
+  }
+  b.innerHTML = html;
+  const on = (id, fn) => { const el = $(id); if (el) el.addEventListener('click', () => { sfx.click(); fn(); }); };
+  on('coopHost', () => { net.host(); resetNetState(); renderCoop(); syncShopCoop(); });
+  on('coopJoin', () => {
+    const c = ($('coopCode').value || '').toUpperCase().replace(/[^A-Z]/g, '');
+    if (c.length !== 4) { toast('Codes are 4 letters'); return; }
+    net.join(c); resetNetState(); renderCoop(); syncShopCoop();
+    if (G.state === 'menu') goToShop();
+  });
+  on('coopLeave', () => leaveCoop());
+  on('coopCopy', () => {
+    const txt = `Join my Holdout game! Open the game link, tap 2 PLAYER and enter code: ${net.code}`;
+    try { navigator.clipboard.writeText(txt).then(() => toast('Code copied'), () => toast(`Code: ${net.code}`)); } catch (_) { toast(`Code: ${net.code}`); }
+  });
+  const inp = $('coopCode');
+  if (inp) inp.addEventListener('keydown', (e) => { e.stopPropagation(); if (e.key === 'Enter') $('coopJoin').click(); });
+}
+
+function resetNetState() {
+  NET.dmgOut.clear(); NET.applied.clear(); NET.mirror.clear();
+  NET.hurtOut = 0; NET.hurtSeen = 0; NET.coinsSeen = null; NET.guestRun = -1; NET.wasLinked = false;
+}
+
+function leaveCoop() {
+  const wasGuest = isGuest();
+  net.leave();
+  resetNetState();
+  removeAvatar(); NET.remote = null;
+  if (wasGuest && NET.usingHostBase) { NET.usingHostBase = false; NET.structKey = ''; structures.loadFrom(save.structures); structures.resetForWave(wallMult()); }
+  if (wasGuest && G.state === 'playing' && ['countdown', 'fight', 'cleared'].includes(G.phase)) failWave('quit');
+  renderCoop(); syncShopCoop();
+}
+
+function openCoop() {
+  renderCoop();
+  showModal('coop');
+}
+
 // ---------------------------------------------------------------- main loop
 const clock = new THREE.Clock();
 function frame() {
@@ -2650,6 +3171,7 @@ function frame() {
   if (G.state === 'loading') return;
   if (G.state !== 'paused') {
     G.time += dt;
+    updateNet(dt);
     world.update(dt);
     if (G.state === 'playing') {
       if (input.consume('pausePressed')) pauseGame();
@@ -2658,7 +3180,7 @@ function frame() {
         else { player.char.pose(dt, 0, -1, null, { cheer: G.phase === 'cleared' || G.phase === 'results' }); player.char.updateFlash(dt, 0); }
         updateWave(dt);
         updatePet(dt);
-        updateEnemies(dt);
+        if (isGuest()) updateMirrorEnemies(dt); else updateEnemies(dt);
         updateStructures(dt);
         updateRockets(dt);
         updateGlobs(dt);
@@ -2767,6 +3289,7 @@ boot();
 window.__game = {
   G, player, input, camera, renderer, scene, THREE, get world() { return world; }, get structures() { return structures; },
   killAll: () => { G.queue.length = 0; G.enemies.forEach(e => e.alive && killEnemy(e)); },
+  net, NET, curWave, hurtPlayer,
   save: () => save, pet, startWave, spawnEnemy, goToShop, enterBuild, exitBuild, useAbility, setupHeroModel, setupPet, equipWeapon, refreshHero,
   addXpTo: (kind, id, n) => { const r = kind === 'hero' ? save.heroes[id] : save.weapons[id]; const from = r.level; addXp(r, n); onLevel(kind, kind === 'hero' ? heroById(id).name : weaponById(id).name, from, r.level); },
 };

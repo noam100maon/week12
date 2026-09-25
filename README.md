@@ -44,6 +44,10 @@ that opens straight from disk; regenerate it with `tools/build_single.sh`.
   Troll (regenerates), Howler (speeds allies), Ghost (phases out), Swarm Bot, Necromancer (summons), Bulwark (shields
   allies), Rocket Mech, Loot Goblin (runs away with big coins) and the Hive Queen boss, plus the originals
   and the Storm King boss.
+- **2 player co-op:** tap **2 PLAYER**, host a game and send the 4-letter code to a friend; they open the same
+  game link, tap 2 PLAYER, type the code and join. The host runs the waves, base and enemies; each player brings
+  their own hero, gun and pet, both earn the coins, and a downed player respawns while the partner holds on.
+  Uses the claude.ai artifact's live room, so both players need access to the shared link.
 - **Edit Base mode:** walls, spike/freeze/flame traps, healing pads, turret towers, tesla coils and mortar towers.
 - **Warnings:** portal beams, red lane arrows, "next enemy from" text, off-screen arrows and a minimap show where
   enemies come from and will come from next; the base screen previews the next wave.

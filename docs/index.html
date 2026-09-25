@@ -28,12 +28,13 @@
     <div id="waveLabel" class="wave-pill">WAVE 1</div>
     <div id="enemyLabel" class="enemy-pill"><span class="ico ico-skull"></span><span id="enemyText">0</span></div>
     <div id="incomingText" class="incoming"></div>
+    <div id="coopHud" class="coop-hud hidden"></div>
   </div>
   <div class="hud-tc">
     <div class="bar-label"><span class="ico ico-house"></span><span>HOUSE</span><span id="houseHpText" class="bar-num">600</span></div>
     <div class="bar house-bar"><div id="houseHpLag" class="lag"></div><div id="houseHpFill" class="fill"></div></div>
     <div id="bossWrap" class="hidden">
-      <div class="bar-label boss"><span>STORM KING</span></div>
+      <div class="bar-label boss"><span id="bossName">STORM KING</span></div>
       <div class="bar boss-bar"><div id="bossFill" class="fill"></div></div>
     </div>
   </div>
@@ -94,6 +95,7 @@
     <div class="tagline">Defend the House · Survive the Storm</div>
     <div class="menu-stats" id="menuStats"></div>
     <button id="playBtn" class="btn btn-play">PLAY</button>
+    <button id="coopBtn" class="btn btn-coop"><span class="ico-2p">👥</span> 2 PLAYER</button>
     <div class="menu-row">
       <button id="howBtn" class="btn btn-ghost">How to play</button>
       <button id="menuSettingsBtn" class="btn btn-ghost">Settings</button>
@@ -113,6 +115,7 @@
       <li><b>Every hero has an ability button</b> (grenade, dash, shield, turret, heal or lightning) plus perks.</li>
       <li><b>Collect coins</b> to recruit heroes, unlock guns, adopt pets and <b>build walls, traps and turret towers</b> in Edit Base. The house grows stronger as you reach higher waves.</li>
       <li><b>Red arrows and beams</b> show where the next enemies will come from. Check the minimap!</li>
+      <li><b>2 PLAYER:</b> host a game and send your friend the code. They open the same game link, tap 2 PLAYER and type it in.</li>
       <li><b>Failed a wave?</b> You keep every coin. Upgrade and try that wave again.</li>
       <li>Every 5th wave a <b>Storm King</b> boss appears. Aim for the head for bonus damage!</li>
     </ul>
@@ -120,10 +123,19 @@
   </div>
 </div>
 
+<div id="coop" class="screen modal">
+  <div class="panel narrow coop-panel">
+    <h2>2 Player Co-op</h2>
+    <div id="coopBody"></div>
+    <button class="btn btn-ghost small close-modal">Close</button>
+  </div>
+</div>
+
 <div id="shop" class="screen">
   <div class="shop-top">
     <button id="shopHomeBtn" class="icon-btn" aria-label="Menu"><span class="ico ico-home"></span></button>
     <div class="shop-title">BASE <span id="shopWave">· Next: Wave 1</span></div>
+    <button id="shopCoopBtn" class="icon-btn coop-btn" aria-label="2 player">👥</button>
     <div class="coin-pill big"><span class="coin-ico"></span><span id="shopCoins">0</span></div>
   </div>
   <div class="shop-body">

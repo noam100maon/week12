@@ -450,3 +450,26 @@ body.desktop .ability::after { content: 'E'; position: absolute; top: -6px; left
   #buildUI .btn.small { padding: 6px 10px; }
 }
 #lockHint { position: absolute; left: 50%; top: 62%; transform: translateX(-50%); font-family: var(--head); font-size: 20px; color: #fff; background: rgba(16,10,36,.75); padding: 10px 20px; border-radius: 14px; box-shadow: 0 0 0 2px rgba(255,192,46,.6); animation: blink 1.4s infinite; pointer-events: none; }
+
+/* co-op */
+.btn-coop { background: linear-gradient(180deg, #8affb5, #2fbf6a); color: #04301a; box-shadow: 0 5px 0 #17753f; font-size: 20px; padding: 10px 26px; display: inline-flex; align-items: center; gap: 8px; }
+.btn-coop:active { box-shadow: 0 2px 0 #17753f; transform: translateY(3px); }
+.ico-2p { font-size: 20px; }
+.coop-btn { font-size: 18px; margin-left: auto; position: relative; }
+.coop-btn.on::after { content: ''; position: absolute; top: 5px; right: 5px; width: 9px; height: 9px; border-radius: 50%; background: #ffc02e; }
+.coop-btn.linked::after { background: #6dff9a; box-shadow: 0 0 8px #6dff9a; }
+.coop-panel { max-width: 420px; }
+.coop-panel #coopBody { display: flex; flex-direction: column; gap: 10px; align-items: stretch; }
+.coop-msg { font-size: 16px; margin: 0; }
+.coop-small { font-size: 12px; color: var(--muted); margin: 0; }
+.coop-code { font-family: var(--head); font-size: 54px; letter-spacing: 12px; color: #6dff9a; text-shadow: 0 4px 0 rgba(0,0,0,.4); user-select: all; -webkit-user-select: all; }
+.coop-status { margin: 0; font-weight: 800; color: #ffcf2e; }
+.coop-status.ok { color: #6dff9a; }
+.coop-join { display: flex; gap: 8px; }
+.coop-join input { flex: 1; min-width: 0; font-family: var(--head); font-size: 26px; letter-spacing: 8px; text-align: center; text-transform: uppercase; border: 0; border-radius: 14px; padding: 8px; background: var(--panel2); color: #fff; box-shadow: inset 0 0 0 2px rgba(255,255,255,.2); }
+.coop-hud { font-family: var(--head); font-size: 13px; color: #6dff9a; text-shadow: 0 2px 0 rgba(0,0,0,.6); }
+.btn:disabled { filter: grayscale(.6) brightness(.8); }
+@media (max-height: 430px) {
+  .coop-code { font-size: 40px; }
+  .btn-coop { font-size: 16px; padding: 8px 18px; }
+}
