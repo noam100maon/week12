@@ -442,7 +442,7 @@ body.desktop .ability::after { content: 'E'; position: absolute; top: -6px; left
 #buildUI .bpiece .bname { font-size: 12px; line-height: 1.1; }
 #buildUI .bpiece .bcost { font-size: 11px; }
 #buildUI .build-tip { position: fixed; bottom: calc(6px + var(--safe-b)); left: 50%; transform: translateX(-50%); width: max-content; max-width: 56vw; font-size: 11px; background: rgba(16,10,36,.55); padding: 3px 10px; border-radius: 8px; }
-#buildUI .build-context { position: absolute; right: calc(10px + var(--safe-r)); top: 50%; transform: translateY(-50%); flex-direction: column; align-items: stretch; gap: 6px; width: 132px; }
+#buildUI .build-context { position: absolute; right: calc(10px + var(--safe-r)); top: 50%; transform: translateY(-50%); flex-direction: column; align-items: stretch; gap: 6px; width: 158px; }
 #buildUI .build-context b { text-align: center; }
 @media (max-height: 430px) {
   #buildUI .build-top, #buildUI .build-bottom { width: 116px; }

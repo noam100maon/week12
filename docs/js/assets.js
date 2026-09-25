@@ -11,7 +11,7 @@ export const MODEL_NAMES = [
   'tree-big', 'tree-small', 'formation-large-rock', 'formation-rock', 'formation-stone', 'grass', 'coin',
   'pet-chick', 'pet-dog', 'pet-cat', 'pet-penguin', 'pet-bee', 'pet-panda', 'pet-parrot', 'pet-fox', 'pet-tiger', 'pet-lion',
   'pet-beaver', 'pet-bunny', 'pet-caterpillar', 'pet-cow', 'pet-crab', 'pet-deer', 'pet-elephant', 'pet-fish', 'pet-giraffe',
-  'pet-hog', 'pet-koala', 'pet-monkey', 'pet-pig', 'pet-polar', 'skater-female',
+  'pet-hog', 'pet-koala', 'pet-monkey', 'pet-pig', 'pet-polar', 'skater-female', 'ship-dark',
 ];
 
 export const M = {};
@@ -386,9 +386,81 @@ export class DroneChar extends Char {
   }
 }
 
+// ---------------------------------------------------------------- flying pirate ship (boss)
+export class ShipChar extends Char {
+  constructor({ height = 5, tint = null, glow = null } = {}) {
+    super();
+    const m = cloneStatic('ship-dark', { height });
+    m.rotation.y = Math.PI / 2; // bow faces +Z
+    this.model = m;
+    this.body.add(m);
+    this.mats = cloneMaterials(m, (mt) => {
+      if (tint && mt.color) mt.color.multiply(new THREE.Color(tint));
+      if (glow && mt.emissive) { mt.emissive.setHex(glow); mt.emissiveIntensity = 0.3; }
+    });
+    this.height = height;
+    addBlob(this.root, height * 0.9);
+  }
+  pose(dt, speed, attack) {
+    this.phase += dt * 1.3;
+    if (this.dead) { this.deadT += dt; this.body.rotation.z += dt * 0.8; this.body.rotation.x += dt * 0.3; return; }
+    this.body.position.y = Math.sin(this.phase) * 0.35;
+    this.body.rotation.z = Math.sin(this.phase * 0.8) * 0.06 + (attack >= 0 ? Math.sin(attack * Math.PI) * 0.12 : 0);
+    this.body.rotation.x = Math.sin(this.phase * 0.6) * 0.04;
+  }
+}
+
+// ---------------------------------------------------------------- blocky gunship (built from primitives)
+export class GunshipChar extends Char {
+  constructor({ height = 1.6, tint = 0x5a6a3a, glow = 0xff5020 } = {}) {
+    super();
+    const k = height / 1.6;
+    const body = new THREE.MeshStandardMaterial({ color: tint, roughness: 0.55, metalness: 0.35 });
+    const dark = new THREE.MeshStandardMaterial({ color: 0x23272e, roughness: 0.5, metalness: 0.6 });
+    const glass = new THREE.MeshStandardMaterial({ color: 0x9fd8ff, emissive: 0x1a4a6a, emissiveIntensity: 0.6, roughness: 0.15, metalness: 0.3 });
+    const light = new THREE.MeshStandardMaterial({ color: glow, emissive: glow, emissiveIntensity: 1.6 });
+    const g = new THREE.Group();
+    const hull = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.9, 2.0), body); hull.position.y = 0.2;
+    const nose = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.6, 0.6), glass); nose.position.set(0, 0.25, 1.15);
+    const tail = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 1.8), body); tail.position.set(0, 0.45, -1.8);
+    const fin = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.6, 0.45), body); fin.position.set(0, 0.8, -2.6);
+    const wing = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.08, 0.5), dark); wing.position.set(0, 0.05, 0.1);
+    const podL = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.7, 8), dark); podL.rotation.x = Math.PI / 2; podL.position.set(-1.05, -0.08, 0.2);
+    const podR = podL.clone(); podR.position.x = 1.05;
+    const gun = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.7, 8), dark); gun.rotation.x = Math.PI / 2; gun.position.set(0, -0.3, 1.2);
+    const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.35, 8), dark); mast.position.y = 0.8;
+    const eye = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.08, 0.05), light); eye.position.set(0, 0.05, 1.46);
+    const rotor = new THREE.Group();
+    for (let i = 0; i < 4; i++) { const b = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.04, 0.2), dark); b.rotation.y = i * Math.PI / 4; rotor.add(b); }
+    rotor.position.y = 0.98;
+    const trot = new THREE.Group();
+    for (let i = 0; i < 2; i++) { const b = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.8, 0.12), dark); b.rotation.x = i * Math.PI / 2; trot.add(b); }
+    trot.position.set(0.18, 0.55, -2.55);
+    g.add(hull, nose, tail, fin, wing, podL, podR, gun, mast, eye, rotor, trot);
+    g.scale.setScalar(k);
+    this.model = g;
+    this.body.add(g);
+    this.rotor = rotor; this.trot = trot;
+    this.mats = [body, dark, glass, light];
+    for (const m of this.mats) { m.userData.baseEmissive = m.emissive.clone(); m.userData.baseIntensity = m.emissiveIntensity; }
+    g.traverse(o => { if (o.isMesh) o.castShadow = shadows; });
+    this.height = height;
+    addBlob(this.root, 1.6 * k);
+  }
+  pose(dt, speed, attack) {
+    this.phase += dt * 2.2;
+    this.rotor.rotation.y += dt * 28;
+    this.trot.rotation.x += dt * 30;
+    if (this.dead) { this.deadT += dt; this.body.rotation.y += dt * 6; this.body.rotation.z += dt; return; }
+    this.body.position.y = Math.sin(this.phase) * 0.18;
+    this.body.rotation.x = Math.min(0.3, speed * 0.05) + (attack >= 0 ? -0.1 : 0);
+    this.body.rotation.z = Math.sin(this.phase * 0.7) * 0.06;
+  }
+}
+
 // ---------------------------------------------------------------- pets (Kenney Cube Pets, clip animation)
 export class PetChar extends Char {
-  constructor(modelName, { height = 0.9 } = {}) {
+  constructor(modelName, { height = 0.9, tint = null, glow = null, ghost = false } = {}) {
     super();
     const src = M[modelName];
     const model = SkeletonUtils.clone(src.scene);
@@ -398,7 +470,11 @@ export class PetChar extends Char {
     model.position.y = -box.min.y * s;
     this.model = model;
     this.body.add(model);
-    this.mats = cloneMaterials(model);
+    this.mats = cloneMaterials(model, (m) => {
+      if (tint && m.color) m.color.multiply(new THREE.Color(tint));
+      if (glow && m.emissive) { m.emissive.setHex(glow); m.emissiveIntensity = 0.45; }
+      if (ghost) { m.transparent = true; m.opacity = 0.55; m.depthWrite = false; }
+    });
     this.mixer = new THREE.AnimationMixer(model);
     this.actions = {};
     for (const clip of src.animations) this.actions[clip.name] = this.mixer.clipAction(clip);

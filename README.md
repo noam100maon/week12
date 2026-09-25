@@ -31,24 +31,27 @@ that opens straight from disk; regenerate it with `tools/build_single.sh`.
 - **Guns and heroes level up by use, 1 → 160.** Rarity climbs Common → Uncommon → Rare → Epic → Legendary → Mythic,
   the gun changes color, and every new rarity unlocks a new ability (crits, burn, freeze, chain lightning, explosive rounds,
   lifesteal, orbital strikes, multishot, chain-reaction kills...). Each gun has its own set.
-- **9 heroes** (Rex, Bolt, Nova, Cyra, Doc, Skye, Luna, Zed, Titan), each with a unique active ability (grenade,
-  overshield, dash, deployable turret, heal pulse, lightning, bullet storm, plague cloud, homing missile barrage),
-  a passive and 5 rarity perks.
-- **17 guns:** Pistol, SMG, Shotgun, Assault Rifle, Sniper, Rocket Launcher, Revolver, Burst Rifle, Flamethrower,
-  Freeze Ray, Tesla Gun, Double Barrel, Crossbow, Minigun, Grenade Launcher, Railgun, Plasma Cannon.
-- **24 pets** (Kenney Cube Pets): fighters, shooters, healers, coin collectors, roarers and a wall-repairing beaver.
-  Pets follow you, fight, and level to 160 with rarity perks too.
-- **31 enemy types**, including 22 new specials: Crawler, Berserker (enrages), Splitter (splits into crawlers),
-  Frost Husk (slows you), Leaper (jumps walls), Pyro (burns, explodes on death), Juggernaut and Iron Knight (armored),
-  Bomber Drone, Toxic Husk (poison cloud), Phantom (teleports), Siege Husk (hunts walls), Sharpshooter (laser),
-  Troll (regenerates), Howler (speeds allies), Ghost (phases out), Swarm Bot, Necromancer (summons), Bulwark (shields
-  allies), Rocket Mech, Loot Goblin (runs away with big coins) and the Hive Queen boss, plus the originals
-  and the Storm King boss.
+- **19 heroes**, each with a unique active ability, a passive and 5 rarity perks: Rex, Bolt, Nova, Cyra, Doc, Skye,
+  Luna, Zed, Titan, Blaze (Flame Nova), Frost (Blizzard), Volt (Chain Storm), Ranger (Arrow Rain), Brick (Fortress
+  taunt), Shade (Vanish), Gizmo (Overclock your base), Sage (Healing Grove), Ace (Air Strike) and Hex (Curse).
+- **27 guns**, including the Laser Rifle, Shock Shotgun, Acid Launcher, Cluster Bomb, Gatling Laser, Ripsaw Launcher,
+  Black Hole Gun, Seeker Missiles, Cryo Cannon and Anti-Materiel Rifle.
+- **34 pets** (Kenney Cube Pets), including elemental versions: Inferno fox, Glacier penguin, Zapper bee, Nightpaw,
+  Midas the golden pig, Prism deer, Robo-Rex, Phoenix, Mammoth and Boo the ghost bunny.
+- **52 enemy types**, including many flyers (Wasp and Taker drones, Mender and EMP drones, Storm Rays, Gunships,
+  Bombardiers, Swarm Carriers, Sky Raider ships) plus Flingers that throw husks over your walls and Mist Blasters.
+  Elite enemies (gold ring, tougher, richer) appear more and more, and waves grow bigger and deadlier.
+- **12 bosses**, with a new one each 5 waves and several at once later: Storm King, Hive Queen, Mist Smasher,
+  Gunship Titan, Frost Colossus, Inferno Golem, Sky Galleon, Plague Mother, Thunder Titan, Void Reaper,
+  Mecha Overlord (mana shield) and Hive Carrier. Bosses slam, bombard, EMP-stun towers, freeze, burn, pull you in
+  and call lightning.
 - **2 player co-op:** tap **2 PLAYER**, host a game and send the 4-letter code to a friend; they open the same
   game link, tap 2 PLAYER, type the code and join. The host runs the waves, base and enemies; each player brings
   their own hero, gun and pet, both earn the coins, and a downed player respawns while the partner holds on.
   Uses the claude.ai artifact's live room, so both players need access to the shared link.
-- **Edit Base mode:** walls, spike/freeze/flame traps, healing pads, turret towers, tesla coils and mortar towers.
+- **Edit Base mode:** 14 pieces (walls including thorn walls, spike/freeze/flame traps, healing pads, turret towers,
+  tesla coils, mortars, flak cannons, laser towers and sniper towers). Tap a piece to **upgrade it with coins up to
+  level 10**. Enemies and bosses break every kind of building, and broken buildings stay broken until you fall.
 - **Warnings:** portal beams, red lane arrows, "next enemy from" text, off-screen arrows and a minimap show where
   enemies come from and will come from next; the base screen previews the next wave.
 - No coin upgrades to grind: the house grows on its own with the wave (bungalow → fortified home), and walls,

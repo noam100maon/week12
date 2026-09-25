@@ -1,7 +1,7 @@
 // Player-built structures (walls, traps, turret towers) and the edit-mode controller.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { BUILD_PIECES, CELL, MAX_STRUCTURES } from './data.js';
+import { BUILD_PIECES, CELL, MAX_STRUCTURES, RARITIES, MAX_BUILD_LEVEL, pieceHp, upgradeCost, sellValue } from './data.js';
 import { BUILD_R } from './world.js';
 import { cloneStatic } from './assets.js';
 
@@ -112,6 +112,11 @@ export class Structures {
       zap: new THREE.MeshStandardMaterial({ color: 0xdff4ff, emissive: 0x7fd0ff, emissiveIntensity: 2 }),
       steel: new THREE.MeshStandardMaterial({ color: 0x4a5058, metalness: 0.7, roughness: 0.4 }),
       gold: new THREE.MeshStandardMaterial({ color: 0xffc02e, emissive: 0xffa000, emissiveIntensity: 0.8 }),
+      thorn: new THREE.MeshStandardMaterial({ map: t.wood, color: 0x9fcf7a, roughness: 0.85 }),
+      thornSpike: new THREE.MeshStandardMaterial({ color: 0xdfe8c8, roughness: 0.5 }),
+      flak: new THREE.MeshStandardMaterial({ color: 0xa8483a, metalness: 0.5, roughness: 0.45 }),
+      pink: new THREE.MeshStandardMaterial({ color: 0xffb0ee, emissive: 0xff4dd2, emissiveIntensity: 2 }),
+      violet: new THREE.MeshStandardMaterial({ color: 0xb48cff, emissive: 0x7a4aff, emissiveIntensity: 1.4 }),
     };
   }
 
@@ -127,14 +132,38 @@ export class Structures {
     return null;
   }
 
-  makeMesh(piece, rot) {
+  makeMesh(piece, rot, level = 1) {
     const g = geometries();
     const grp = new THREE.Group();
+    if (level > 1) {
+      // upgrade ring: colour climbs the rarity ladder, one pip per level
+      const col = RARITIES[Math.min(RARITIES.length - 1, Math.floor((level - 1) / 2) + 1)].hex;
+      const mat = new THREE.MeshStandardMaterial({ color: col, emissive: col, emissiveIntensity: 1.2 });
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(piece.kind === 'wall' ? 0.5 : 0.95, 0.06, 6, 28), mat);
+      ring.rotation.x = Math.PI / 2; ring.position.y = piece.kind === 'wall' ? 2.95 : 0.2;
+      grp.add(ring);
+      for (let k = 0; k < level - 1; k++) {
+        const pip = new THREE.Mesh(new THREE.OctahedronGeometry(0.09, 0), mat);
+        const a = (k / Math.max(1, level - 1)) * Math.PI * 2;
+        const rr = piece.kind === 'wall' ? 0.5 : 0.95;
+        pip.position.set(Math.cos(a) * rr, (piece.kind === 'wall' ? 2.95 : 0.2) + 0.12, Math.sin(a) * rr);
+        grp.add(pip);
+      }
+    }
     if (piece.kind === 'wall') {
       const m = new THREE.Mesh(g.wall, this.mats[piece.id]);
       m.castShadow = m.receiveShadow = !!this.opts.shadows;
       grp.add(m);
-      if (piece.id !== 'wood') {
+      if (piece.thorns) {
+        const cones = [];
+        for (let k = -2; k <= 2; k++) for (const side of [-1, 1]) for (const y of [0.7, 1.6]) {
+          const c = new THREE.ConeGeometry(0.08, 0.45, 5);
+          c.rotateX(side * Math.PI / 2); c.translate(k * 0.36 + (y > 1 ? 0.18 : 0), y, side * 0.42);
+          cones.push(c);
+        }
+        grp.add(new THREE.Mesh(mergeGeometries(cones), this.mats.thornSpike));
+      }
+      if (piece.id !== 'wood' && !piece.thorns) {
         const cap = new THREE.Mesh(new THREE.BoxGeometry(CELL + 0.06, 0.18, 0.55), piece.id === 'metal' ? this.mats.metal : this.mats.plate);
         cap.position.y = 2.65;
         grp.add(cap);
@@ -206,6 +235,54 @@ export class Structures {
       top.position.y = 2.4;
       grp.add(top);
       grp.userData.top = top; grp.userData.topY = 3.4;
+    } else if (piece.style === 'flak' || piece.style === 'sniper') {
+      const sniper = piece.style === 'sniper';
+      const tower = cloneStatic('tower', { height: sniper ? 4.6 : 3.0 });
+      tower.scale.x = tower.scale.z = sniper ? 0.5 : 0.7;
+      grp.add(tower);
+      const head = new THREE.Group();
+      const base = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.65, 0.4, 12), this.mats.steel);
+      const box = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.5, 0.9), sniper ? this.mats.steel : this.mats.flak);
+      box.position.y = 0.4;
+      const eye = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.1, 0.05), sniper ? this.mats.violet : this.mats.ember);
+      eye.position.set(0, 0.5, 0.46);
+      const barrel = new THREE.Group();
+      if (sniper) {
+        const b = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 2.0, 8), this.mats.steel);
+        b.rotation.x = Math.PI / 2; b.position.z = 0.8;
+        const scope = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.5, 8), this.mats.violet);
+        scope.rotation.x = Math.PI / 2; scope.position.set(0, 0.18, 0.2);
+        barrel.add(b, scope);
+      } else {
+        for (const x of [-0.2, 0.2]) {
+          const b = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.13, 1.1, 10), this.mats.steel);
+          b.rotation.x = Math.PI / 2; b.position.set(x, 0, 0.45);
+          barrel.add(b);
+        }
+      }
+      barrel.position.set(0, 0.45, 0.2);
+      const muzzle = new THREE.Object3D(); muzzle.position.set(0, 0, sniper ? 1.8 : 1.0);
+      barrel.add(muzzle);
+      head.add(base, box, eye, barrel);
+      head.userData = { barrel, muzzle };
+      head.position.y = sniper ? 4.7 : 3.1;
+      grp.add(head);
+      grp.userData.head = head; grp.userData.topY = head.position.y + 0.5;
+    } else if (piece.style === 'laser') {
+      const base = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.9, 0.6, 8), this.mats.steel);
+      base.position.y = 0.3;
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.35, 2.8, 8), this.mats.steel);
+      pole.position.y = 2.0;
+      const top = new THREE.Group();
+      const crystal = new THREE.Mesh(new THREE.OctahedronGeometry(0.45, 0), this.mats.pink);
+      crystal.scale.y = 1.6;
+      const halo1 = new THREE.Mesh(new THREE.TorusGeometry(0.62, 0.05, 6, 24), this.mats.pink);
+      halo1.rotation.x = Math.PI / 2;
+      const halo2 = halo1.clone(); halo2.rotation.x = Math.PI / 3;
+      top.add(crystal, halo1, halo2);
+      top.position.y = 3.9;
+      grp.add(base, pole, top);
+      grp.userData.top = top; grp.userData.topY = 3.9;
     } else if (piece.kind === 'turret') {
       const tower = cloneStatic('tower', { height: 3.4 });
       tower.scale.x = tower.scale.z = 0.62;
@@ -218,18 +295,20 @@ export class Structures {
     return grp;
   }
 
-  add(pieceId, i, j, rot = 0, temporary = false) {
+  add(pieceId, i, j, rot = 0, temporary = false, level = 1) {
     const piece = pieceById(pieceId);
-    const mesh = this.makeMesh(piece, rot);
+    level = Math.max(1, Math.min(MAX_BUILD_LEVEL, level | 0 || 1));
+    const mesh = this.makeMesh(piece, rot, level);
     const c = Structures.cellCenter(i, j);
     mesh.position.copy(c);
     this.group.add(mesh);
-    const s = { piece, i, j, rot, mesh, x: c.x, z: c.z, hp: 1, max: 1, alive: true, shake: 0, cooldown: Math.random() * 0.3, temporary, life: 0, bar: null };
+    const s = { piece, i, j, rot, mesh, x: c.x, z: c.z, hp: 1, max: 1, alive: true, shake: 0, cooldown: Math.random() * 0.3, temporary, life: 0, bar: null, level, stunT: 0 };
+    s.max = s.hp = pieceHp(piece, level);
     if (piece.kind === 'wall') {
       s.hx = rot ? 0.28 : CELL / 2;
       s.hz = rot ? CELL / 2 : 0.28;
       s.bar = makeBar(mesh, 3.1);
-    }
+    } else s.bar = makeBar(mesh, piece.kind === 'turret' ? (piece.style === 'mortar' ? 4.2 : 4.6) : 1.2);
     if (piece.kind === 'turret') { s.hx = s.hz = 0.9; }
     if (piece.kind === 'pad') { s.hx = s.hz = 0; }
     this.list.push(s);
@@ -254,15 +333,23 @@ export class Structures {
     const s = this.byCell.get(cellKey(i, j));
     if (!s || s.piece.kind !== 'wall') return null;
     this.removeStructure(s);
-    return this.add(s.piece.id, i, j, s.rot ? 0 : 1);
+    return this.add(s.piece.id, i, j, s.rot ? 0 : 1, false, s.level);
+  }
+
+  // rebuild the mesh at a new level (keeps the cell)
+  upgradeAt(i, j) {
+    const s = this.byCell.get(cellKey(i, j));
+    if (!s || s.level >= MAX_BUILD_LEVEL) return null;
+    this.removeStructure(s);
+    return this.add(s.piece.id, i, j, s.rot, false, s.level + 1);
   }
 
   loadFrom(saved) {
     for (const s of [...this.list]) this.removeStructure(s);
-    for (const s of saved) if (pieceById(s.p)) this.add(s.p, s.i, s.j, s.r || 0);
+    for (const s of saved) if (pieceById(s.p)) this.add(s.p, s.i, s.j, s.r || 0, false, s.l || 1);
   }
 
-  serialize() { return this.list.filter(s => !s.temporary).map(s => ({ p: s.piece.id, i: s.i, j: s.j, r: s.rot })); }
+  serialize() { return this.list.filter(s => !s.temporary).map(s => ({ p: s.piece.id, i: s.i, j: s.j, r: s.rot, l: s.level })); }
 
   // Restore every structure to full health for a new wave attempt.
   resetForWave(wallMult) {
@@ -272,7 +359,18 @@ export class Structures {
       s.mesh.visible = true;
       s.mesh.scale.set(1, 1, 1);
       s.mesh.position.set(s.x, 0, s.z);
-      if (s.piece.kind === 'wall') { s.max = s.piece.hp * wallMult; s.hp = s.max; }
+      s.max = pieceHp(s.piece, s.level) * wallMult; s.hp = s.max; s.stunT = 0;
+      updateBar(s);
+    }
+  }
+
+  // Next wave of the same run: buildings keep their damage (and stay broken) until you die.
+  refreshWave(wallMult) {
+    for (const s of this.list) {
+      const f = s.alive ? s.hp / s.max : 0;
+      s.max = pieceHp(s.piece, s.level) * wallMult;
+      s.hp = s.max * f;
+      s.stunT = 0;
       updateBar(s);
     }
   }
@@ -324,7 +422,7 @@ export class Structures {
       if (s.recoil > 0) {
         s.recoil = Math.max(0, s.recoil - dt * 6);
         const head = s.mesh.userData.head;
-        if (head) head.userData.barrel.position.z = 0.55 - s.recoil * 0.15;
+        if (head) head.userData.barrel.position.z = (s.piece.style ? 0.2 : 0.55) - s.recoil * 0.15;
         else if (s.mesh.userData.top) s.mesh.userData.top.position.y = 2.4 - s.recoil * 0.2;
       }
       if (s.pop > 0) { s.pop = Math.max(0, s.pop - dt * 3); const sp = s.mesh.userData.spikes; if (sp) sp.position.y = s.pop * 0.25; }
@@ -513,9 +611,13 @@ export class BuildMode {
     const bar = document.getElementById('buildContext');
     bar.classList.toggle('hidden', !s);
     if (s) {
-      document.getElementById('ctxName').textContent = s.piece.name;
+      const L = s.level || 1;
+      document.getElementById('ctxName').textContent = `${s.piece.name} · Lv ${L}`;
       document.getElementById('ctxRotate').classList.toggle('hidden', s.piece.kind !== 'wall');
-      document.getElementById('ctxSell').innerHTML = `Sell <span class="coin-ico"></span>${s.piece.cost}`;
+      const up = document.getElementById('ctxUpgrade');
+      up.innerHTML = L >= MAX_BUILD_LEVEL ? 'MAX LEVEL' : `Upgrade → Lv ${L + 1} <span class="coin-ico"></span>${upgradeCost(s.piece, L)}`;
+      up.disabled = L >= MAX_BUILD_LEVEL;
+      document.getElementById('ctxSell').innerHTML = `Sell <span class="coin-ico"></span>${sellValue(s.piece, L)}`;
     }
   }
 

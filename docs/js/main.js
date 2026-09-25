@@ -8,11 +8,11 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { Sfx } from './audio.js';
 import { Input } from './input.js';
 import { Particles, Tracers, DamageNumbers, Bolts, Rings } from './fx.js';
-import { loadModels, setShadowMode, KenneyChar, RobotChar, DroneChar, PetChar, makeGun, cloneStatic, renderThumbs } from './assets.js';
+import { loadModels, setShadowMode, KenneyChar, RobotChar, DroneChar, PetChar, ShipChar, GunshipChar, makeGun, cloneStatic, renderThumbs } from './assets.js';
 import { buildWorld, WORLD_R, COMPASS } from './world.js';
 import { Structures, BuildMode, pieceById } from './build.js';
 import {
-  WEAPONS, weaponById, weaponStats, HEROES, heroById, heroStats, PETS, petById, petStats, PET_PERK_NAMES, houseTier, houseMaxHp, ENEMIES, BUILD_PIECES,
+  WEAPONS, weaponById, weaponStats, HEROES, heroById, heroStats, PETS, petById, petStats, PET_PERK_NAMES, houseTier, houseMaxHp, ENEMIES, BUILD_PIECES, pieceLevelMult, upgradeCost, sellValue, MAX_BUILD_LEVEL,
   RARITIES, rarityIndex, rarityOf, xpToNext, addXp, MAX_LEVEL,
   buildWave, waveSummary, waveHpMult, waveDmgMult, waveCoinMult, waveBonus, isBossWave, portalCount,
   loadSave, parseSave, writeLocal, clearSave, defaultSave,
@@ -150,7 +150,7 @@ async function initCloud() {
 // ---------------------------------------------------------------- state
 const G = {
   state: 'loading', phase: 'idle', phaseT: 0, time: 0,
-  queue: [], spawnT: 0, enemies: [], coins: [], rockets: [], globs: [], grenades: [], clouds: [],
+  queue: [], spawnT: 0, enemies: [], coins: [], rockets: [], globs: [], grenades: [], clouds: [], vortices: [],
   kills: 0, runCoins: 0, houseHp: 700, houseMax: 700, houseLastHit: -10,
   shake: 0, kick: 0, failReason: '', dynT: 0, dynFrames: 0, menuAngle: 0.6,
   hitCount: 0, novaQueue: [], xpStart: null, thumbs: {},
@@ -163,7 +163,7 @@ const player = {
   char: null, gunHolder: null, gun: null, weaponId: 'pistol', ammo: {},
   reloadT: 0, fireCd: 0, swapT: 0, lastShot: -10, bloom: 0,
   abilityCd: 0, charges: 1, shieldT: 0, boostT: 0, adrenalineT: 0, dashT: 0, dashDir: new THREE.Vector3(), rebootUsed: false,
-  stormT: 0, slowT: 0, burnT: 0, burnDps: 0,
+  stormT: 0, slowT: 0, burnT: 0, burnDps: 0, fortT: 0, vanishT: 0, overclockT: 0, pull: null, hits: 0,
   ring: null,
 };
 let HS = null;      // hero stats
@@ -258,14 +258,20 @@ function applyUpgradesToWorld() {
   refreshHero();
 }
 
+function healHouseDt(amount) {
+  if (!isGuest()) { G.houseHp = Math.min(G.houseMax, G.houseHp + amount); return; }
+  NET.hhAcc = (NET.hhAcc || 0) + amount;
+  if (NET.hhAcc >= 8) { healHouse(NET.hhAcc); NET.hhAcc = 0; }
+}
 function wallMult() {
   let m = 1 + 0.08 * (curWave() - 1);
+  if (save.hero === 'gizmo') m *= 1.25;
   if (save.hero === 'cyra') m *= 1.3;
   if (HS.perks.has('fortify')) m *= 1.3;
   return m;
 }
 function trapMult() {
-  let m = 1;
+  let m = save.hero === 'gizmo' ? 1.25 : 1;
   if (HS.perks.has('overclock')) m *= 1.3;
   return m * waveScale();
 }
@@ -281,7 +287,7 @@ function setupHeroModel() {
   if (player.char) { scene.remove(player.char.root); player.char.dispose(); }
   let ch;
   if (def.model === 'robot') ch = new RobotChar({ color: def.color || 0x3d8bff, height: 2.0, eyes: def.color ? 0xffc02e : 0x3ce0ff });
-  else ch = new KenneyChar(def.model, { height: 1.85 });
+  else ch = new KenneyChar(def.model, { height: 1.85, tint: def.tint || null, glow: def.glow || null });
   ch.heroId = def.id;
   scene.add(ch.root);
   player.char = ch;
@@ -330,7 +336,7 @@ function updateThumbs() {
   for (const h of HEROES) {
     const key = 'hero_' + h.id;
     if (G.thumbs[key]) continue;
-    const ch = h.model === 'robot' ? new RobotChar({ color: h.color || 0x3d8bff, height: 2, eyes: h.color ? 0xffc02e : 0x3ce0ff }) : new KenneyChar(h.model, { height: 1.85 });
+    const ch = h.model === 'robot' ? new RobotChar({ color: h.color || 0x3d8bff, height: 2, eyes: h.color ? 0xffc02e : 0x3ce0ff }) : new KenneyChar(h.model, { height: 1.85, tint: h.tint || null, glow: h.glow || null });
     ch.pose(0.016, 0, -1, null);
     if (ch.mixer) ch.mixer.update(0.5);
     jobs.push({ id: key, object: ch.root, dir: [0.35, 0.25, 1], dist: 1.3, done: () => ch.dispose() });
@@ -338,7 +344,7 @@ function updateThumbs() {
   for (const p of PETS) {
     const key = 'pet_' + p.id;
     if (G.thumbs[key]) continue;
-    const ch = new PetChar(p.model, { height: 0.9 });
+    const ch = new PetChar(p.model, { height: 0.9, tint: p.tint, glow: p.glow, ghost: p.ghost });
     ch.mixer.update(0.3);
     jobs.push({ id: key, object: ch.root, dir: [0.6, 0.45, 1], dist: 1.5, done: () => ch.dispose() });
   }
@@ -432,7 +438,7 @@ function resetPlayer() {
   player.reloadT = 0; player.fireCd = 0; player.swapT = 0; player.bloom = 0;
   player.abilityCd = 0; player.charges = HS.perks.has('doubledash') ? 2 : 1;
   player.shieldT = 0; player.boostT = 0; player.adrenalineT = 0; player.dashT = 0; player.rebootUsed = false;
-  player.stormT = 0; player.slowT = 0; player.burnT = 0;
+  player.stormT = 0; player.slowT = 0; player.burnT = 0; player.fortT = 0; player.vanishT = 0; player.overclockT = 0; player.pull = null;
   const ch = player.char;
   ch.dead = false; ch.deadT = 0; ch.body.rotation.set(0, 0, 0); ch.body.position.set(0, 0, 0);
   if (ch.play) { ch.current = null; ch.mixer.stopAllAction(); ch.play('Idle', 0.1); }
@@ -497,6 +503,23 @@ function updatePlayer(dt) {
   player.boostT = Math.max(0, player.boostT - dt);
   player.adrenalineT = Math.max(0, player.adrenalineT - dt);
   player.stormT = Math.max(0, player.stormT - dt);
+  player.fortT = Math.max(0, player.fortT - dt);
+  player.overclockT = Math.max(0, player.overclockT - dt);
+  if (player.vanishT > 0) {
+    player.vanishT -= dt;
+    const inv = player.vanishT > 0;
+    for (const m of ch.mats) { m.transparent = inv; m.opacity = inv ? 0.3 : 1; }
+  }
+  if (player.pull && player.pull.t > 0) {
+    player.pull.t -= dt;
+    const dx = player.pull.x - player.pos.x, dz = player.pull.z - player.pos.z, d = Math.hypot(dx, dz) || 1;
+    if (d > 3) { player.pos.x += dx / d * 7 * dt; player.pos.z += dz / d * 7 * dt; }
+    if (Math.random() < dt * 20) sparks.emit(player.pos.x, 1, player.pos.z, dx / d * 4, 0.5, dz / d * 4, 0.4, 0.3, COL.purple, 0);
+  }
+  if (save.hero === 'frosty' && G.phase === 'fight') {
+    player.auraT = (player.auraT || 0) - dt;
+    if (player.auraT <= 0) { player.auraT = 0.4; for (const e of G.enemies) if (e.alive && Math.hypot(e.pos.x - player.pos.x, e.pos.z - player.pos.z) < 6 && !(e.chill && e.chill.slow > 0.25)) setChill(e, 0.25, 0.6); }
+  }
   if (player.slowT > 0) {
     player.slowT -= dt;
     if (Math.random() < dt * 8) sparks.emit(player.pos.x, 0.3 + Math.random() * 1.6, player.pos.z, 0, 0.5, 0, 0.5, 0.2, COL.ice, 1);
@@ -698,12 +721,163 @@ function useAbility() {
       }
       break;
     }
+    case 'blaze': {
+      const r = 8 * (HS.perks.has('bignova') ? 1.5 : 1);
+      const burn = 22 * power * (HS.perks.has('hotter') ? 2 : 1);
+      rings.spawn(player.pos, r, 0xff6a2a, 0.7); rings.spawn(player.pos, r * 0.6, 0xffc02e, 0.5);
+      explode(player.pos.clone().setY(1), 0, r * 0.5, { color: COL.fire });
+      for (let k = 0; k < 60; k++) { const a = Math.random() * TAU; sparks.emit(player.pos.x + Math.cos(a) * r * 0.8, 0.4, player.pos.z + Math.sin(a) * r * 0.8, Math.cos(a) * 3, 3 + Math.random() * 3, Math.sin(a) * 3, 0.8, 0.5, COL.fire, -1); }
+      for (const e of G.enemies) if (e.alive && e.spawnT <= 0 && Math.hypot(e.pos.x - player.pos.x, e.pos.z - player.pos.z) < r + e.radius) {
+        damageEnemy(e, 80 * power, { point: e.pos.clone().setY(e.pos.y + e.height * 0.6), src: 'ability' });
+        if (e.alive) e.burn = { dps: burn, t: 4 };
+      }
+      if (HS.perks.has('firewalk')) spawnCloud(player.pos.clone().setY(0), r * 0.7, 30 * power, 5, true, 'fire');
+      break;
+    }
+    case 'frosty': {
+      const r = 10 * (HS.perks.has('bigblizzard') ? 1.5 : 1);
+      const t = HS.perks.has('deepfreeze') ? 5 : 3;
+      rings.spawn(player.pos, r, 0x9fe8ff, 0.9); rings.spawn(player.pos, r * 0.5, 0xffffff, 0.6);
+      for (let k = 0; k < 70; k++) { const a = Math.random() * TAU, rr = Math.random() * r; sparks.emit(player.pos.x + Math.cos(a) * rr, 0.3 + Math.random() * 2, player.pos.z + Math.sin(a) * rr, 0, 2, 0, 1, 0.4, COL.ice, 0); }
+      for (const e of G.enemies) if (e.alive && e.spawnT <= 0 && Math.hypot(e.pos.x - player.pos.x, e.pos.z - player.pos.z) < r + e.radius) {
+        damageEnemy(e, 40 * power, { point: e.pos.clone().setY(e.pos.y + e.height * 0.6), src: 'ability' });
+        if (e.alive) setChill(e, 0.85, t);
+      }
+      sfx.zap();
+      break;
+    }
+    case 'volt': {
+      const n = HS.perks.has('morechains') ? 16 : 10;
+      const dmg = 90 * power * (HS.perks.has('overcharge') ? 1.6 : 1);
+      let from = player.pos.clone().setY(1.6);
+      const hitSet = new Set();
+      for (let k = 0; k < n; k++) {
+        let best = null, bd = 16;
+        for (const e of G.enemies) { if (!e.alive || e.spawnT > 0 || hitSet.has(e)) continue; const d = Math.hypot(e.pos.x - from.x, e.pos.z - from.z); if (d < bd) { bd = d; best = e; } }
+        if (!best) break;
+        hitSet.add(best);
+        const to = best.pos.clone().setY(best.pos.y + best.height * 0.55);
+        bolts.spawn(from, to, 0xfff07a, 0.22, 0.7);
+        damageEnemy(best, dmg, { point: to, src: 'ability' });
+        from = to;
+      }
+      sfx.zap();
+      break;
+    }
+    case 'ranger': {
+      const tEnd = Math.min(60, worldHitT(ray.origin, ray.direction, 60));
+      const c = ray.origin.clone().addScaledVector(ray.direction, tEnd); c.y = 0;
+      const n = HS.perks.has('morearrows') ? 26 : 16;
+      rings.spawn(c, 6, 0xa8e08a, 1.8);
+      for (let k = 0; k < n; k++) {
+        const a = Math.random() * TAU, rr = Math.sqrt(Math.random()) * 6;
+        const p = new THREE.Vector3(c.x + Math.cos(a) * rr, 0.2, c.z + Math.sin(a) * rr);
+        setTimeout(() => {
+          if (G.phase !== 'fight') return;
+          tracers.spawn(p.clone().add(V1.set(-3, 18, -3)), p, 0xe8d8a0, 0.06, 0.15);
+          explode(p, 45 * power, 2, { src: 'ability', small: true });
+          if (HS.perks.has('poison')) for (const e of G.enemies) if (e.alive && Math.hypot(e.pos.x - p.x, e.pos.z - p.z) < 2.2) e.burn = { dps: 12 * power, t: 4 };
+        }, 150 + k * (1400 / n));
+      }
+      break;
+    }
+    case 'brick': {
+      player.fortT = HS.perks.has('longfort') ? 9 : 6;
+      rings.spawn(player.pos, 14, 0x8a939e, 0.8);
+      G.shake = 0.35;
+      showBanner('FORTRESS', 'Enemies are coming for you', 'gold', 1.2);
+      for (const e of G.enemies) if (e.alive && !e.def.boss && Math.hypot(e.pos.x - player.pos.x, e.pos.z - player.pos.z) < 14) { e.huntWall = null; e.wall = null; }
+      break;
+    }
+    case 'shadow': {
+      player.vanishT = HS.perks.has('longvanish') ? 8 : 5;
+      smoke.emit(player.pos.x, 1, player.pos.z, 0, 0.5, 0, 1.2, 1.5, COL.purple, 0, 1.5, 2.5);
+      for (let k = 0; k < 20; k++) smoke.emit(player.pos.x + (Math.random() - 0.5) * 2, 0.5 + Math.random() * 2, player.pos.z + (Math.random() - 0.5) * 2, 0, 0.5, 0, 0.8, 0.8, COL.purple, 0, 1, 2);
+      for (const e of G.enemies) if (e.atkTarget === 'player') e.atkTarget = null;
+      break;
+    }
+    case 'gizmo': {
+      player.overclockT = HS.perks.has('longclock') ? 14 : 8;
+      for (const st of structures.list) {
+        if (st.temporary) continue;
+        if (!st.alive) { if (HS.perks.has('rebuild')) fixWall(st, 'revive'); continue; }
+        fixWall(st, st.max * 0.4);
+        rings.spawn(new THREE.Vector3(st.x, 0.2, st.z), 1.5, 0xffc07a, 0.5);
+      }
+      healHouse(G.houseMax * 0.05);
+      showBanner('OVERCLOCK', 'Buildings repaired and firing twice as fast', 'gold', 1.4);
+      break;
+    }
+    case 'sage': {
+      const r = 7 * (HS.perks.has('biggrove') ? 1.5 : 1);
+      spawnCloud(player.pos.clone().setY(0), r, HS.perks.has('thorngrove') ? 28 * power : 0, 8, true, 'grove');
+      rings.spawn(player.pos, r, 0x6dff9a, 1);
+      sfx.heal();
+      if (HS.perks.has('miracle')) for (const st of structures.list) if (!st.alive && st.piece.kind === 'wall') fixWall(st, 'revive');
+      break;
+    }
+    case 'ace': {
+      const n = HS.perks.has('morebombs') ? 14 : 10;
+      const dir = new THREE.Vector3(ray.direction.x, 0, ray.direction.z).normalize();
+      const start = player.pos.clone().addScaledVector(dir, 6); start.y = 0.2;
+      tracers.spawn(start.clone().add(V1.set(0, 20, 0)).addScaledVector(dir, -20), start.clone().add(V2.set(0, 20, 0)).addScaledVector(dir, n * 2.6 + 20), 0xffffff, 0.3, 1.2);
+      for (let k = 0; k < n; k++) {
+        const p = start.clone().addScaledVector(dir, k * 2.6);
+        setTimeout(() => {
+          if (G.phase !== 'fight') return;
+          explode(p, 70 * power, 3, { src: 'ability' });
+          if (HS.perks.has('napalm')) spawnCloud(p.clone().setY(0), 2.2, 20 * power, 4, true, 'fire');
+        }, 350 + k * 110);
+      }
+      break;
+    }
+    case 'hex': {
+      const tEnd = Math.min(50, worldHitT(ray.origin, ray.direction, 50));
+      const c = ray.origin.clone().addScaledVector(ray.direction, tEnd); c.y = 0;
+      const r = 7 * (HS.perks.has('bigcurse') ? 1.5 : 1);
+      rings.spawn(c, r, 0xc08aff, 1); rings.spawn(c, r * 0.5, 0x7a3aff, 0.8);
+      for (let k = 0; k < 40; k++) { const a = Math.random() * TAU, rr = Math.random() * r; sparks.emit(c.x + Math.cos(a) * rr, 0.3, c.z + Math.sin(a) * rr, 0, 2.5, 0, 0.9, 0.4, COL.purple, -1); }
+      for (const e of G.enemies) if (e.alive && Math.hypot(e.pos.x - c.x, e.pos.z - c.z) < r + e.radius) {
+        e.curseT = 8; e.curseMult = HS.perks.has('doom') ? 1.8 : 1.5;
+        e.curseDot = HS.perks.has('plague') ? 15 * power : 0;
+        setChill(e, 0.3, 8);
+      }
+      break;
+    }
   }
 }
 
 // ---------------------------------------------------------------- poison / plague clouds
-function spawnCloud(pos, r, dps, t, friendly) {
-  G.clouds.push({ pos: pos.clone(), r, dps, t, max: t, friendly });
+function spawnCloud(pos, r, dps, t, friendly, kind = '', owner = true) {
+  G.clouds.push({ pos: pos.clone(), r, dps, t, max: t, friendly, kind, owner });
+}
+
+function spawnVortex(pos, r, dps, t) {
+  G.vortices.push({ pos: pos.clone(), r, dps, t });
+  rings.spawn(pos, r, 0x7a3aff, 0.8);
+  sfx.zap();
+}
+
+function updateVortices(dt) {
+  for (let i = G.vortices.length - 1; i >= 0; i--) {
+    const v = G.vortices[i];
+    v.t -= dt;
+    if (v.t <= 0) { explode(v.pos.clone().setY(0.8), v.dps * 1.5, v.r * 0.6, { src: 'weapon', small: true, noAbilities: true, color: COL.purple }); G.vortices.splice(i, 1); continue; }
+    for (let k = 0; k < 4; k++) {
+      const a = Math.random() * TAU, rr = 0.5 + Math.random() * v.r;
+      sparks.emit(v.pos.x + Math.cos(a) * rr, 0.4 + Math.random() * 1.5, v.pos.z + Math.sin(a) * rr, -Math.cos(a) * rr * 2 - Math.sin(a) * 3, 0.5, -Math.sin(a) * rr * 2 + Math.cos(a) * 3, 0.4, 0.35, COL.purple, 0);
+    }
+    for (const e of G.enemies) {
+      if (!e.alive || e.spawnT > 0) continue;
+      const dx = v.pos.x - e.pos.x, dz = v.pos.z - e.pos.z, d = Math.hypot(dx, dz);
+      if (d > v.r + e.radius) continue;
+      damageEnemy(e, v.dps * dt, { src: 'weapon', quiet: true });
+      if (e.def.boss || d < 0.6) continue;
+      const k2 = Math.min(d - 0.5, 6 * dt);
+      if (e.mirror) { e.pullAcc = (e.pullAcc || 0) + 1; if (e.pullAcc % 8 === 0) netRequest(['kb', e.id, r1(dx / d * k2 * 8), r1(dz / d * k2 * 8)]); }
+      else { e.pos.x += dx / d * k2; e.pos.z += dz / d * k2; }
+    }
+  }
 }
 
 function updateClouds(dt) {
@@ -711,13 +885,18 @@ function updateClouds(dt) {
     const c = G.clouds[i];
     c.t -= dt;
     if (c.t <= 0) { G.clouds.splice(i, 1); continue; }
-    const col = c.friendly ? COL.acid : COL.toxic;
+    const col = c.kind === 'fire' ? COL.fire : c.kind === 'grove' ? COL.green : c.friendly ? COL.acid : COL.toxic;
+    if (c.kind === 'grove') {
+      // Sage's grove heals whoever stands in it (and the house)
+      if (player.alive && Math.hypot(player.pos.x - c.pos.x, player.pos.z - c.pos.z) < c.r) player.hp = Math.min(player.maxHp, player.hp + player.maxHp * 0.06 * dt);
+      healHouseDt(G.houseMax * 0.01 * dt);
+    }
     for (let k = 0; k < Math.ceil(c.r * 1.2); k++) {
       if (Math.random() > dt * 10) continue;
       const a = Math.random() * TAU, rr = Math.sqrt(Math.random()) * c.r;
       smoke.emit(c.pos.x + Math.cos(a) * rr, 0.3 + Math.random() * 0.8, c.pos.z + Math.sin(a) * rr, 0, 0.4, 0, 1.2, 1.2, col, -0.2, 1.2, 2.2);
     }
-    if (c.friendly) {
+    if (c.friendly && c.dps > 0) {
       for (const e of G.enemies) {
         if (!e.alive || e.spawnT > 0) continue;
         if (Math.hypot(e.pos.x - c.pos.x, e.pos.z - c.pos.z) < c.r + e.radius) damageEnemy(e, c.dps * dt, { src: 'ability', quiet: true });
@@ -795,7 +974,7 @@ function setupPet() {
   const ri = rarityIndex(petRec().level);
   if (pet.char && pet.id === def.id) { if (pet.ring) pet.ring.material.color.setHex(RARITIES[ri].hex); return; }
   if (pet.char) { scene.remove(pet.char.root); pet.char.dispose(); }
-  pet.char = new PetChar(def.model, { height: def.fly ? 0.75 : 0.85 });
+  pet.char = new PetChar(def.model, { height: def.fly ? 0.75 : 0.85, tint: def.tint, glow: def.glow, ghost: def.ghost });
   pet.id = def.id;
   scene.add(pet.char.root);
   const ring = new THREE.Mesh(new THREE.RingGeometry(0.42, 0.52, 32), new THREE.MeshBasicMaterial({ color: RARITIES[ri].hex, transparent: true, opacity: 0.7, blending: THREE.AdditiveBlending, depthWrite: false }));
@@ -860,7 +1039,7 @@ function updatePet(dt) {
       pet.fix = null;
       let bd = 40;
       for (const st of structures.list) {
-        if (st.piece.kind !== 'wall' || st.temporary || (st.alive && st.hp >= st.max * 0.95)) continue;
+        if (st.temporary || (st.alive && st.hp >= st.max * 0.95)) continue;
         const d = Math.hypot(st.x - player.pos.x, st.z - player.pos.z) + (st.alive ? 0 : 6);
         if (d < bd) { bd = d; pet.fix = st; }
       }
@@ -1113,7 +1292,11 @@ function fire(w, st) {
       const tEnd = worldHitT(ray.origin, d, w.range);
       const hits = raycastEnemies(ray.origin, d, tEnd).filter(h => h.t > minT);
       const aimPoint = ray.origin.clone().addScaledVector(d, hits.length ? hits[0].t : tEnd);
-      spawnRocket(muzzle, aimPoint, dmgBase * (k > 0 ? 0.6 : 1), w.splash, tracerCol, { lob: w.lob, plasma: w.plasma });
+      const lock = w.homing ? findAimTarget(12, 2) : null;
+      spawnRocket(muzzle, aimPoint, dmgBase * (k > 0 ? 0.6 : 1), w.splash, w.vortex ? 0x7a3aff : tracerCol, {
+        lob: w.lob, plasma: w.plasma, pool: w.pool, cluster: w.cluster, vortex: w.vortex,
+        homing: lock ? lock.e : null, aim: w.homing ? (lock ? lock.e.pos.clone().setY(lock.e.pos.y + lock.e.height * 0.5) : aimPoint.clone()) : null, speed: w.homing ? 34 : undefined,
+      });
     }
     return;
   }
@@ -1167,13 +1350,28 @@ function fire(w, st) {
 // Applies weapon abilities on a hit.
 function weaponHit(e, dmg, head, point, abilities, fromExplosion = false) {
   let crit = head;
-  let critChance = (HS.perks.has('critblades') ? 0.2 : 0) + (HS.perks.has('deadeye') ? 0.15 : 0);
+  let critChance = (HS.perks.has('critblades') ? 0.2 : 0) + (HS.perks.has('deadeye') ? 0.15 : 0) + (save.hero === 'shadow' ? 0.1 : 0);
   for (const a of abilities) if (a.key === 'crit') critChance += a.v.chance;
-  if (Math.random() < critChance) { dmg *= 2; crit = true; }
+  if (player.vanishT > 0) critChance = 1;
+  if (Math.random() < critChance) { dmg *= save.hero === 'shadow' ? 2.3 : 2; crit = true; }
+  if (save.hero === 'ranger' && Math.hypot(e.pos.x - player.pos.x, e.pos.z - player.pos.z) > 25) dmg *= 1.25;
+  if (save.hero === 'ace' && e.def.fly) dmg *= 1.2;
+  if (HS.perks.has('shatter') && e.chill) dmg *= 1.4;
   for (const a of abilities) if (a.key === 'executioner' && e.hp / e.maxHp < 0.35) dmg *= 1 + a.v.f;
   const dealt = damageEnemy(e, dmg, { point, head: crit, src: 'weapon' });
   if (save.hero === 'zed' && player.alive) player.hp = Math.min(player.maxHp, player.hp + dealt * (HS.perks.has('leech') ? 0.06 : 0.03));
   if (e.alive && HS.perks.has('rot') && !e.burn) e.burn = { dps: dmg * 0.3, t: 3 };
+  if (e.alive && save.hero === 'blaze' && !fromExplosion && Math.random() < 0.2) e.burn = { dps: dmg * 0.3 * (HS.perks.has('hotter') ? 2 : 1), t: 3 };
+  if (save.hero === 'hex' && HS.perks.has('leech') && e.curseT > 0 && player.alive) player.hp = Math.min(player.maxHp, player.hp + dealt * 0.05);
+  if (save.hero === 'volt' && !fromExplosion && ++player.hits % 6 === 0) {
+    let from = point.clone();
+    for (const o of G.enemies.filter(o2 => o2 !== e && o2.alive && o2.spawnT <= 0 && o2.pos.distanceTo(e.pos) < 8).slice(0, 2)) {
+      const to = new THREE.Vector3(o.pos.x, o.pos.y + o.height * 0.55, o.pos.z);
+      bolts.spawn(from, to, 0xfff07a, 0.14, 0.5);
+      damageEnemy(o, dmg * 0.6, { point: to, src: 'weapon' });
+      from = to;
+    }
+  }
   if (e.alive) {
     for (const a of abilities) {
       if (a.key === 'burn') e.burn = { dps: dmg * a.v.f, t: a.v.dur };
@@ -1246,7 +1444,8 @@ function spawnRocket(from, to, dmg, splash, color, opts = {}) {
     vel = to.clone().sub(from).divideScalar(T);
     vel.y += 0.5 * 20 * T;
   } else vel = to.clone().sub(from).normalize().multiplyScalar(opts.speed || (opts.plasma ? 34 : 42));
-  const r = { mesh, vel, dmg, splash, life: opts.lob ? 4 : 3, gravity: opts.lob ? 20 : 0, src: opts.src || 'weapon', plasma: opts.plasma, homing: opts.homing || null, aim: opts.aim || null, delay: opts.delay || 0, speed: opts.speed || 42, color };
+  if (opts.vortex) mesh.children.forEach((c, i) => c.material && c.material.color && c.material.color.setHex(i === 0 ? 0x1a0a2a : 0x7a3aff));
+  const r = { mesh, vel, dmg, splash, life: opts.lob ? 4 : 3, gravity: opts.lob ? 20 : 0, src: opts.src || 'weapon', plasma: opts.plasma, pool: opts.pool, cluster: opts.cluster, vortex: opts.vortex, homing: opts.homing || null, aim: opts.aim || null, delay: opts.delay || 0, speed: opts.speed || 42, color };
   G.rockets.push(r);
   return r;
 }
@@ -1286,6 +1485,10 @@ function updateRockets(dt) {
     }
     if (boom) {
       explode(p.clone(), r.dmg, r.splash, { src: r.src, color: r.plasma ? COL.purple : undefined, small: r.src === 'ability' });
+      const ground = p.clone(); ground.y = 0;
+      if (r.pool) spawnCloud(ground, r.splash, r.dmg * 0.35, 3.5, true, 'acid');
+      if (r.cluster) for (let k = 0; k < 5; k++) { const a = k / 5 * TAU + Math.random(); const q = ground.clone().add(V1.set(Math.cos(a) * 2.8, 0.3, Math.sin(a) * 2.8)); setTimeout(() => explode(q, r.dmg * 0.4, 2.2, { src: 'weapon', small: true, noAbilities: true }), 90 + k * 70); }
+      if (r.vortex) spawnVortex(ground, 6, r.dmg * 0.45, 2.6);
       scene.remove(r.mesh);
       r.mesh.traverse(o => { if (o.isMesh) { o.geometry.dispose(); o.material.dispose(); } });
       G.rockets.splice(i, 1);
@@ -1380,11 +1583,13 @@ function onLevel(kind, name, from, to) {
 function makeEnemyChar(def) {
   if (def.model === 'robot') return new RobotChar({ color: def.color, height: def.height, widen: def.widen || 1, emissive: def.emissive || 0, eyes: def.boss ? 0xff40ff : 0xff3020 });
   if (def.model === 'drone') return new DroneChar({ height: def.height, tint: def.tint || null });
+  if (def.model === 'ship') return new ShipChar({ height: def.height, tint: def.tint || null, glow: def.glow || null });
+  if (def.model === 'gunship') return new GunshipChar({ height: def.height, tint: def.tint || 0x5a6a3a });
   return new KenneyChar(def.model, { height: def.height, tint: def.tint || null, glow: def.glow || null, zombie: def.model.startsWith('zombie') });
 }
 
 let shieldGeo = null;
-function spawnEnemy(type, portalIndex, at = null) {
+function spawnEnemy(type, portalIndex, at = null, elite = false) {
   const def = ENEMIES[type];
   const n = curWave();
   const portal = world.portals[portalIndex] || world.portals[0];
@@ -1425,9 +1630,13 @@ function spawnEnemy(type, portalIndex, at = null) {
     burn: null, chill: null, healT: 2 + Math.random() * 2, summonT: def.summon ? 5 : 8,
     lastHit: -10, blinkT: 2 + Math.random() * 2, phaseT: Math.random() * 3, phased: false, huntT: 0, huntWall: null,
     haste: 1, shielded: false, enraged: false, life: 0, wander: null, hop: Math.random() * 6,
+    huntTowers: !!def.ranged && !def.boss && !def.goblin && Math.random() < 0.3,
   };
   if (def.phase) for (const m of char.mats) { m.transparent = true; m.opacity = 0.7; m.depthWrite = false; }
   e.id = NET.idSeq++;
+  e.skillT = (def.skills || []).map(sk => sk.every * (0.5 + Math.random() * 0.5));
+  if (def.skills && def.skills.some(sk => sk.type === 'shield')) { e.shieldHp = 0; e.bubble = makeBubble(char.root, def); }
+  if (elite) makeElite(e);
   if (!def.boss) e.hpBar = makeHpBar(char.root, def.height + 0.35 + (def.fly ? 0.3 : 0));
   G.enemies.push(e);
   sfx.portal();
@@ -1471,7 +1680,15 @@ function damageEnemy(e, amount, opts = {}) {
   const src = opts.src || 'weapon';
   const byPlayer = src === 'weapon' || src === 'ability';
   if (e.phased) return 0;
+  if (e.curseT > 0 && src !== 'remote') amount *= e.curseMult || 1.5;
   if (e.mirror && src !== 'remote') NET.dmgOut.set(e.id, (NET.dmgOut.get(e.id) || 0) + amount);
+  if (e.shieldHp > 0) {
+    // mana shield soaks damage first
+    const soak = Math.min(e.shieldHp, amount);
+    e.shieldHp -= soak; amount -= soak;
+    if (e.shieldHp <= 0 && !e.mirror) { rings.spawn(e.pos, e.radius * 3, 0x6fdcff, 0.5); showBanner('SHIELD BROKEN!', '', 'gold', 1); sfx.fenceBreak(); }
+    if (amount <= 0) { if (!opts.quiet && opts.point) sparks.emit(opts.point.x, opts.point.y, opts.point.z, 0, 1, 0, 0.3, 0.3, COL.blue, 4); return 0; }
+  }
   let blocked = false;
   e.lastHit = G.time;
   if (e.def.armor) amount *= 1 - e.def.armor;
@@ -1520,7 +1737,7 @@ function killEnemy(e, byPlayer = true, noCoins = false) {
   const c = new THREE.Vector3(e.pos.x, e.pos.y + e.height * 0.5, e.pos.z);
   for (let i = 0; i < 14; i++) sparks.emit(c.x, c.y, c.z, (Math.random() - 0.5) * 6, Math.random() * 5, (Math.random() - 0.5) * 6, 0.5, 0.3, COL.purple, 9, 1);
   if (!noCoins) {
-    let v = e.coinValue * coinMult();
+    let v = e.coinValue * coinMult() * (e.curseT > 0 && save.hero === 'hex' ? 1.3 : 1);
     if (HS.perks.has('jackpot') && Math.random() < 0.1) { v *= 3; dmgNums.spawn(c.clone().setY(c.y + 1), 'JACKPOT', 'coin'); }
     dropCoins(e.pos, v, e.def.boss ? 14 : e.def.coins >= 12 ? 5 : 2);
   }
@@ -1539,7 +1756,7 @@ function killEnemy(e, byPlayer = true, noCoins = false) {
     explode(c, 0, def.deathFire, { color: COL.fire, small: true });
     if (Math.hypot(player.pos.x - c.x, player.pos.z - c.z) < def.deathFire) { hurtPlayer(e.dmg * 0.8); burnPlayer(e.dmg * 0.25, 2.5); }
     hurtRemoteNear(c.x, c.z, def.deathFire, e.dmg * 0.8);
-    for (const s of structures.list) if (s.alive && s.piece.kind === 'wall' && Math.hypot(s.x - c.x, s.z - c.z) < def.deathFire + 0.5) hitStructure(s, e.dmg * 2);
+    for (const s of structures.list) if (s.alive && Math.hypot(s.x - c.x, s.z - c.z) < def.deathFire + 0.5) hitStructure(s, e.dmg * 2);
   }
   if (def.deathCloud) { spawnCloud(e.pos.clone().setY(0), def.deathCloud, e.dmg * 0.9, 5, false); rings.spawn(e.pos, def.deathCloud, 0x9aff4a, 0.5); }
   if (e.def.boss) { G.shake = 0.6; explode(c, 0, 1); }
@@ -1569,14 +1786,15 @@ function updateAuras() {
 
 function hostileTarget(e, def) {
   // wall hunters go straight for nearby walls
-  if (def.wallHunter) {
+  if (def.wallHunter || def.towerHunter || e.huntTowers) {
     e.huntT -= 1;
     if (e.huntT <= 0 || (e.huntWall && !e.huntWall.alive)) {
       e.huntT = 40;
       e.huntWall = null;
-      let bd = 20;
+      let bd = def.towerHunter ? 34 : 22;
+      const towersOnly = def.towerHunter || e.huntTowers;
       for (const s of structures.list) {
-        if (!s.alive || s.piece.kind !== 'wall') continue;
+        if (!s.alive || s.piece.kind === 'trap' || s.piece.kind === 'pad' || (towersOnly && s.piece.kind !== 'turret')) continue;
         const d = Math.hypot(s.x - e.pos.x, s.z - e.pos.z);
         if (d < bd) { bd = d; e.huntWall = s; }
       }
@@ -1698,9 +1916,9 @@ function updateEnemies(dt) {
     if (e.def.summon) {
       e.summonT -= dt;
       if (e.summonT <= 0) {
-        e.summonT = e.def.boss ? 9 : 7;
-        if (list.filter(o => o.alive).length < 40) {
-          const n = e.def.boss ? 4 : 2;
+        e.summonT = e.def.summonEvery || (e.def.boss ? 9 : 7);
+        if (list.filter(o => o.alive).length < 44) {
+          const n = e.def.summonN || (e.def.boss ? 4 : 2);
           for (let k = 0; k < n; k++) {
             const a = Math.random() * TAU;
             spawnEnemy(e.def.summon, 0, new THREE.Vector3(e.pos.x + Math.cos(a) * 2.5, 0, e.pos.z + Math.sin(a) * 2.5));
@@ -1720,16 +1938,19 @@ function updateEnemies(dt) {
       }
     }
     if (e.def.explode && Math.random() < dt * 3) sfx.beep();
+    if (e.def.skills) { enemySkills(e, dt); if (!e.alive) continue; }
+    if (e.curseT > 0) { e.curseT -= dt; if (Math.random() < dt * 6) sparks.emit(e.pos.x, e.pos.y + e.height * Math.random(), e.pos.z, 0, 1, 0, 0.6, 0.3, COL.purple, -1); if (e.curseDot) damageEnemy(e, e.curseDot * dt, { src: 'ability', quiet: true }); if (!e.alive) continue; }
 
     // target selection
     let dp = Math.hypot(player.pos.x - e.pos.x, player.pos.z - e.pos.z);
-    let tgtPos = player.pos, tgtKind = 'player', tgtOk = player.alive && (player.shieldT <= 0 || e.def.boss);
+    let tgtPos = player.pos, tgtKind = 'player', tgtOk = player.alive && (player.shieldT <= 0 || e.def.boss) && !(player.vanishT > 0);
     const RM = NET.remote;
-    if (RM && RM.alive && (!RM.shield || e.def.boss)) {
+    if (RM && RM.alive && !RM.hidden && (!RM.shield || e.def.boss)) {
       const dr = Math.hypot(RM.pos.x - e.pos.x, RM.pos.z - e.pos.z);
       if (!tgtOk || dr < dp) { dp = dr; tgtPos = RM.pos; tgtKind = 'remote'; tgtOk = true; }
     }
-    const aggro = e.def.boss ? 9 : e.def.fast ? 8 : e.def.ranged ? e.def.ranged * 0.8 : 6.5;
+    let aggro = e.def.hunter ? 60 : e.def.boss ? 9 : e.def.fast ? 8 : e.def.ranged ? e.def.ranged * 0.8 : 6.5;
+    if (player.fortT > 0 && tgtKind === 'player') aggro = Math.max(aggro, 14); // Brick's taunt
     let targetKind;
     const hunt = hostileTarget(e, e.def);
     if (tgtOk && dp < aggro) { TP.set(tgtPos.x, 0, tgtPos.z); targetKind = tgtKind; }
@@ -1788,6 +2009,10 @@ function updateEnemies(dt) {
       if (attackPhase >= 1) { e.atkT = -1; attackPhase = -1; }
     }
     e.speedNow += (moveSpeed - e.speedNow) * Math.min(1, dt * 8);
+    if (e.def.fly && !e.def.ranged) {
+      const near = clamp(1 - (dist - stopAt) / 8, 0, 1);
+      e.pos.y += ((e.def.fly - (e.def.fly - 1.3) * near) - e.pos.y) * Math.min(1, dt * 4);
+    }
     if (e.def.leap) {
       // bounding leaps that clear walls
       e.hop += dt * 5.5 * Math.min(1, e.speedNow / 2);
@@ -1836,6 +2061,145 @@ function updateEnemies(dt) {
   }
 }
 
+// ---------------------------------------------------------------- elites, boss skills
+function makeElite(e) {
+  e.elite = true;
+  e.hp *= 2.6; e.maxHp *= 2.6;
+  e.dmg *= 1.35;
+  e.coinValue *= 3;
+  e.height *= 1.18; e.radius *= 1.12;
+  e.char.body.scale.multiplyScalar(1.18);
+  const ring = new THREE.Mesh(new THREE.RingGeometry(e.radius * 1.3, e.radius * 1.6, 28), new THREE.MeshBasicMaterial({ color: 0xffc02e, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false }));
+  ring.rotation.x = -Math.PI / 2; ring.position.y = 0.06 - (e.def.fly || 0);
+  e.char.root.add(ring);
+  e.eliteRing = ring;
+  if (e.hpBar) { e.hpBar.bg.position.y *= 1.18; e.hpBar.fill.position.y *= 1.18; }
+}
+
+function makeBubble(parent, def) {
+  const m = new THREE.Mesh(new THREE.SphereGeometry(def.radius * 2.2, 24, 16), new THREE.MeshBasicMaterial({ color: 0x6fdcff, transparent: true, opacity: 0.22, blending: THREE.AdditiveBlending, depthWrite: false }));
+  m.position.y = def.height * 0.5;
+  m.visible = false;
+  parent.add(m);
+  return m;
+}
+
+// Damage the player, partner and buildings in a radius (boss abilities)
+function enemyAreaHit(e, x, z, r, dmg, opts = {}) {
+  if (Math.hypot(player.pos.x - x, player.pos.z - z) < r) {
+    hurtPlayer(dmg);
+    if (opts.burn) burnPlayer(dmg * 0.25, 3);
+    if (opts.slow) player.slowT = Math.max(player.slowT, opts.slow);
+  }
+  hurtRemoteNear(x, z, r, dmg);
+  for (const s of structures.list) {
+    if (!s.alive || Math.hypot(s.x - x, s.z - z) > r + 0.5) continue;
+    if (opts.stun) s.stunT = Math.max(s.stunT, opts.stun);
+    if (opts.building !== 0) hitStructure(s, dmg * (opts.building || e.def.wallMult || 1));
+  }
+  if (opts.house) { const hp = housePoint(x, z, V2); if (Math.hypot(hp.x - x, hp.z - z) < r) hurtHouse(dmg, new THREE.Vector3(x, 0, z)); }
+}
+
+function skyStrike(e, x, z, dmg) {
+  const top = new THREE.Vector3(x + (Math.random() - 0.5) * 3, 30, z + (Math.random() - 0.5) * 3);
+  const bottom = new THREE.Vector3(x, 0.2, z);
+  bolts.spawn(top, bottom, 0xfff07a, 0.3, 2.5);
+  bolts.spawn(top, bottom, 0xffffff, 0.2, 1.5);
+  rings.spawn(bottom, 3.2, 0xfff07a, 0.45);
+  explode(bottom, 0, 2.5, { small: true, color: COL.coin });
+  enemyAreaHit(e, x, z, 3, dmg, { house: true });
+}
+
+function skillTargets(e, towers, range = 40) {
+  const out = [];
+  for (const s of structures.list) if (s.alive && (!towers || s.piece.kind === 'turret') && Math.hypot(s.x - e.pos.x, s.z - e.pos.z) < range) out.push(new THREE.Vector3(s.x, 1.5, s.z));
+  if (player.alive && Math.hypot(player.pos.x - e.pos.x, player.pos.z - e.pos.z) < range) out.push(player.pos.clone().setY(1));
+  if (NET.remote && NET.remote.alive) out.push(NET.remote.pos.clone().setY(1));
+  if (!out.length || Math.random() < 0.25) out.push(housePoint(e.pos.x, e.pos.z, new THREE.Vector3()).setY(2));
+  return out;
+}
+
+function enemySkills(e, dt) {
+  const def = e.def;
+  // mana shield bubble
+  if (e.bubble) { e.bubble.visible = e.shieldHp > 0; if (e.bubble.visible) e.bubble.material.opacity = 0.14 + 0.1 * Math.sin(G.time * 6); }
+  if (G.phase !== 'fight') return;
+  def.skills.forEach((sk, i) => {
+    e.skillT[i] -= dt;
+    if (e.skillT[i] > 0) return;
+    e.skillT[i] = sk.every * (0.85 + Math.random() * 0.3);
+    const x = e.pos.x, z = e.pos.z;
+    const base = e.dmg;
+    switch (sk.type) {
+      case 'slam': {
+        rings.spawn(e.pos, sk.r, 0xb070ff, 0.6); rings.spawn(e.pos, sk.r * 0.6, 0xffffff, 0.4);
+        explode(new THREE.Vector3(x, 0.3, z), 0, sk.r * 0.6, { color: COL.dust });
+        G.shake = Math.max(G.shake, 0.5);
+        enemyAreaHit(e, x, z, sk.r, base * 0.9, { house: true });
+        break;
+      }
+      case 'frost': {
+        rings.spawn(e.pos, sk.r, 0x9fe8ff, 0.8); rings.spawn(e.pos, sk.r * 0.5, 0xffffff, 0.5);
+        for (let k = 0; k < 40; k++) { const a = Math.random() * TAU, rr = Math.random() * sk.r; sparks.emit(x + Math.cos(a) * rr, 0.3, z + Math.sin(a) * rr, 0, 3, 0, 0.8, 0.4, COL.ice, 0); }
+        enemyAreaHit(e, x, z, sk.r, base * 0.5, { slow: 3.5, stun: 3, building: 0.6 });
+        sfx.zap();
+        break;
+      }
+      case 'fireRing': {
+        rings.spawn(e.pos, sk.r, 0xff6a2a, 0.8); rings.spawn(e.pos, sk.r * 0.7, 0xffc02e, 0.6);
+        for (let k = 0; k < 50; k++) { const a = Math.random() * TAU; sparks.emit(x + Math.cos(a) * sk.r * 0.9, 0.3, z + Math.sin(a) * sk.r * 0.9, 0, 3 + Math.random() * 3, 0, 0.8, 0.5, COL.fire, -1); }
+        enemyAreaHit(e, x, z, sk.r, base * 0.7, { burn: true, stun: 1.5, building: 1.5 });
+        sfx.explosion();
+        break;
+      }
+      case 'emp': {
+        rings.spawn(e.pos.clone().setY(0), sk.r, 0x6fdcff, 0.7);
+        bolts.spawn(new THREE.Vector3(x, e.pos.y + 1, z), new THREE.Vector3(x, 0.2, z), 0x6fdcff, 0.3, 1.2);
+        let hit = 0;
+        for (const s of structures.list) if (s.alive && s.piece.kind === 'turret' && Math.hypot(s.x - x, s.z - z) < sk.r) { s.stunT = Math.max(s.stunT, sk.t); hit++; bolts.spawn(new THREE.Vector3(x, e.pos.y, z), new THREE.Vector3(s.x, 3, s.z), 0x6fdcff, 0.25, 0.8); }
+        if (hit) sfx.zap();
+        break;
+      }
+      case 'barrage': {
+        const tg = skillTargets(e, sk.towers);
+        const from = new THREE.Vector3(x, e.pos.y + e.height * 0.6, z);
+        for (let k = 0; k < sk.n; k++) {
+          const to = tg[k % tg.length].clone().add(V1.set((Math.random() - 0.5) * 3, 0, (Math.random() - 0.5) * 3));
+          const T = Math.max(0.5, from.distanceTo(to) / 22) + k * 0.05;
+          spitGlob(from.clone().add(V2.set((Math.random() - 0.5) * 2, 0, (Math.random() - 0.5) * 2)), to, e, 'barrage', { dmg: base * 0.45, bomb: true, splash: 2.6, T, grav: 6, color: 0x5a5a4a, emissive: 0xff6a2a, size: 0.2, trail: true });
+        }
+        sfx.shot('rocket');
+        break;
+      }
+      case 'lightning': {
+        const tg = skillTargets(e, false, 45);
+        for (let k = 0; k < sk.n; k++) {
+          const p = tg[Math.floor(Math.random() * tg.length)];
+          setTimeout(() => { if (G.phase === 'fight' && e.alive) skyStrike(e, p.x + (Math.random() - 0.5) * 2, p.z + (Math.random() - 0.5) * 2, base * 0.6); }, k * 180);
+        }
+        break;
+      }
+      case 'clouds': {
+        const tg = skillTargets(e, false, 40);
+        for (let k = 0; k < sk.n; k++) { const p = tg[Math.floor(Math.random() * tg.length)]; spawnCloud(new THREE.Vector3(p.x, 0, p.z), 4, base * 0.35, 6, false); rings.spawn(new THREE.Vector3(p.x, 0, p.z), 4, 0x9aff4a, 0.5); }
+        break;
+      }
+      case 'pull': {
+        if (player.alive && Math.hypot(player.pos.x - x, player.pos.z - z) < sk.r) {
+          player.pull = { x, z, t: 2 };
+          toast('The Void Reaper is pulling you in!');
+        }
+        rings.spawn(e.pos, sk.r, 0x7a3aff, 1.2); rings.spawn(e.pos, sk.r * 0.5, 0x7a3aff, 1);
+        break;
+      }
+      case 'shield': {
+        if (e.shieldHp <= 0) { e.shieldHp = e.maxHp * sk.frac; rings.spawn(e.pos, e.radius * 3, 0x6fdcff, 0.6); showBanner('MANA SHIELD UP', 'Burst it down!', 'red', 1.2); }
+        break;
+      }
+    }
+  });
+}
+
 function applyEnemyHit(e) {
   if (!e.alive) return;
   const t = e.atkTarget;
@@ -1847,13 +2211,23 @@ function applyEnemyHit(e) {
     hurtRemoteNear(c.x, c.z, def.explode, e.dmg * 0.6);
     const hp = housePoint(c.x, c.z, V2);
     if (Math.hypot(hp.x - c.x, hp.z - c.z) < def.explode) hurtHouse(e.dmg, c);
-    for (const s of structures.list) if (s.alive && s.piece.kind !== 'trap' && Math.hypot(s.x - c.x, s.z - c.z) < def.explode + 0.5) hitStructure(s, e.dmg * 1.5);
+    for (const s of structures.list) if (s.alive && Math.hypot(s.x - c.x, s.z - c.z) < def.explode + 0.5) hitStructure(s, e.dmg * 1.5);
     killEnemy(e, false, true);
     return;
   }
   if (def.ranged) {
     const target = t === 'player' ? player.pos.clone().setY(1) : t === 'remote' && NET.remote ? NET.remote.pos.clone().setY(1) : t === 'house' ? housePoint(e.pos.x, e.pos.z, new THREE.Vector3()).setY(2) : new THREE.Vector3(t.x, 1.3, t.z);
     const from = new THREE.Vector3(e.pos.x, e.pos.y + e.height * 0.8, e.pos.z);
+    if (def.fling) {
+      // throw a husk over the walls, toward the target
+      const land = target.clone(); land.y = 0;
+      const hp2 = housePoint(land.x, land.z, V2);
+      land.x += (hp2.x - land.x) * 0.25 + (Math.random() - 0.5) * 3; land.z += (hp2.z - land.z) * 0.25 + (Math.random() - 0.5) * 3;
+      spitGlob(from, land, e, t, { fling: def.fling, T: 1.3, grav: 16, color: 0x7a6a4a, emissive: 0x2a1a00, size: 0.55 });
+      sfx.spit();
+      return;
+    }
+    if (def.ramp) { e.rampN = Math.min(4, (e.rampN || 0) + 1); }
     if (def.bomb) {
       const drop = target.clone(); drop.y = 0;
       spitGlob(from.setY(e.pos.y - 0.2), drop, e, t, { bomb: true, splash: 3, T: 0.8, grav: 14, color: 0x2a2a2a, emissive: 0xff5020, size: 0.3 });
@@ -1866,11 +2240,12 @@ function applyEnemyHit(e) {
       return;
     }
     if (def.beam) {
-      tracers.spawn(from, target, def.beam, 0.07, 0.25);
+      const rampM = 1 + (def.ramp || 0) * (e.rampN || 0);
+      tracers.spawn(from, target, def.beam, 0.07 * rampM, 0.25);
       tracers.spawn(from, target, 0xffffff, 0.025, 0.25);
       sfx.shot('sniper');
       for (let k = 0; k < 6; k++) sparks.emit(target.x, target.y, target.z, (Math.random() - 0.5) * 3, Math.random() * 2, (Math.random() - 0.5) * 3, 0.25, 0.25, COL.red, 6);
-      hitTarget(e, t, e.dmg);
+      hitTarget(e, t, e.dmg * rampM);
       return;
     }
     if (def.fly) {
@@ -1881,7 +2256,11 @@ function applyEnemyHit(e) {
     } else spitGlob(from, target, e, t);
     return;
   }
-  if (def.boss) { rings.spawn(e.pos, 4.5, 0xb070ff, 0.4); G.shake = Math.max(G.shake, 0.3); if (Math.hypot(player.pos.x - e.pos.x, player.pos.z - e.pos.z) < 4.5 && t !== 'player') hurtPlayer(e.dmg * 0.7); }
+  if (def.boss) {
+    rings.spawn(e.pos, 4.5, 0xb070ff, 0.4); G.shake = Math.max(G.shake, 0.3);
+    if (Math.hypot(player.pos.x - e.pos.x, player.pos.z - e.pos.z) < 4.5 && t !== 'player') hurtPlayer(e.dmg * 0.7);
+    for (const s of structures.list) if (s.alive && s !== t && Math.hypot(s.x - e.pos.x, s.z - e.pos.z) < 4.5) hitStructure(s, e.dmg * (def.wallMult || 1) * 0.5);
+  }
   hitTarget(e, t, e.dmg);
 }
 
@@ -1890,6 +2269,7 @@ function hitTarget(e, t, dmg) {
     const d = Math.hypot(player.pos.x - e.pos.x, player.pos.z - e.pos.z);
     if (d < (e.def.ranged || e.def.reach + player.radius + e.radius + 0.7) + 1) {
       hurtPlayer(dmg);
+      if (HS.perks.has('thornskin') && e.alive) damageEnemy(e, dmg * 0.8 * waveScale(), { src: 'ability', point: new THREE.Vector3(e.pos.x, e.pos.y + e.height * 0.6, e.pos.z) });
       if (e.def.slowOnHit) player.slowT = 2.5;
       if (e.def.burnOnHit) burnPlayer(e.dmg * 0.3, 3);
     }
@@ -1897,7 +2277,10 @@ function hitTarget(e, t, dmg) {
     const R2 = NET.remote;
     if (R2 && R2.alive && Math.hypot(R2.pos.x - e.pos.x, R2.pos.z - e.pos.z) < (e.def.ranged || e.def.reach + player.radius + e.radius + 0.7) + 1) NET.hurtOut += dmg;
   } else if (t === 'house') hurtHouse(dmg, e.pos);
-  else if (t && t.alive) hitStructure(t, dmg * (e.def.wallMult || 1));
+  else if (t && t.alive) {
+    hitStructure(t, dmg * (e.def.wallMult || 1));
+    if (t.piece.thorns && e.alive && !isGuest()) damageEnemy(e, dmg * t.piece.thorns * pieceLevelMult(t.level || 1) * waveScale(), { src: 'trap', point: new THREE.Vector3(e.pos.x, e.pos.y + e.height * 0.6, e.pos.z) });
+  }
 }
 
 function hitStructure(s, dmg) {
@@ -1920,7 +2303,7 @@ function spitGlob(from, to, e, t, o = {}) {
   const mesh = new THREE.Mesh(new THREE.SphereGeometry(o.size || 0.22, 8, 6), new THREE.MeshStandardMaterial({ color: o.color || 0x9dff3a, emissive: o.emissive || 0x4aff1a, emissiveIntensity: o.bomb ? 0.6 : 1.2 }));
   mesh.position.copy(from);
   scene.add(mesh);
-  G.globs.push({ mesh, vel, grav, dmg: e.dmg, target: t, life: 2.5, splash: o.splash || 0, trail: o.trail, wallMult: e.def.wallMult || 1 });
+  G.globs.push({ mesh, vel, grav, dmg: o.dmg ?? e.dmg, target: t, life: 2.5, splash: o.splash || 0, trail: o.trail, wallMult: e.def.wallMult || 1, fling: o.fling || null });
 }
 
 function updateGlobs(dt) {
@@ -1934,6 +2317,14 @@ function updateGlobs(dt) {
       if (g.trail) smoke.emit(p.x, p.y, p.z, 0, 0.4, 0, 0.5, 0.4, COL.smoke, 0, 1, 1.8);
       if (Math.random() < 0.6) sparks.emit(p.x, p.y, p.z, 0, 0, 0, 0.2, 0.2, COL.fire);
     } else if (Math.random() < 0.6) sparks.emit(p.x, p.y, p.z, 0, 0, 0, 0.3, 0.2, COL.acid);
+    if (g.fling && (p.y <= 0.1 || g.life <= 0 || houseBox.containsPoint(p))) {
+      const at = p.clone(); at.y = 0;
+      if (houseBox.containsPoint(p)) { const hp3 = housePoint(at.x, at.z, V2); at.x = hp3.x + Math.sign(at.x - hp3.x || 1) * 1.5; at.z = hp3.z + Math.sign(at.z - hp3.z || 1) * 1.5; }
+      const o = spawnEnemy(g.fling, 0, at); o.spawnT = 0.2;
+      for (let k = 0; k < 10; k++) smoke.emit(at.x, 0.3, at.z, (Math.random() - 0.5) * 4, 1, (Math.random() - 0.5) * 4, 0.6, 0.5, COL.dust, 2, 1);
+      scene.remove(g.mesh); g.mesh.geometry.dispose(); G.globs.splice(i, 1);
+      continue;
+    }
     if (g.splash && (p.y <= 0.1 || houseBox.containsPoint(p) || g.life <= 0 || (structures.wallAt(p.x, p.z, 0.2) && p.y < 2.6))) {
       const c = p.clone(); c.y = Math.max(0.3, c.y);
       explode(c, 0, g.splash, { small: true });
@@ -1941,7 +2332,7 @@ function updateGlobs(dt) {
       if (c.y < 3.5) hurtRemoteNear(c.x, c.z, g.splash, g.dmg);
       const hp = housePoint(c.x, c.z, V2);
       if (Math.hypot(hp.x - c.x, hp.z - c.z) < g.splash) hurtHouse(g.dmg, c);
-      for (const s of structures.list) if (s.alive && s.piece.kind === 'wall' && Math.hypot(s.x - c.x, s.z - c.z) < g.splash + 0.6) hitStructure(s, g.dmg * g.wallMult);
+      for (const s of structures.list) if (s.alive && Math.hypot(s.x - c.x, s.z - c.z) < g.splash + 0.6) hitStructure(s, g.dmg * g.wallMult);
       scene.remove(g.mesh);
       g.mesh.geometry.dispose();
       G.globs.splice(i, 1);
@@ -1973,6 +2364,7 @@ function hurtPlayer(dmg, dot = false) {
   if (!player.alive || G.phase !== 'fight') return;
   if (player.shieldT > 0) { if (!dot) rings.spawn(player.pos, 1.5, 0x5cb8ff, 0.25); return; }
   dmg *= (1 - HS.armor) * Math.pow(0.9, PS.count('guard'));
+  if (player.fortT > 0) dmg *= 0.3;
   player.hp -= dmg;
   player.lastHurt = G.time;
   if (dot && player.hp > 0) return;
@@ -2029,7 +2421,8 @@ function hurtHouse(dmg, from) {
 function updateStructures(dt) {
   structures.update(dt);
   const vis = isGuest(); // the guest only animates the host's structures; damage happens on the host
-  const tm = trapMult();
+  const tm = trapMult() * (player.overclockT > 0 ? 1.25 : 1);
+  const rateBoost = player.overclockT > 0 || (NET.remote && NET.remote.overclock) ? 2 : 1;
   for (const s of [...structures.list]) {
     if (!s.alive) continue;
     if (s.temporary && !vis) {
@@ -2037,81 +2430,119 @@ function updateStructures(dt) {
       if (s.life <= 0) { structures.removeStructure(s); for (let i = 0; i < 12; i++) sparks.emit(s.x, 1, s.z, (Math.random() - 0.5) * 4, Math.random() * 3, (Math.random() - 0.5) * 4, 0.4, 0.3, COL.blue, 6); continue; }
     }
     const p = s.piece;
+    const L = s.level || 1;
+    const lm = pieceLevelMult(L);
+    if (s.stunT > 0) {
+      // stunned by an EMP / frost boss: sparks and no firing
+      s.stunT -= dt;
+      if (Math.random() < dt * 12) sparks.emit(s.x + (Math.random() - 0.5) * 1.5, 1 + Math.random() * 3, s.z + (Math.random() - 0.5) * 1.5, (Math.random() - 0.5) * 3, 2, (Math.random() - 0.5) * 3, 0.3, 0.25, COL.blue, 4);
+      if (p.kind !== 'wall') continue;
+    }
     if (p.kind === 'pad') {
       const on = player.alive && Math.abs(player.pos.x - s.x) < 1.2 && Math.abs(player.pos.z - s.z) < 1.2;
       if (on && G.phase === 'fight' && player.hp < player.maxHp) {
-        player.hp = Math.min(player.maxHp, player.hp + 12 * tm * dt);
+        player.hp = Math.min(player.maxHp, player.hp + (p.heal || 12) * lm * dt);
         if (Math.random() < dt * 12) sparks.emit(player.pos.x + (Math.random() - 0.5), 0.3, player.pos.z + (Math.random() - 0.5), 0, 2.5, 0, 0.7, 0.3, COL.green, -1);
       }
-      continue;
-    }
-    if (p.kind === 'turret' && p.style) {
-      s.cooldown -= dt;
-      const targets = G.enemies.filter(e => e.alive && e.spawnT <= 0 && !e.phased && Math.hypot(e.pos.x - s.x, e.pos.z - s.z) < p.range);
       const top = s.mesh.userData.top;
-      if (top) top.rotation.y += dt * (targets.length ? 4 : 0.6);
-      if (!targets.length || s.cooldown > 0 || G.phase !== 'fight' || vis) continue;
-      s.cooldown = 1 / p.rate;
-      const from = V1.set(s.x, s.mesh.userData.topY || 4, s.z).clone();
-      if (p.style === 'tesla') {
-        targets.sort((a, b) => Math.hypot(a.pos.x - s.x, a.pos.z - s.z) - Math.hypot(b.pos.x - s.x, b.pos.z - s.z));
-        let prev = from;
-        for (const e of targets.slice(0, p.chain)) {
-          const to = new THREE.Vector3(e.pos.x, e.pos.y + e.height * 0.55, e.pos.z);
-          bolts.spawn(prev, to, 0x9fd8ff, 0.14, 0.6);
-          damageEnemy(e, p.dmg * tm, { point: to, src: 'trap' });
-          if (e.alive) e.chill = { slow: 0.3, t: 0.6 };
-          prev = to;
-        }
-        sfx.zap();
-      } else {
-        const t = targets.sort((a, b) => b.maxHp - a.maxHp)[0];
-        const to = new THREE.Vector3(t.pos.x + t.speedNow * 0.3 * Math.sin(t.facing), 0.2, t.pos.z + t.speedNow * 0.3 * Math.cos(t.facing));
-        const r = spawnRocket(from, to, p.dmg * tm, p.splash, 0xffc02e, { lob: true, big: true, src: 'trap' });
-        s.recoil = 1;
-        sfx.shot('rocket');
-        for (let k = 0; k < 8; k++) smoke.emit(from.x, from.y, from.z, (Math.random() - 0.5) * 2, 2, (Math.random() - 0.5) * 2, 0.6, 0.6, COL.smoke, 0, 1, 2);
-      }
+      if (top) top.rotation.z += dt * 2;
       continue;
     }
     if (p.kind === 'trap') {
       let hit = false;
+      const slow = p.slow ? Math.min(0.85, p.slow + 0.02 * (L - 1)) : 0;
       for (const e of G.enemies) {
         if (!e.alive || e.spawnT > 0 || e.def.fly) continue;
         if (Math.abs(e.pos.x - s.x) < 1.1 + e.radius * 0.4 && Math.abs(e.pos.z - s.z) < 1.1 + e.radius * 0.4) {
-          if (!vis) damageEnemy(e, p.dps * tm * dt, { src: 'trap', quiet: true });
-          if (p.slow) { e.trapSlow = Math.min(e.trapSlow, 1 - p.slow); if (Math.random() < dt * 5) sparks.emit(e.pos.x, 0.4, e.pos.z, 0, 1, 0, 0.5, 0.25, COL.ice, 0); }
-          else if (p.burn) { if (e.alive && !vis) e.burn = { dps: p.dps * tm * 0.6, t: 2.5 }; }
+          if (!vis) damageEnemy(e, p.dps * tm * lm * dt, { src: 'trap', quiet: true });
+          if (slow) { e.trapSlow = Math.min(e.trapSlow, 1 - slow); if (Math.random() < dt * 5) sparks.emit(e.pos.x, 0.4, e.pos.z, 0, 1, 0, 0.5, 0.25, COL.ice, 0); }
+          else if (p.burn) { if (e.alive && !vis) e.burn = { dps: p.dps * tm * lm * 0.6, t: 2.5 }; }
           else { e.trapSlow = Math.min(e.trapSlow, 0.75); if (Math.random() < dt * 6) sparks.emit(e.pos.x, 0.3, e.pos.z, (Math.random() - 0.5) * 2, 2, (Math.random() - 0.5) * 2, 0.3, 0.2, COL.blood, 8); }
           hit = true;
         }
       }
       if (hit && !p.slow && !p.burn) s.pop = 1;
       if (p.burn && Math.random() < dt * (hit ? 30 : 6)) sparks.emit(s.x + (Math.random() - 0.5) * 1.6, 0.2, s.z + (Math.random() - 0.5) * 1.6, 0, 2 + Math.random() * 2, 0, 0.5, 0.35, COL.fire, -1);
-    } else if (p.kind === 'turret') {
-      const head = s.mesh.userData.head;
-      const hy = head.position.y * s.mesh.scale.y;
-      let best = null, bd = p.range;
-      for (const e of G.enemies) {
-        if (!e.alive || e.spawnT > 0) continue;
-        const d = Math.hypot(e.pos.x - s.x, e.pos.z - s.z);
-        if (d < bd) { bd = d; best = e; }
+      continue;
+    }
+    if (p.kind !== 'turret') continue;
+    const range = p.range * (1 + 0.04 * (L - 1));
+    const rate = p.rate * (1 + 0.06 * (L - 1)) * rateBoost;
+    const dmg = p.dmg * tm * lm;
+    const head = s.mesh.userData.head;
+    const top = s.mesh.userData.top;
+    // pick a target
+    let best = null, bd = range;
+    const cand = [];
+    for (const e of G.enemies) {
+      if (!e.alive || e.spawnT > 0 || e.phased) continue;
+      if (p.airOnly && !e.def.fly) continue;
+      const d = Math.hypot(e.pos.x - s.x, e.pos.z - s.z);
+      if (d >= range) continue;
+      cand.push(e);
+      if (p.style === 'sniper' ? (!best || e.hp > best.hp) : d < bd) { bd = d; best = e; }
+    }
+    if (best && p.style === 'sniper') bd = Math.hypot(best.pos.x - s.x, best.pos.z - s.z);
+    if (top) top.rotation.y += dt * (best ? 4 : 0.6);
+    if (head) {
+      if (!best) head.rotation.y += dt * 0.5;
+      else {
+        const hy = head.position.y * s.mesh.scale.y;
+        head.rotation.y = lerpAngle(head.rotation.y, Math.atan2(best.pos.x - s.x, best.pos.z - s.z), Math.min(1, dt * 10));
+        head.userData.barrel.rotation.x = -Math.atan2(best.pos.y + best.height * 0.5 - hy, bd);
       }
-      if (!best) { head.rotation.y += dt * 0.5; continue; }
-      const aim = Math.atan2(best.pos.x - s.x, best.pos.z - s.z);
-      head.rotation.y = lerpAngle(head.rotation.y, aim, Math.min(1, dt * 10));
-      head.userData.barrel.rotation.x = -Math.atan2(best.pos.y + best.height * 0.5 - hy, bd);
-      s.cooldown -= dt;
-      if (s.cooldown <= 0 && G.phase === 'fight' && !vis) {
-        s.cooldown = 1 / p.rate;
-        s.recoil = 1;
-        const from = head.userData.muzzle.getWorldPosition(new THREE.Vector3());
-        const to = new THREE.Vector3(best.pos.x, best.pos.y + best.height * 0.5, best.pos.z);
-        tracers.spawn(from, to, 0x6fdcff, 0.05, 0.06);
-        sparks.emit(from.x, from.y, from.z, 0, 0.5, 0, 0.08, 0.45, COL.blue);
-        sfx.shot('turret');
-        damageEnemy(best, p.dmg * tm, { point: to, src: 'trap' });
+    }
+    s.cooldown -= dt;
+    if (!best || s.cooldown > 0 || G.phase !== 'fight' || vis) continue;
+    s.cooldown = 1 / rate;
+    const to = new THREE.Vector3(best.pos.x, best.pos.y + best.height * 0.5, best.pos.z);
+    if (!p.style) {
+      s.recoil = 1;
+      const from = head.userData.muzzle.getWorldPosition(new THREE.Vector3());
+      tracers.spawn(from, to, 0x6fdcff, 0.05, 0.06);
+      sparks.emit(from.x, from.y, from.z, 0, 0.5, 0, 0.08, 0.45, COL.blue);
+      sfx.shot('turret');
+      damageEnemy(best, dmg, { point: to, src: 'trap' });
+    } else if (p.style === 'tesla') {
+      const from = new THREE.Vector3(s.x, s.mesh.userData.topY || 4, s.z);
+      cand.sort((a, b) => Math.hypot(a.pos.x - s.x, a.pos.z - s.z) - Math.hypot(b.pos.x - s.x, b.pos.z - s.z));
+      let prev = from;
+      for (const e of cand.slice(0, p.chain + Math.floor((L - 1) / 3))) {
+        const pt = new THREE.Vector3(e.pos.x, e.pos.y + e.height * 0.55, e.pos.z);
+        bolts.spawn(prev, pt, 0x9fd8ff, 0.14, 0.6);
+        damageEnemy(e, dmg, { point: pt, src: 'trap' });
+        if (e.alive) setChill(e, 0.3, 0.6);
+        prev = pt;
       }
+      sfx.zap();
+    } else if (p.style === 'mortar') {
+      const from = new THREE.Vector3(s.x, s.mesh.userData.topY || 4, s.z);
+      const t = cand.sort((a, b) => b.maxHp - a.maxHp)[0];
+      const aim = new THREE.Vector3(t.pos.x + t.speedNow * 0.3 * Math.sin(t.facing), 0.2, t.pos.z + t.speedNow * 0.3 * Math.cos(t.facing));
+      spawnRocket(from, aim, dmg, p.splash + 0.2 * (L - 1), 0xffc02e, { lob: true, big: true, src: 'trap' });
+      s.recoil = 1;
+      sfx.shot('rocket');
+      for (let k = 0; k < 8; k++) smoke.emit(from.x, from.y, from.z, (Math.random() - 0.5) * 2, 2, (Math.random() - 0.5) * 2, 0.6, 0.6, COL.smoke, 0, 1, 2);
+    } else if (p.style === 'flak') {
+      s.recoil = 1;
+      const from = head.userData.muzzle.getWorldPosition(new THREE.Vector3());
+      tracers.spawn(from, to, 0xffa060, 0.09, 0.1);
+      explode(to, dmg, p.splash + 0.15 * (L - 1), { src: 'trap', small: true, color: COL.fire });
+      sfx.shot('shotgun');
+    } else if (p.style === 'laser') {
+      const from = new THREE.Vector3(s.x, s.mesh.userData.topY || 4, s.z);
+      tracers.spawn(from, to, 0xff4dd2, 0.09, 0.12);
+      tracers.spawn(from, to, 0xffffff, 0.03, 0.12);
+      if (Math.random() < 0.5) sparks.emit(to.x, to.y, to.z, (Math.random() - 0.5) * 2, 1.5, (Math.random() - 0.5) * 2, 0.25, 0.3, COL.purple, 4);
+      if (G.time - (s.sndT || 0) > 0.25) { s.sndT = G.time; sfx.laser(); }
+      damageEnemy(best, dmg, { point: to, src: 'trap', quiet: true });
+    } else if (p.style === 'sniper') {
+      s.recoil = 1;
+      const from = head.userData.muzzle.getWorldPosition(new THREE.Vector3());
+      tracers.spawn(from, to, 0xb48cff, 0.1, 0.3);
+      tracers.spawn(from, to, 0xffffff, 0.04, 0.3);
+      sfx.shot('sniper');
+      damageEnemy(best, dmg * (best.def.boss ? 1.5 : 1), { point: to, src: 'trap' });
     }
   }
 }
@@ -2180,6 +2611,7 @@ function clearArena() {
   for (const list of [G.rockets, G.globs, G.grenades]) { for (const r of list) scene.remove(r.mesh); list.length = 0; }
   G.novaQueue.length = 0;
   G.clouds.length = 0;
+  G.vortices.length = 0;
   clearGhosts();
   sparks.clear(); smoke.clear(); tracers.clear(); dmgNums.clear(); bolts.clear(); rings.clear();
   for (const pt of world.portals) { pt.warnTarget = 0; pt.laneShow = 0; }
@@ -2206,7 +2638,7 @@ function startWave(fresh = true) {
     const oldMax = G.houseMax;
     applyUpgradesToWorld();
     G.houseHp = Math.min(G.houseMax, G.houseHp + (G.houseMax - oldMax) + G.houseMax * 0.35);
-    structures.resetForWave(wallMult());
+    structures.refreshWave(wallMult()); // damaged / destroyed buildings stay that way until you fall
     player.hp = player.maxHp;
     player.charges = HS.perks.has('doubledash') ? 2 : 1;
     player.abilityCd = 0;
@@ -2266,7 +2698,7 @@ function updateWave(dt) {
     G.spawnT -= dt;
     if (G.queue.length && G.spawnT <= 0 && alive < maxAlive) {
       const s = G.queue.shift();
-      spawnEnemy(s.type, s.portal);
+      spawnEnemy(s.type, s.portal, null, s.elite);
       G.spawnT = Math.max(0.3, 1.5 - n * 0.045) * (0.7 + Math.random() * 0.6);
     }
     const upcoming = G.queue.slice(0, 4).map(s => s.portal);
@@ -2694,10 +3126,26 @@ function bindUi() {
     updateBuildHud();
   });
   click('ctxRotate', () => { const s = buildMode.focus; if (!s) return; const n = structures.rotateAt(s.i, s.j); structures.resetForWave(wallMult()); buildMode.select(n); save.structures = structures.serialize(); writeSave(); });
+  click('ctxUpgrade', () => {
+    const s = buildMode.focus; if (!s) return;
+    if (s.level >= MAX_BUILD_LEVEL) { sfx.deny(); toast('Already max level'); return; }
+    const cost = upgradeCost(s.piece, s.level);
+    if (save.coins < cost) { sfx.deny(); toast('Not enough coins'); return; }
+    save.coins -= cost;
+    const n = structures.upgradeAt(s.i, s.j);
+    structures.resetForWave(wallMult());
+    sfx.levelUp(n.level % 2 === 1);
+    rings.spawn(new THREE.Vector3(n.x, 0.2, n.z), 2.5, 0xffc02e, 0.5);
+    for (let i = 0; i < 20; i++) sparks.emit(n.x + (Math.random() - 0.5) * 2, 0.5 + Math.random() * 3, n.z + (Math.random() - 0.5) * 2, 0, 2, 0, 0.8, 0.35, COL.coin, -1);
+    buildMode.select(n);
+    save.structures = structures.serialize();
+    writeSave();
+    renderBuildPalette(); updateBuildHud();
+  });
   click('ctxSell', () => {
     const s = buildMode.focus; if (!s) return;
     structures.removeAt(s.i, s.j);
-    save.coins += s.piece.cost;
+    save.coins += sellValue(s.piece, s.level || 1);
     sfx.sell();
     buildMode.select(null);
     save.structures = structures.serialize();
@@ -2867,14 +3315,20 @@ function clearGhosts() {
 }
 
 const ghostClouds = [];
-function cloudPack() { return G.clouds.slice(0, 8).map(c => [r1(c.pos.x), r1(c.pos.z), r1(c.r), c.friendly ? 1 : 0]); }
+const CLOUD_KINDS = ['', 'acid', 'fire', 'grove', 'vortex'];
+function cloudPack() {
+  return G.clouds.slice(0, 8).map(c => [r1(c.pos.x), r1(c.pos.z), r1(c.r), c.friendly ? 1 : 0, Math.max(0, CLOUD_KINDS.indexOf(c.kind))])
+    .concat(G.vortices.slice(0, 3).map(v => [r1(v.pos.x), r1(v.pos.z), r1(v.r), 1, 4]));
+}
 function syncGhostClouds(list) {
   ghostClouds.length = 0;
-  for (const a of list || []) if (Array.isArray(a)) ghostClouds.push({ x: a[0] / 10, z: a[1] / 10, r: a[2] / 10, friendly: !!a[3] });
+  for (const a of list || []) if (Array.isArray(a)) ghostClouds.push({ x: a[0] / 10, z: a[1] / 10, r: a[2] / 10, friendly: !!a[3], kind: CLOUD_KINDS[a[4] | 0] || '' });
 }
 function updateGhostClouds(dt) {
   for (const c of ghostClouds) {
-    const col = c.friendly ? COL.acid : COL.toxic;
+    if (c.kind === 'grove' && player.alive && Math.hypot(player.pos.x - c.x, player.pos.z - c.z) < c.r) player.hp = Math.min(player.maxHp, player.hp + player.maxHp * 0.06 * dt);
+    if (c.kind === 'vortex') { for (let k = 0; k < 3; k++) { const a = Math.random() * TAU, rr = 0.5 + Math.random() * c.r; sparks.emit(c.x + Math.cos(a) * rr, 0.4 + Math.random() * 1.5, c.z + Math.sin(a) * rr, -Math.cos(a) * rr * 2 - Math.sin(a) * 3, 0.5, -Math.sin(a) * rr * 2 + Math.cos(a) * 3, 0.4, 0.35, COL.purple, 0); } continue; }
+    const col = c.kind === 'fire' ? COL.fire : c.kind === 'grove' ? COL.green : c.friendly ? COL.acid : COL.toxic;
     for (let k = 0; k < Math.ceil(c.r * 1.2); k++) {
       if (Math.random() > dt * 10) continue;
       const a = Math.random() * TAU, rr = Math.sqrt(Math.random()) * c.r;
@@ -2967,7 +3421,7 @@ function hostRequests(list) {
 
 function hurtRemoteNear(x, z, r, dmg) {
   const R = NET.remote;
-  if (R && R.alive && !R.shield && Math.hypot(R.pos.x - x, R.pos.z - z) < r) NET.hurtOut += dmg;
+  if (R && R.alive && !R.shield && !R.hidden && Math.hypot(R.pos.x - x, R.pos.z - z) < r) NET.hurtOut += dmg;
 }
 
 function respawnPlayer() {
@@ -2993,7 +3447,7 @@ function playerSnap() {
     h: save.hero, w: player.weaponId, r: player.gun ? player.gun.userData.rarity : 0, sc: NET.shots,
     al: player.alive ? 1 : 0, hp: Math.round(player.hp / player.maxHp * 100), sp: r1(Math.hypot(player.vel.x, player.vel.z)),
     a: G.time - player.lastShot < 0.9 ? 1 : 0, pl: G.state === 'playing' ? 1 : 0, run: isGuest() ? NET.guestRun : G.runId || 0,
-    sh: player.shieldT > 0 ? 1 : 0,
+    sh: player.shieldT > 0 ? 1 : 0, oc: player.overclockT > 0 ? 1 : 0, iv: player.vanishT > 0 ? 1 : 0,
     pe: pet.char ? [def.id, r2(pet.char.root.position.x), r2(pet.char.root.position.z), r2(pet.char.root.position.y), r2(pet.facing), r1(pet.speedNow), pet.atkT >= 0 ? r2(pet.atkT) : -1, petRec().level] : null,
   };
 }
@@ -3010,6 +3464,8 @@ function hostSnapshot(maxE = 40) {
     if (e.burn) fl |= 32;
     if (e.chill) fl |= 64;
     if (e.spawnT > 0) fl |= 128;
+    if (e.elite) fl |= 256;
+    if (e.shieldHp > 0) fl |= 512;
     es.push([e.id, ENEMY_KEYS.indexOf(e.type), r1(e.pos.x), r1(e.pos.z), r1(e.pos.y), r2(e.facing), Math.round(clamp(e.hp / e.maxHp, 0, 1) * 1000), fl]);
   };
   for (const e of G.enemies) if (e.alive && es.length < maxE) push(e);
@@ -3018,8 +3474,8 @@ function hostSnapshot(maxE = 40) {
   return {
     w: save.wave, ph: G.state === 'playing' ? G.phase : 'base', pt: Math.round(G.phaseT * 10), run: G.runId || 0, fr: G.failReason || '',
     hh: Math.round(G.houseHp), hm: Math.round(G.houseMax), e: es,
-    sl: perm.map(x => `${BUILD_PIECES.indexOf(x.piece)}.${x.i}.${x.j}.${x.rot}`).join(','),
-    sw: perm.map(x => x.piece.kind === 'wall' ? (x.alive ? Math.max(1, Math.round(x.hp / x.max * 99)) : 0) : 1).join('.'),
+    sl: perm.map(x => `${BUILD_PIECES.indexOf(x.piece)}.${x.i}.${x.j}.${x.rot}.${x.level || 1}`).join(','),
+    sw: perm.map(x => (x.alive ? Math.max(1, Math.round(x.hp / x.max * 99)) : 0) + (x.stunT > 0 ? 100 : 0)).join('.'),
     tt: structures.list.filter(x => x.temporary && x.alive).map(x => [r1(x.x), r1(x.z)]),
     hu: Math.round(NET.hurtOut), co: Math.round(NET.coinsOut), q: G.queue.length,
     up: G.queue.slice(0, 4).map(s => [ENEMY_KEYS.indexOf(s.type), s.portal]),
@@ -3087,7 +3543,7 @@ function updateAvatar(dt, pp, t) {
   const def = heroById(pp.h) || HEROES[0];
   if (!A || A.hero !== def.id) {
     if (A) { scene.remove(A.char.root); A.char.dispose(); }
-    const ch = def.model === 'robot' ? new RobotChar({ color: def.color || 0x3d8bff, height: 2.0, eyes: def.color ? 0xffc02e : 0x3ce0ff }) : new KenneyChar(def.model, { height: 1.85 });
+    const ch = def.model === 'robot' ? new RobotChar({ color: def.color || 0x3d8bff, height: 2.0, eyes: def.color ? 0xffc02e : 0x3ce0ff }) : new KenneyChar(def.model, { height: 1.85, tint: def.tint || null, glow: def.glow || null });
     scene.add(ch.root);
     const holder = new THREE.Group();
     ch.root.add(holder);
@@ -3146,7 +3602,8 @@ function updateAvatar(dt, pp, t) {
   }
   A.sc = pp.sc;
   if (A.flashT > 0) { A.flashT -= dt; if (A.flashT <= 0 && A.gun) A.gun.userData.flash.visible = false; }
-  NET.remote = { pos: A.pos, alive: A.alive && !!pp.al, hp: pp.hp, shield: !!pp.sh };
+  NET.remote = { pos: A.pos, alive: A.alive && !!pp.al, hidden: !!pp.iv, hp: pp.hp, shield: !!pp.sh, overclock: !!pp.oc };
+  for (const m of ch.mats) { const want = pp.iv ? 0.3 : 1; if (m.opacity !== want) { m.transparent = want < 1; m.opacity = want; } }
   updateRemotePet(dt, pp, t);
 }
 
@@ -3157,7 +3614,7 @@ function updateRemotePet(dt, pp, t) {
   let P = NET.rpet;
   if (!P || P.id !== def.id) {
     removeRemotePet();
-    const ch = new PetChar(def.model, { height: def.fly ? 0.75 : 0.85 });
+    const ch = new PetChar(def.model, { height: def.fly ? 0.75 : 0.85, tint: def.tint, glow: def.glow, ghost: def.ghost });
     scene.add(ch.root);
     const ri = rarityIndex(pe[7] || 1);
     const ring = new THREE.Mesh(new THREE.RingGeometry(0.42, 0.52, 32), new THREE.MeshBasicMaterial({ color: RARITIES[ri].hex, transparent: true, opacity: 0.7, blending: THREE.AdditiveBlending, depthWrite: false }));
@@ -3201,14 +3658,15 @@ function guestSyncStructures(hs) {
   if (key !== NET.structKey || !NET.usingHostBase) {
     NET.structKey = key;
     NET.usingHostBase = true;
-    structures.loadFrom(parts.filter(a => BUILD_PIECES[a[0]]).map(a => ({ p: BUILD_PIECES[a[0]].id, i: a[1], j: a[2], r: a[3] })));
+    structures.loadFrom(parts.filter(a => BUILD_PIECES[a[0]]).map(a => ({ p: BUILD_PIECES[a[0]].id, i: a[1], j: a[2], r: a[3], l: a[4] || 1 })));
     structures.resetForWave(wallMult());
   }
   const hp = (hs.sw || '').split('.').map(Number);
   const list = structures.list.filter(x => !x.temporary);
   list.forEach((s, idx) => {
-    if (s.piece.kind !== 'wall' || hp[idx] === undefined || isNaN(hp[idx])) return;
-    const f = hp[idx] / 99;
+    if (hp[idx] === undefined || isNaN(hp[idx])) return;
+    s.stunT = hp[idx] >= 100 ? 0.3 : 0;
+    const f = (hp[idx] % 100) / 99;
     if (f <= 0) { if (s.alive) { structures.damage(s, s.hp + 1); sfx.fenceBreak(); for (let i = 0; i < 16; i++) smoke.emit(s.x + (Math.random() - 0.5) * 2, 0.5 + Math.random() * 2, s.z + (Math.random() - 0.5) * 2, (Math.random() - 0.5) * 6, 3 + Math.random() * 4, (Math.random() - 0.5) * 6, 1, 0.4, COL.wood, 12); } }
     else {
       if (!s.alive) structures.revive(s);
@@ -3245,6 +3703,7 @@ function guestSyncEnemies(es, t) {
       if (fl & 1) continue;
       e = spawnEnemy(type, 0, new THREE.Vector3(x / 10, 0, z / 10));
       e.id = id; e.mirror = true; e.buf = [];
+      if (fl & 256) makeElite(e);
       e.facing = f / 100; e.char.root.rotation.y = e.facing;
       if (!(fl & 128)) { e.spawnT = 0; e.char.root.scale.setScalar(1); }
       else for (let i = 0; i < 16; i++) sparks.emit(x / 10, 1 + Math.random() * 2, z / 10, (Math.random() - 0.5) * 5, Math.random() * 3, (Math.random() - 0.5) * 5, 0.6, 0.5, COL.purple, 2, 1);
@@ -3257,6 +3716,8 @@ function guestSyncEnemies(es, t) {
     e.hostHp = hostHp;
     if (G.time - (e.lastHit || -10) > 0.6 || hostHp < e.hp) e.hp = hostHp;
     e.phased = !!(fl & 4); e.shielded = !!(fl & 8);
+    e.shieldHp = fl & 512 ? Math.max(e.shieldHp || 0, 1) : 0;
+    if (e.bubble) e.bubble.visible = !!(fl & 512);
     if ((fl & 1) && e.alive) killEnemy(e, false, true);
   }
   for (const [id, e] of NET.mirror) {
@@ -3540,6 +4001,7 @@ function frame() {
         updateGlobs(dt);
         updateGrenades(dt);
         updateClouds(dt);
+        updateVortices(dt);
         processNovas();
         updateCoins(dt, G.phase === 'cleared');
         updateHud();

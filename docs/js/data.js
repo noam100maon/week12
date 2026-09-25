@@ -232,6 +232,110 @@ export const WEAPONS = [
       { key: 'nova', name: 'Supernova', v: { r: 6, f: 1.5 } },
     ],
   },
+  {
+    id: 'laser', name: 'Laser Rifle', desc: 'Fast red beams that pierce two enemies.', cost: 7200, dmg: 17, rate: 8, mag: 40, reload: 1.8, spread: 0.004, pellets: 1, range: 75, pierce: 2, sound: 'rifle', recoil: 0.006, model: 'blaster-a', modelScale: 0.36, stretch: 1.2, tint: 0xff5a5a, beamColor: 0xff3a3a, beamWidth: 0.06,
+    abilities: [
+      { key: 'rapid', name: 'Focus Lens', v: { f: 0.2 } },
+      { key: 'burn', name: 'Searing Beam', v: { f: 0.25, dur: 2 } },
+      { key: 'pierce', name: 'Refraction', v: { n: 2 } },
+      { key: 'crit', name: 'Overheat', v: { chance: 0.15 } },
+      { key: 'orbital', name: 'Orbital Laser', v: { every: 20, f: 8, r: 4 } },
+    ],
+  },
+  {
+    id: 'shockshot', name: 'Shock Shotgun', desc: 'Every pellet arcs lightning to another enemy.', cost: 7800, dmg: 12, rate: 1.4, mag: 8, reload: 2.1, spread: 0.07, pellets: 8, range: 26, sound: 'shotgun', recoil: 0.06, model: 'blaster', modelScale: 0.42, stretch: 1.3, tint: 0x6fb8ff, beamColor: 0x9fd8ff,
+    base: [{ key: 'chain', v: { n: 1, f: 0.5 } }],
+    abilities: [
+      { key: 'bigmag', name: 'Capacitor Shells', v: { f: 0.5 } },
+      { key: 'freeze', name: 'Stun Pellets', v: { slow: 0.4, dur: 1.2 } },
+      { key: 'chain', name: 'Storm Shells', v: { n: 2, f: 0.4 } },
+      { key: 'executioner', name: 'Overcharge', v: { f: 0.8 } },
+      { key: 'nova', name: 'Thunderclap', v: { r: 4, f: 1.2 } },
+    ],
+  },
+  {
+    id: 'acid', name: 'Acid Launcher', desc: 'Lobs acid that leaves a burning puddle.', cost: 8400, dmg: 60, rate: 1.3, mag: 6, reload: 2.4, spread: 0.01, pellets: 1, range: 55, splash: 3, projectile: true, lob: true, pool: true, sound: 'rocket', recoil: 0.04, model: 'tube', tint: 0x6aff3a,
+    abilities: [
+      { key: 'bigmag', name: 'Big Canisters', v: { f: 0.5 } },
+      { key: 'freeze', name: 'Sticky Goo', v: { slow: 0.45, dur: 2.5 } },
+      { key: 'multishot', name: 'Double Splash', v: { n: 1 } },
+      { key: 'vampire', name: 'Leech Acid', v: { f: 0.02 } },
+      { key: 'nova', name: 'Meltdown', v: { r: 5, f: 1.2 } },
+    ],
+  },
+  {
+    id: 'cluster', name: 'Cluster Bomb', desc: 'Rockets burst into five extra explosions.', cost: 9200, dmg: 110, rate: 0.9, mag: 4, reload: 2.8, spread: 0.01, pellets: 1, range: 90, splash: 3.5, projectile: true, cluster: true, sound: 'rocket', recoil: 0.07, model: 'tube', tint: 0xff9a3a,
+    abilities: [
+      { key: 'bigmag', name: 'Extra Tubes', v: { f: 0.5 } },
+      { key: 'burn', name: 'Napalm', v: { f: 0.3, dur: 3 } },
+      { key: 'multishot', name: 'Twin Rockets', v: { n: 1 } },
+      { key: 'rapid', name: 'Autoloader', v: { f: 0.3 } },
+      { key: 'nova', name: 'Chain Reaction', v: { r: 5, f: 1.2 } },
+    ],
+  },
+  {
+    id: 'gatlaser', name: 'Gatling Laser', desc: 'A storm of green laser bolts.', cost: 10000, dmg: 8, rate: 22, mag: 200, reload: 3.8, spread: 0.035, pellets: 1, range: 65, sound: 'smg', recoil: 0.002, model: 'blaster-repeater', modelScale: 0.46, stretch: 1.5, tint: 0x5aff8a, beamColor: 0x5aff8a,
+    abilities: [
+      { key: 'crit', name: 'Hot Coils', v: { chance: 0.12 } },
+      { key: 'pierce', name: 'Phase Bolts', v: { n: 1 } },
+      { key: 'burn', name: 'Plasma Burn', v: { f: 0.2, dur: 2 } },
+      { key: 'vampire', name: 'Energy Siphon', v: { f: 0.012 } },
+      { key: 'orbital', name: 'Laser Rain', v: { every: 45, f: 9, r: 4 } },
+    ],
+  },
+  {
+    id: 'ripsaw', name: 'Ripsaw Launcher', desc: 'Spinning saw blades cut through 8 enemies and make them bleed.', cost: 11000, dmg: 75, rate: 1.5, mag: 10, reload: 2.4, spread: 0, pellets: 1, range: 50, pierce: 8, sound: 'sniper', recoil: 0.03, model: 'blaster-a', modelScale: 0.4, stretch: 1.1, tint: 0xffb040, beamColor: 0xffb040, beamWidth: 0.2,
+    base: [{ key: 'burn', v: { f: 0.3, dur: 3 } }],
+    abilities: [
+      { key: 'rapid', name: 'Sharpened', v: { f: 0.2 } },
+      { key: 'executioner', name: 'Lacerate', v: { f: 1.0 } },
+      { key: 'multishot', name: 'Twin Blades', v: { n: 1 } },
+      { key: 'vampire', name: 'Bloodletter', v: { f: 0.02 } },
+      { key: 'nova', name: 'Shrapnel Storm', v: { r: 4, f: 1.3 } },
+    ],
+  },
+  {
+    id: 'blackhole', name: 'Black Hole Gun', desc: 'Opens a black hole that sucks enemies in and crushes them.', cost: 13000, dmg: 70, rate: 0.6, mag: 3, reload: 3, spread: 0.005, pellets: 1, range: 70, splash: 3, projectile: true, plasma: true, vortex: true, sound: 'rocket', recoil: 0.05, model: 'tube', tint: 0x5a2aa0,
+    abilities: [
+      { key: 'bigmag', name: 'Singularity Core', v: { f: 0.5 } },
+      { key: 'freeze', name: 'Time Dilation', v: { slow: 0.5, dur: 2 } },
+      { key: 'rapid', name: 'Quick Collapse', v: { f: 0.3 } },
+      { key: 'chain', name: 'Event Horizon', v: { n: 3, f: 0.5 } },
+      { key: 'nova', name: 'Supermassive', v: { r: 6, f: 1.5 } },
+    ],
+  },
+  {
+    id: 'seeker', name: 'Seeker Missiles', desc: 'Homing missiles lock onto the enemy you aim at.', cost: 14500, dmg: 80, rate: 2.6, mag: 12, reload: 2.8, spread: 0.02, pellets: 1, range: 100, splash: 2.6, projectile: true, homing: true, sound: 'rocket', recoil: 0.03, model: 'tube', tint: 0xd0d8e0,
+    abilities: [
+      { key: 'multishot', name: 'Swarm Pods', v: { n: 1 } },
+      { key: 'bigmag', name: 'Missile Rack', v: { f: 0.5 } },
+      { key: 'burn', name: 'Thermite', v: { f: 0.25, dur: 3 } },
+      { key: 'multishot', name: 'Salvo', v: { n: 1 } },
+      { key: 'nova', name: 'Carpet Strike', v: { r: 5, f: 1.2 } },
+    ],
+  },
+  {
+    id: 'cryo', name: 'Cryo Cannon', desc: 'Frozen shells that freeze everything they hit.', cost: 16000, dmg: 95, rate: 1.1, mag: 6, reload: 2.5, spread: 0.01, pellets: 1, range: 60, splash: 4, projectile: true, lob: true, sound: 'rocket', recoil: 0.05, model: 'tube', tint: 0x9fe8ff,
+    base: [{ key: 'freeze', v: { slow: 0.7, dur: 3 } }],
+    abilities: [
+      { key: 'bigmag', name: 'Cold Storage', v: { f: 0.5 } },
+      { key: 'executioner', name: 'Shatter', v: { f: 1.2 } },
+      { key: 'multishot', name: 'Hailstorm', v: { n: 1 } },
+      { key: 'chain', name: 'Frost Link', v: { n: 3, f: 0.4 } },
+      { key: 'nova', name: 'Ice Age', v: { r: 6, f: 1.4 } },
+    ],
+  },
+  {
+    id: 'antimat', name: 'Anti-Materiel Rifle', desc: 'Massive rounds that pierce 3 enemies and explode.', cost: 18000, dmg: 420, rate: 0.5, mag: 5, reload: 3, spread: 0, pellets: 1, range: 180, pierce: 3, headMult: 2.5, scope: true, sound: 'sniper', recoil: 0.1, model: 'blaster-a', modelScale: 0.46, stretch: 1.8, tint: 0x4a4a42, beamColor: 0xffe08a, beamWidth: 0.14,
+    base: [{ key: 'explode', v: { r: 1.8, f: 0.3 } }],
+    abilities: [
+      { key: 'rapid', name: 'Bolt Action+', v: { f: 0.25 } },
+      { key: 'pierce', name: 'Tungsten Core', v: { n: 3 } },
+      { key: 'crit', name: 'Marksman', v: { chance: 0.25 } },
+      { key: 'executioner', name: 'Headhunter', v: { f: 1.2 } },
+      { key: 'orbital', name: 'Kinetic Strike', v: { every: 4, f: 3, r: 5 } },
+    ],
+  },
 ];
 
 export function weaponById(id) { return WEAPONS.find(w => w.id === id); }
@@ -370,6 +474,126 @@ export const HEROES = [
       { key: 'warmachine', name: 'Juggernaut', desc: '+25% weapon damage.' },
     ],
   },
+  {
+    id: 'blaze', name: 'Blaze', role: 'Pyro', model: 'survivor-male', tint: 0xff9a7a, glow: 0x4a1000, cost: 5000,
+    passive: 'Your hits have a 20% chance to set enemies on fire.',
+    active: { name: 'Flame Nova', cd: 12, desc: 'Explode in a ring of fire that burns everything around you.' },
+    perks: [
+      { key: 'hotter', name: 'Hotter Flames', desc: 'Burns deal double damage.' },
+      { key: 'firewalk', name: 'Fire Walk', desc: 'Leave burning ground for 5s after Flame Nova.' },
+      { key: 'reload', name: 'Quick Hands', desc: '+20% reload speed.' },
+      { key: 'bignova', name: 'Inferno', desc: 'Flame Nova radius +50%.' },
+      { key: 'warmachine', name: 'Burning Rage', desc: '+25% weapon damage.' },
+    ],
+  },
+  {
+    id: 'frosty', name: 'Frost', role: 'Cryo', model: 'survivor-female', tint: 0xb8e8ff, glow: 0x0a3050, cost: 5500,
+    passive: 'Enemies near you (6m) are slowed 25%.',
+    active: { name: 'Blizzard', cd: 14, desc: 'Freeze every enemy around you almost solid for 3s.' },
+    perks: [
+      { key: 'deepfreeze', name: 'Deep Freeze', desc: 'Blizzard lasts 5s.' },
+      { key: 'shatter', name: 'Shatter', desc: '+40% damage to frozen enemies.' },
+      { key: 'vital', name: 'Frost Armor', desc: '+25% max health.' },
+      { key: 'bigblizzard', name: 'Whiteout', desc: 'Blizzard radius +50%.' },
+      { key: 'warmachine', name: 'Cold Blooded', desc: '+25% weapon damage.' },
+    ],
+  },
+  {
+    id: 'volt', name: 'Volt', role: 'Storm Caller', model: 'cyborg-female', tint: 0xfff07a, glow: 0x3a3000, cost: 6000,
+    passive: 'Every 6th hit zaps 2 extra enemies.',
+    active: { name: 'Chain Storm', cd: 13, desc: 'Lightning leaps between up to 10 enemies.' },
+    perks: [
+      { key: 'morechains', name: 'Conductor', desc: 'Chain Storm hits 16 enemies.' },
+      { key: 'static', name: 'Static Field', desc: 'Nearby enemies take shock damage.' },
+      { key: 'overcharge', name: 'Overcharge', desc: 'Chain Storm damage +60%.' },
+      { key: 'reload', name: 'Capacitor', desc: '+20% reload speed.' },
+      { key: 'warmachine', name: 'High Voltage', desc: '+25% weapon damage.' },
+    ],
+  },
+  {
+    id: 'ranger', name: 'Ranger', role: 'Archer', model: 'male', tint: 0xa8e08a, glow: 0x0a2a00, cost: 6500,
+    passive: '+25% damage to enemies more than 25m away.',
+    active: { name: 'Arrow Rain', cd: 15, desc: 'Rain 16 explosive arrows where you aim.' },
+    perks: [
+      { key: 'morearrows', name: 'Volley', desc: 'Arrow Rain fires 26 arrows.' },
+      { key: 'deadeye', name: 'Eagle Eye', desc: '+15% crit chance.' },
+      { key: 'lightfeet', name: 'Light Feet', desc: '+10% move speed.' },
+      { key: 'poison', name: 'Poison Tips', desc: 'Arrows poison enemies.' },
+      { key: 'warmachine', name: 'Hunter', desc: '+25% weapon damage.' },
+    ],
+  },
+  {
+    id: 'brick', name: 'Brick', role: 'Guardian', model: 'robot', color: 0x8a939e, cost: 7000,
+    passive: '+40% health and 10% damage reduction.',
+    active: { name: 'Fortress', cd: 16, desc: 'For 6s take 70% less damage and pull every enemy nearby to you.' },
+    perks: [
+      { key: 'plating', name: 'Heavy Plating', desc: '+20% max health.' },
+      { key: 'longfort', name: 'Stronghold', desc: 'Fortress lasts 9s.' },
+      { key: 'thornskin', name: 'Thorn Skin', desc: 'Enemies that hit you take damage.' },
+      { key: 'absorb', name: 'Bulwark', desc: 'Take 15% less damage.' },
+      { key: 'ironwill', name: 'Protector', desc: 'The house takes 15% less damage.' },
+    ],
+  },
+  {
+    id: 'shadow', name: 'Shade', role: 'Assassin', model: 'skater-male', tint: 0x8a7ab8, glow: 0x1a0a3a, cost: 7500,
+    passive: '+30% crit damage and 10% crit chance.',
+    active: { name: 'Vanish', cd: 15, desc: 'Turn invisible for 5s: enemies lose you and every shot crits.' },
+    perks: [
+      { key: 'longvanish', name: 'Ghost', desc: 'Vanish lasts 8s.' },
+      { key: 'lightfeet', name: 'Shadow Step', desc: '+10% move speed.' },
+      { key: 'critblades', name: 'Assassinate', desc: '+20% crit chance.' },
+      { key: 'reload', name: 'Sleight of Hand', desc: '+20% reload speed.' },
+      { key: 'warmachine', name: 'Deadly', desc: '+25% weapon damage.' },
+    ],
+  },
+  {
+    id: 'gizmo', name: 'Gizmo', role: 'Engineer', model: 'survivor-male', tint: 0xffc07a, glow: 0x2a1a00, cost: 8000,
+    passive: 'Your buildings deal +25% damage and have +25% health.',
+    active: { name: 'Overclock', cd: 18, desc: 'Repair every building 40% and double their fire rate for 8s.' },
+    perks: [
+      { key: 'rebuild', name: 'Rebuild', desc: 'Overclock also rebuilds destroyed buildings.' },
+      { key: 'overclock', name: 'Tuned Up', desc: 'Traps and turrets +30% damage.' },
+      { key: 'fortify', name: 'Reinforce', desc: 'Buildings +30% health.' },
+      { key: 'basekit', name: 'Handyman', desc: 'The house repairs 6 HP/s.' },
+      { key: 'longclock', name: 'Overdrive', desc: 'Overclock lasts 14s.' },
+    ],
+  },
+  {
+    id: 'sage', name: 'Sage', role: 'Druid', model: 'survivor-female', tint: 0x9aff9a, glow: 0x0a3a0a, cost: 8500,
+    passive: 'Heal 1% max health per second.',
+    active: { name: 'Healing Grove', cd: 20, desc: 'For 8s heal 6% per second, heal your partner and the house.' },
+    perks: [
+      { key: 'lifeline', name: 'Deep Roots', desc: 'Double health regeneration.' },
+      { key: 'thorngrove', name: 'Thorn Grove', desc: 'The grove damages enemies inside it.' },
+      { key: 'vital', name: 'Evergreen', desc: '+25% max health.' },
+      { key: 'biggrove', name: 'Wild Growth', desc: 'Grove radius +50%.' },
+      { key: 'miracle', name: 'Rebirth', desc: 'Grove rebuilds destroyed walls.' },
+    ],
+  },
+  {
+    id: 'ace', name: 'Ace', role: 'Pilot', model: 'skater-female', tint: 0xffb0b0, glow: 0x3a0a0a, cost: 9000,
+    passive: '+20% damage against flying enemies.',
+    active: { name: 'Air Strike', cd: 16, desc: 'Call a bomber that carpet bombs a line where you aim.' },
+    perks: [
+      { key: 'morebombs', name: 'Heavy Bomber', desc: 'Air Strike drops 14 bombs.' },
+      { key: 'napalm', name: 'Napalm', desc: 'Bombs set the ground on fire.' },
+      { key: 'reload', name: 'Hot Reload', desc: '+20% reload speed.' },
+      { key: 'deadeye', name: 'Top Gun', desc: '+15% crit chance.' },
+      { key: 'warmachine', name: 'Ace Pilot', desc: '+25% weapon damage.' },
+    ],
+  },
+  {
+    id: 'hex', name: 'Hex', role: 'Witch', model: 'zombie-1', tint: 0xc08aff, glow: 0x2a0a4a, cost: 10000,
+    passive: 'Cursed enemies drop 30% more coins.',
+    active: { name: 'Curse', cd: 14, desc: 'Curse enemies where you aim: they take +50% damage and are slowed for 8s.' },
+    perks: [
+      { key: 'bigcurse', name: 'Mass Curse', desc: 'Curse radius +50%.' },
+      { key: 'doom', name: 'Doom', desc: 'Cursed enemies take +80% damage instead.' },
+      { key: 'leech', name: 'Soul Drain', desc: 'Heal from damage to cursed enemies.' },
+      { key: 'plague', name: 'Wither', desc: 'Cursed enemies take damage over time.' },
+      { key: 'warmachine', name: 'Dark Power', desc: '+25% weapon damage.' },
+    ],
+  },
 ];
 
 export function heroById(id) { return HEROES.find(h => h.id === id); }
@@ -382,6 +606,7 @@ export function heroStats(h, level) {
   let hp = 100 * (1 + 0.01 * L);
   if (h.id === 'bolt') hp *= 1.3;
   if (h.id === 'titan') hp *= 1.2;
+  if (h.id === 'brick') hp *= 1.4;
   if (perks.has('plating')) hp *= 1.2;
   if (perks.has('vital')) hp *= 1.25;
   let speed = 1;
@@ -393,11 +618,12 @@ export function heroStats(h, level) {
   if (perks.has('warmachine')) dmg *= 1.25;
   if (perks.has('highnoon')) dmg *= 1.25;
   let regen = h.id === 'doc' ? 3 : 0.5 + 0.02 * L;
+  if (h.id === 'sage') regen += hp * 0.01;
   if (perks.has('lifeline')) regen *= 2;
   return {
     hp: Math.round(hp), speed, dmg, regen,
     power: 1 + 0.025 * L,      // active ability strength
-    armor: perks.has('absorb') ? 0.15 : 0,
+    armor: (perks.has('absorb') ? 0.15 : 0) + (h.id === 'brick' ? 0.1 : 0),
     coinMult: (h.id === 'skye' ? 1.25 : 1) * (perks.has('treasure') ? 1.15 : 1),
     magnet: 5 + (h.id === 'skye' ? 4 : 0) + (perks.has('magnet') ? 4 : 0),
     perks,
@@ -455,6 +681,16 @@ export const PETS = [
   { id: 'deer', name: 'Antlers', model: 'pet-deer', cost: 3900, kind: 'melee', dmg: 24, rate: 1.2, speed: 13, desc: 'Graceful and fast. You move faster too.', perks: ['swift', 'power', 'swift', 'crit', 'double'] },
   { id: 'elephant', name: 'Trunk', model: 'pet-elephant', cost: 4800, kind: 'roar', dmg: 32, rate: 0.9, speed: 9, desc: 'Stomps the ground, crushing and slowing every enemy nearby.', perks: ['roar', 'power', 'guard', 'roar', 'splash'] },
   { id: 'lion', name: 'King', model: 'pet-lion', cost: 4200, kind: 'roar', dmg: 26, rate: 1, speed: 10, desc: 'Bites, and roars to damage and slow every enemy nearby.', perks: ['roar', 'power', 'guard', 'freeze', 'roar'] },
+  { id: 'inferno', name: 'Inferno', model: 'pet-fox', tint: 0xff7a4a, glow: 0x6a1a00, cost: 5200, kind: 'melee', dmg: 30, rate: 1.4, speed: 12, desc: 'A fox made of flame. Every bite burns.', perks: ['burn', 'power', 'splash', 'burn', 'frenzy'] },
+  { id: 'glacier', name: 'Glacier', model: 'pet-penguin', tint: 0xaef0ff, glow: 0x0a3a5a, cost: 5400, kind: 'ranged', dmg: 20, rate: 1.4, speed: 9, range: 20, color: 0x9fe8ff, desc: 'Penguin king. Hurls ice that freezes enemies.', perks: ['freeze', 'power', 'splash', 'double', 'freeze'] },
+  { id: 'thunderbee', name: 'Zapper', model: 'pet-bee', tint: 0xfff06a, glow: 0x6a5a00, cost: 5800, kind: 'ranged', fly: 2.2, dmg: 16, rate: 2.4, speed: 13, range: 18, color: 0xfff06a, desc: 'Electric bee. Its stings chain lightning.', perks: ['chain', 'frenzy', 'chain', 'power', 'double'] },
+  { id: 'shadowcat', name: 'Nightpaw', model: 'pet-cat', tint: 0x6a5a9a, glow: 0x2a0a4a, cost: 6200, kind: 'melee', dmg: 36, rate: 1.3, speed: 14, desc: 'Shadow cat. Deadly critical strikes.', perks: ['crit', 'power', 'swift', 'crit', 'double'] },
+  { id: 'goldpig', name: 'Midas', model: 'pet-pig', tint: 0xffd24a, glow: 0x5a4000, cost: 6600, kind: 'collector', dmg: 14, rate: 1.6, speed: 12, range: 14, color: 0xffd24a, desc: 'Golden pig. Tons more coins from everything.', perks: ['coins', 'coins', 'magnet', 'coins', 'coins'] },
+  { id: 'crystaldeer', name: 'Prism', model: 'pet-deer', tint: 0xaff4ff, glow: 0x1a5a6a, cost: 7000, kind: 'support', dmg: 14, rate: 1, speed: 12, desc: 'Crystal deer. Heals you and shields you from damage.', perks: ['heal', 'guard', 'heal', 'guard', 'heal'] },
+  { id: 'robodog', name: 'Robo-Rex', model: 'pet-dog', tint: 0xa8b4c0, glow: 0x003a5a, cost: 7600, kind: 'ranged', dmg: 26, rate: 2, speed: 11, range: 24, color: 0xff3a3a, desc: 'Robot dog with laser eyes.', perks: ['power', 'double', 'frenzy', 'chain', 'power'] },
+  { id: 'phoenix', name: 'Phoenix', model: 'pet-chick', tint: 0xff9a4a, glow: 0x7a2a00, cost: 8200, kind: 'ranged', fly: 2.4, dmg: 24, rate: 1.8, speed: 13, range: 20, color: 0xff7a2a, desc: 'Fire bird. Rains burning feathers on enemies.', perks: ['burn', 'splash', 'power', 'double', 'burn'] },
+  { id: 'mechaphant', name: 'Mammoth', model: 'pet-elephant', tint: 0x9aa6b4, glow: 0x002a4a, cost: 9000, kind: 'roar', dmg: 40, rate: 0.9, speed: 9, desc: 'Armored mecha elephant. Earth-shaking stomps.', perks: ['roar', 'power', 'guard', 'roar', 'splash'] },
+  { id: 'ghostbunny', name: 'Boo', model: 'pet-bunny', tint: 0xdff4ff, glow: 0x2a4a6a, ghost: true, cost: 9500, kind: 'builder', dmg: 18, rate: 1.2, speed: 13, desc: 'Ghost bunny. Phases through walls to repair and rebuild everything fast.', perks: ['repair', 'guard', 'repair', 'heal', 'repair'] },
 ];
 export function petById(id) { return PETS.find(p => p.id === id); }
 
@@ -479,14 +715,24 @@ export const BUILD_PIECES = [
   { id: 'wood', name: 'Wood Wall', kind: 'wall', cost: 25, hp: 350, color: '#b47a45', desc: 'Cheap wall. Blocks enemies.' },
   { id: 'stone', name: 'Brick Wall', kind: 'wall', cost: 60, hp: 900, color: '#b5553e', desc: 'Sturdy brick wall.' },
   { id: 'metal', name: 'Metal Wall', kind: 'wall', cost: 140, hp: 2200, color: '#8a98a8', desc: 'Toughest wall.' },
-  { id: 'spikes', name: 'Spike Trap', kind: 'trap', cost: 80, dps: 34, color: '#d8dee6', desc: 'Hurts enemies walking over it.' },
-  { id: 'freeze', name: 'Freeze Trap', kind: 'trap', cost: 100, dps: 10, slow: 0.55, color: '#7fe3ff', desc: 'Slows enemies a lot.' },
-  { id: 'turret', name: 'Turret Tower', kind: 'turret', cost: 250, dmg: 12, rate: 3, range: 24, color: '#3cc8ff', desc: 'Shoots enemies in range.' },
-  { id: 'flame', name: 'Flame Trap', kind: 'trap', cost: 140, dps: 18, burn: true, color: '#ff8a3a', desc: 'Sets enemies on fire as they cross it.' },
-  { id: 'heal', name: 'Healing Pad', kind: 'pad', cost: 200, color: '#6dff9a', desc: 'Stand on it to heal 12 HP/s.' },
-  { id: 'tesla', name: 'Tesla Coil', kind: 'turret', style: 'tesla', cost: 380, dmg: 16, rate: 1.4, range: 14, chain: 4, color: '#9fd8ff', desc: 'Zaps up to 4 nearby enemies at once.' },
-  { id: 'mortar', name: 'Mortar Tower', kind: 'turret', style: 'mortar', cost: 450, dmg: 55, rate: 0.5, range: 40, splash: 4, color: '#ffc02e', desc: 'Long range, explosive splash.' },
+  { id: 'thorn', name: 'Thorn Wall', kind: 'wall', cost: 180, hp: 1400, thorns: 0.6, color: '#7aa84a', desc: 'Spiked wall: enemies that hit it get hurt.' },
+  { id: 'spikes', name: 'Spike Trap', kind: 'trap', cost: 80, hp: 400, dps: 34, color: '#d8dee6', desc: 'Hurts enemies walking over it.' },
+  { id: 'freeze', name: 'Freeze Trap', kind: 'trap', cost: 100, hp: 400, dps: 10, slow: 0.55, color: '#7fe3ff', desc: 'Slows enemies a lot.' },
+  { id: 'flame', name: 'Flame Trap', kind: 'trap', cost: 140, hp: 400, dps: 18, burn: true, color: '#ff8a3a', desc: 'Sets enemies on fire as they cross it.' },
+  { id: 'heal', name: 'Healing Pad', kind: 'pad', cost: 200, hp: 500, heal: 12, color: '#6dff9a', desc: 'Stand on it to heal 12 HP/s.' },
+  { id: 'turret', name: 'Turret Tower', kind: 'turret', cost: 250, hp: 700, dmg: 12, rate: 3, range: 24, color: '#3cc8ff', desc: 'Shoots enemies in range.' },
+  { id: 'tesla', name: 'Tesla Coil', kind: 'turret', style: 'tesla', cost: 380, hp: 650, dmg: 16, rate: 1.4, range: 14, chain: 4, color: '#9fd8ff', desc: 'Zaps up to 4 nearby enemies at once.' },
+  { id: 'mortar', name: 'Mortar Tower', kind: 'turret', style: 'mortar', cost: 450, hp: 800, dmg: 55, rate: 0.5, range: 40, splash: 4, color: '#ffc02e', desc: 'Long range, explosive splash.' },
+  { id: 'flak', name: 'Flak Cannon', kind: 'turret', style: 'flak', cost: 420, hp: 750, dmg: 40, rate: 1.2, range: 34, splash: 3, airOnly: true, color: '#ff7a5a', desc: 'Anti-air: shreds flying enemies with airburst shells.' },
+  { id: 'laser', name: 'Laser Tower', kind: 'turret', style: 'laser', cost: 600, hp: 700, dmg: 9, rate: 10, range: 22, color: '#ff4dd2', desc: 'Continuous laser beam. Melts one target.' },
+  { id: 'sniper', name: 'Sniper Tower', kind: 'turret', style: 'sniper', cost: 700, hp: 650, dmg: 150, rate: 0.45, range: 60, color: '#b48cff', desc: 'Huge single shots at the toughest enemy in range.' },
 ];
+export const MAX_BUILD_LEVEL = 10;
+// Each upgrade makes a piece tougher and stronger.
+export function pieceLevelMult(level) { return 1 + 0.3 * (level - 1); }
+export function pieceHp(piece, level = 1) { return Math.round((piece.hp || 400) * (1 + 0.45 * (level - 1))); }
+export function upgradeCost(piece, level) { return Math.round(piece.cost * (0.6 + 0.4 * level) * Math.pow(1.12, level - 1)); }
+export function sellValue(piece, level) { let v = piece.cost; for (let l = 1; l < level; l++) v += Math.round(upgradeCost(piece, l) * 0.5); return v; }
 export const MAX_STRUCTURES = 48;
 export const CELL = 2;
 
@@ -522,11 +768,34 @@ export const ENEMIES = {
   mech: { name: 'Rocket Mech', model: 'robot', hp: 220, speed: 1.9, dmg: 26, rate: 3, height: 2.7, radius: 0.75, coins: 20, reach: 1.2, minWave: 15, weight: 1, color: 0x6a7a3a, widen: 1.15, ranged: 18, rocket: true },
   goblin: { name: 'Loot Goblin', model: 'zombie-2', hp: 90, speed: 5.4, dmg: 0, rate: 1, height: 1.4, radius: 0.4, coins: 70, reach: 1.0, minWave: 4, weight: 0.5, tint: 0xffe066, glow: 0x5a4000, goblin: true },
   queen: { name: 'Hive Queen', model: 'cyborg-female', hp: 2600, speed: 1.7, dmg: 45, rate: 2.2, height: 5.2, radius: 1.4, coins: 220, reach: 2.2, minWave: 10, weight: 0, tint: 0xb070ff, glow: 0x5a0a8a, boss: true, ranged: 16, summon: 'swarm', wallMult: 3 },
+  // ---- flyers & mist monsters
+  wasp: { name: 'Wasp Drone', model: 'drone', hp: 24, speed: 8.5, dmg: 7, rate: 0.7, height: 0.8, radius: 0.4, coins: 4, reach: 1.0, minWave: 5, weight: 3, fly: 2.2, tint: 0xffd23a, fast: true },
+  taker: { name: 'Taker', model: 'drone', hp: 70, speed: 6.5, dmg: 16, rate: 1.2, height: 1.3, radius: 0.6, coins: 10, reach: 1.1, minWave: 8, weight: 2, fly: 2.6, tint: 0x5a2a7a, glow: 0x3a0a5a, fast: true, hunter: true },
+  mender: { name: 'Mender Drone', model: 'drone', hp: 60, speed: 3.8, dmg: 5, rate: 1.6, height: 1.2, radius: 0.6, coins: 11, reach: 1, minWave: 10, weight: 1.2, fly: 5.5, tint: 0x6dff9a, healer: true, keepAway: 14 },
+  emp: { name: 'EMP Drone', model: 'drone', hp: 75, speed: 4, dmg: 8, rate: 1.6, height: 1.3, radius: 0.6, coins: 12, reach: 1, minWave: 11, weight: 1.2, fly: 5, tint: 0x7ad0ff, towerHunter: true, ranged: 12, skills: [{ type: 'emp', every: 5, r: 9, t: 3 }] },
+  stormray: { name: 'Storm Ray', model: 'drone', hp: 90, speed: 4.4, dmg: 14, rate: 2, height: 1.6, radius: 0.8, coins: 13, reach: 1, minWave: 12, weight: 1.5, fly: 6, tint: 0x6ae8ff, ranged: 16, beam: 0x7fd0ff },
+  gunship: { name: 'Gunship', model: 'gunship', hp: 260, speed: 3.2, dmg: 26, rate: 2.6, height: 1.6, radius: 1.2, coins: 20, reach: 1, minWave: 11, weight: 1, fly: 7, ranged: 22, rocket: true, towerHunter: true },
+  bombardier: { name: 'Bombardier', model: 'gunship', hp: 320, speed: 3, dmg: 30, rate: 2.2, height: 2, radius: 1.4, coins: 22, reach: 1, minWave: 15, weight: 0.8, fly: 8, ranged: 6, bomb: true, tint: 0x6a3a3a },
+  carrier: { name: 'Swarm Carrier', model: 'drone', hp: 300, speed: 2.6, dmg: 10, rate: 2, height: 2.6, radius: 1.3, coins: 24, reach: 1, minWave: 14, weight: 0.8, fly: 7.5, tint: 0xffa03a, summon: 'wasp', keepAway: 18 },
+  raider: { name: 'Sky Raider', model: 'ship', hp: 380, speed: 2.6, dmg: 24, rate: 2.8, height: 2.4, radius: 1.6, coins: 26, reach: 1, minWave: 16, weight: 0.8, fly: 6.5, ranged: 20, rocket: true },
+  flinger: { name: 'Flinger', model: 'zombie-1', hp: 170, speed: 2.1, dmg: 10, rate: 3.2, height: 2.8, radius: 0.75, coins: 16, reach: 1.2, minWave: 9, weight: 1.2, tint: 0xa88a6a, glow: 0x2a1a00, ranged: 22, fling: 'husk' },
+  mistblaster: { name: 'Mist Blaster', model: 'zombie-2', hp: 190, speed: 2.2, dmg: 18, rate: 2.6, height: 2.5, radius: 0.7, coins: 18, reach: 1.1, minWave: 12, weight: 1, tint: 0xb08aff, glow: 0x4a1a8a, ranged: 28, beam: 0xc07aff, ramp: 0.25 },
+  // ---- bosses (one appears every 5th wave, later two or three at once)
+  smasherBoss: { name: 'Mist Smasher', model: 'zombie-1', hp: 3600, speed: 2.3, dmg: 70, rate: 2, height: 6, radius: 1.8, coins: 200, reach: 2.6, minWave: 15, weight: 0, tint: 0x7a5aa0, glow: 0x3a0a6a, boss: true, wallMult: 6, wallHunter: true, skills: [{ type: 'slam', every: 4, r: 7 }] },
+  gunshipBoss: { name: 'Gunship Titan', model: 'gunship', hp: 2800, speed: 2.6, dmg: 40, rate: 2.2, height: 4, radius: 2.4, coins: 220, reach: 2, minWave: 20, weight: 0, fly: 9, boss: true, ranged: 26, rocket: true, towerHunter: true, tint: 0x3a4a2a, skills: [{ type: 'barrage', every: 6, n: 8, towers: true }, { type: 'emp', every: 9, r: 14, t: 4 }] },
+  frostBoss: { name: 'Frost Colossus', model: 'zombie-1', hp: 3500, speed: 1.9, dmg: 60, rate: 2.2, height: 5.8, radius: 1.7, coins: 220, reach: 2.5, minWave: 25, weight: 0, tint: 0xbff0ff, glow: 0x0a4a7a, boss: true, wallMult: 3, slowOnHit: true, skills: [{ type: 'frost', every: 7, r: 12 }] },
+  infernoBoss: { name: 'Inferno Golem', model: 'robot', hp: 3900, speed: 1.9, dmg: 65, rate: 2, height: 5.6, radius: 1.8, coins: 240, reach: 2.5, minWave: 30, weight: 0, color: 0xff5a1a, emissive: 0x8a2000, widen: 1.3, boss: true, wallMult: 3, burnOnHit: true, deathFire: 7, skills: [{ type: 'fireRing', every: 6, r: 9 }] },
+  galleonBoss: { name: 'Sky Galleon', model: 'ship', hp: 4200, speed: 1.6, dmg: 45, rate: 3, height: 7, radius: 3.2, coins: 260, reach: 2, minWave: 35, weight: 0, fly: 9.5, boss: true, ranged: 32, rocket: true, wallMult: 3, summon: 'raider', summonN: 1, summonEvery: 16, skills: [{ type: 'barrage', every: 5, n: 10 }] },
+  plagueBoss: { name: 'Plague Mother', model: 'cyborg-female', hp: 3400, speed: 2, dmg: 45, rate: 2, height: 5.2, radius: 1.5, coins: 240, reach: 2.2, minWave: 40, weight: 0, tint: 0x8aff6a, glow: 0x1a5a00, boss: true, ranged: 16, summon: 'toxic', deathCloud: 8, skills: [{ type: 'clouds', every: 5, n: 3 }] },
+  thunderBoss: { name: 'Thunder Titan', model: 'cyborg-female', hp: 3700, speed: 2.1, dmg: 50, rate: 2, height: 5.4, radius: 1.5, coins: 260, reach: 2.2, minWave: 45, weight: 0, tint: 0xfff07a, glow: 0x5a4a00, boss: true, ranged: 20, beam: 0xfff07a, skills: [{ type: 'lightning', every: 4, n: 6 }] },
+  reaperBoss: { name: 'Void Reaper', model: 'zombie-2', hp: 3300, speed: 2.8, dmg: 70, rate: 1.8, height: 5, radius: 1.4, coins: 260, reach: 2.4, minWave: 50, weight: 0, tint: 0x3a2a5a, glow: 0x5a0aaa, boss: true, phase: true, blink: 10, skills: [{ type: 'pull', every: 8, r: 16 }] },
+  mechaBoss: { name: 'Mecha Overlord', model: 'robot', hp: 4600, speed: 1.7, dmg: 75, rate: 2.2, height: 6.5, radius: 2, coins: 300, reach: 2.8, minWave: 55, weight: 0, color: 0x9aa4b0, emissive: 0x2a0000, widen: 1.35, boss: true, wallMult: 4, skills: [{ type: 'shield', every: 12, frac: 0.35 }, { type: 'barrage', every: 7, n: 10, towers: true }] },
+  hiveBoss: { name: 'Hive Carrier', model: 'drone', hp: 3400, speed: 2, dmg: 40, rate: 2, height: 5, radius: 2.6, coins: 280, reach: 2, minWave: 60, weight: 0, fly: 10, tint: 0xff7a2a, glow: 0x6a2000, boss: true, ranged: 24, beam: 0xff7a2a, summon: 'wasp', summonN: 5, summonEvery: 6, skills: [{ type: 'barrage', every: 8, n: 6 }] },
   boss: { name: 'Storm King', model: 'robot', hp: 1900, speed: 1.9, dmg: 60, rate: 1.8, height: 5.8, radius: 1.6, coins: 160, reach: 2.4, minWave: 5, weight: 0, color: 0x8b45e0, emissive: 0x4a1080, widen: 1.2, boss: true, wallMult: 3 },
 };
 
-export function waveHpMult(n) { return (1 + 0.2 * (n - 1)) * Math.pow(1.035, Math.max(0, n - 15)); }
-export function waveDmgMult(n) { return 1 + 0.09 * (n - 1); }
+export function waveHpMult(n) { return (1 + 0.24 * (n - 1)) * Math.pow(1.045, Math.max(0, n - 10)); }
+export function waveDmgMult(n) { return (1 + 0.1 * (n - 1)) * Math.pow(1.012, Math.max(0, n - 10)); }
 export function waveCoinMult(n) { return 1 + 0.08 * (n - 1); }
 export function waveBonus(n) { return 25 + 12 * n; }
 export function isBossWave(n) { return n % 5 === 0; }
@@ -538,9 +807,10 @@ function rng(seed) {
   return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
 }
 
+export const BOSS_ORDER = ['boss', 'queen', 'smasherBoss', 'gunshipBoss', 'frostBoss', 'infernoBoss', 'galleonBoss', 'plagueBoss', 'thunderBoss', 'reaperBoss', 'mechaBoss', 'hiveBoss'];
 export function buildWave(n) {
   const r = rng(n * 7919 + 17);
-  const total = 6 + Math.floor(n * 2.6);
+  const total = 8 + Math.floor(n * 3.3 + Math.pow(Math.max(0, n - 10), 1.25));
   const types = Object.entries(ENEMIES).filter(([, d]) => d.weight > 0 && d.minWave <= n);
   // the husk share shrinks as more types unlock
   const weights = types.map(([k, d]) => (k === 'husk' ? d.weight + Math.max(0, 8 - n) : d.weight));
@@ -550,11 +820,19 @@ export function buildWave(n) {
   for (let i = 0; i < total; i++) {
     let x = r() * sum, t = 'husk';
     for (let k = 0; k < types.length; k++) { x -= weights[k]; if (x <= 0) { t = types[k][0]; break; } }
-    list.push({ type: t, portal: Math.floor(r() * portals) });
+    // elites: tougher, glowing, richer versions that show up more and more
+    const elite = n >= 6 && r() < Math.min(0.28, (n - 5) * 0.014);
+    list.push({ type: t, portal: Math.floor(r() * portals), elite });
   }
   if (isBossWave(n)) {
     const bosses = 1 + Math.floor(n / 20);
-    for (let b = 0; b < bosses; b++) list.splice(Math.floor(list.length * (0.35 + 0.3 * b)), 0, { type: n % 10 === 0 && b === 0 ? 'queen' : 'boss', portal: b % portals });
+    const pool = BOSS_ORDER.filter(k => ENEMIES[k].minWave <= n);
+    for (let b = 0; b < bosses; b++) {
+      // the newest boss for this wave first, then earlier ones
+      const left = pool.filter(x => !list.some(e => e.type === x));
+      const k = b === 0 ? BOSS_ORDER[(n / 5 - 1) % BOSS_ORDER.length] : (left.length ? left : pool)[Math.floor(r() * (left.length || pool.length))];
+      list.splice(Math.floor(list.length * (0.3 + 0.3 * b)), 0, { type: ENEMIES[k].minWave <= n ? k : 'boss', portal: b % portals });
+    }
   }
   return list;
 }
