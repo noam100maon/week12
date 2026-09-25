@@ -605,7 +605,10 @@ function useAbility() {
         const d = Math.hypot(e.pos.x - player.pos.x, e.pos.z - player.pos.z);
         if (d < 8) {
           damageEnemy(e, 60 * power, { point: e.pos.clone().setY(e.pos.y + e.height * 0.6), src: 'ability' });
-          if (!e.def.boss && !e.def.fly) { e.pos.x += (e.pos.x - player.pos.x) / (d || 1) * 3; e.pos.z += (e.pos.z - player.pos.z) / (d || 1) * 3; }
+          if (!e.def.boss && !e.def.fly) {
+            const kx = (e.pos.x - player.pos.x) / (d || 1) * 3, kz = (e.pos.z - player.pos.z) / (d || 1) * 3;
+            if (e.mirror) netRequest(['kb', e.id, r1(kx), r1(kz)]); else { e.pos.x += kx; e.pos.z += kz; }
+          }
         }
       }
       break;
@@ -627,6 +630,7 @@ function useAbility() {
         const side = n === 2 ? (k ? 1.4 : -1.4) : 0;
         const x = player.pos.x + Math.cos(player.yaw) * side - Math.sin(player.yaw) * 1.5;
         const z = player.pos.z - Math.sin(player.yaw) * side - Math.cos(player.yaw) * 1.5;
+        if (isGuest()) { netRequest(['tu', r1(x), r1(z)]); continue; }
         const s = structures.add('turret', 0, 0, 0, true);
         s.x = x; s.z = z; s.mesh.position.set(x, 0, z); s.life = 20; s.hx = s.hz = 0.6;
         s.mesh.scale.setScalar(0.7);
@@ -636,15 +640,15 @@ function useAbility() {
     }
     case 'doc': {
       player.hp = Math.min(player.maxHp, player.hp + player.maxHp * 0.4);
-      G.houseHp = Math.min(G.houseMax, G.houseHp + G.houseMax * 0.1);
+      healHouse(G.houseMax * 0.1);
       rings.spawn(player.pos, 10, 0x6dff9a, 0.8);
       sfx.heal();
       if (HS.perks.has('boost')) player.boostT = 6;
       if (HS.perks.has('fieldmedic') || HS.perks.has('miracle')) {
         for (const s of structures.list) {
           if (s.piece.kind !== 'wall') continue;
-          if (!s.alive && HS.perks.has('miracle')) structures.revive(s);
-          else if (s.alive && HS.perks.has('fieldmedic')) structures.revive(s);
+          if (!s.alive && HS.perks.has('miracle')) fixWall(s, 'revive');
+          else if (s.alive && HS.perks.has('fieldmedic')) fixWall(s, s.max);
         }
       }
       for (let i = 0; i < 30; i++) sparks.emit(player.pos.x + (Math.random() - 0.5) * 2, 0.5 + Math.random() * 2, player.pos.z + (Math.random() - 0.5) * 2, 0, 2, 0, 0.8, 0.4, COL.green, -1);
@@ -814,7 +818,7 @@ function petDamage(e, dmg, point) {
   damageEnemy(e, dmg, { point, src: 'ability', pet: true });
   if (e.alive) {
     if (PS.perks.has('burn')) e.burn = { dps: dmg * 0.4, t: 3 };
-    if (PS.perks.has('freeze') || def.id === 'penguin') e.chill = { slow: 0.4, t: 2 };
+    if (PS.perks.has('freeze') || def.id === 'penguin') setChill(e, 0.4, 2);
   }
   if (PS.perks.has('splash')) {
     for (const o of G.enemies) if (o !== e && o.alive && o.spawnT <= 0 && o.pos.distanceTo(e.pos) < 2.8) damageEnemy(o, dmg * 0.5, { point: new THREE.Vector3(o.pos.x, o.pos.y + o.height * 0.5, o.pos.z), src: 'ability', pet: true });
@@ -871,8 +875,8 @@ function updatePet(dt) {
         if (pet.buildT >= 0.5) {
           pet.buildT = 0;
           pet.atkT = 0;
-          if (!fixing.alive) { fixing.rebuild = (fixing.rebuild || 0) + 0.12; if (fixing.rebuild >= 1) { fixing.rebuild = 0; structures.revive(fixing); fixing.hp = fixing.max * 0.5; structures.heal(fixing, 0); toast(`${def.name} rebuilt a wall!`); pet.fix = null; } }
-          else structures.heal(fixing, fixing.max * 0.08);
+          if (!fixing.alive) { fixing.rebuild = (fixing.rebuild || 0) + 0.12; if (fixing.rebuild >= 1) { fixing.rebuild = 0; fixWall(fixing, 'revive'); toast(`${def.name} rebuilt a wall!`); pet.fix = null; } }
+          else fixWall(fixing, fixing.max * 0.08);
           for (let k = 0; k < 6; k++) sparks.emit(fixing.x + (Math.random() - 0.5) * 1.5, 0.5 + Math.random() * 2, fixing.z + (Math.random() - 0.5) * 1.5, (Math.random() - 0.5) * 2, 2, (Math.random() - 0.5) * 2, 0.5, 0.3, COL.wood, 6);
           sfx.fenceHit();
         }
@@ -912,7 +916,7 @@ function updatePet(dt) {
       pet.healCd = 5 / (PS.rate / def.rate);
       const heal = player.maxHp * 0.08 * (1 + 0.01 * (petRec().level - 1));
       player.hp = Math.min(player.maxHp, player.hp + heal);
-      G.houseHp = Math.min(G.houseMax, G.houseHp + G.houseMax * 0.02);
+      healHouse(G.houseMax * 0.02);
       rings.spawn(pet.pos, 3, 0x6dff9a, 0.6);
       for (let i = 0; i < 10; i++) sparks.emit(player.pos.x, 0.5 + Math.random() * 1.5, player.pos.z, (Math.random() - 0.5) * 2, 2, (Math.random() - 0.5) * 2, 0.7, 0.3, COL.green, -1);
       pet.atkT = 0;
@@ -925,7 +929,7 @@ function updatePet(dt) {
       pet.roarCd = 10 / (1 + 0.3 * PS.count('roar'));
       rings.spawn(pet.pos, r, 0xffb13a, 0.6);
       G.shake = Math.max(G.shake, 0.15);
-      for (const e of G.enemies) if (e.alive && e.spawnT <= 0 && e.pos.distanceTo(pet.pos) < r) { petDamage(e, power * 1.2, new THREE.Vector3(e.pos.x, e.pos.y + e.height * 0.5, e.pos.z)); e.chill = { slow: 0.5, t: 2.5 }; }
+      for (const e of G.enemies) if (e.alive && e.spawnT <= 0 && e.pos.distanceTo(pet.pos) < r) { petDamage(e, power * 1.2, new THREE.Vector3(e.pos.x, e.pos.y + e.height * 0.5, e.pos.z)); setChill(e, 0.5, 2.5); }
     }
   }
   // collector: pull coins near the pet too
@@ -1173,7 +1177,7 @@ function weaponHit(e, dmg, head, point, abilities, fromExplosion = false) {
   if (e.alive) {
     for (const a of abilities) {
       if (a.key === 'burn') e.burn = { dps: dmg * a.v.f, t: a.v.dur };
-      if (a.key === 'freeze') e.chill = { slow: a.v.slow, t: a.v.dur };
+      if (a.key === 'freeze') setChill(e, a.v.slow, a.v.dur);
     }
   } else if (!e.novaDone) {
     e.novaDone = true;
@@ -1290,6 +1294,7 @@ function updateRockets(dt) {
 }
 
 function explode(pos, dmg, radius, opts = {}) {
+  fxRecord(['x', r1(pos.x), r1(pos.y), r1(pos.z), r1(radius), opts.small ? 1 : 0, colHex(opts.color || COL.fire)]);
   sfx.explosion();
   const dPlayer = pos.distanceTo(player.pos);
   G.shake = Math.max(G.shake, clamp((opts.small ? 0.25 : 0.6) - dPlayer * 0.02, 0.05, 0.6));
@@ -1720,7 +1725,7 @@ function updateEnemies(dt) {
     let dp = Math.hypot(player.pos.x - e.pos.x, player.pos.z - e.pos.z);
     let tgtPos = player.pos, tgtKind = 'player', tgtOk = player.alive && (player.shieldT <= 0 || e.def.boss);
     const RM = NET.remote;
-    if (RM && RM.alive) {
+    if (RM && RM.alive && (!RM.shield || e.def.boss)) {
       const dr = Math.hypot(RM.pos.x - e.pos.x, RM.pos.z - e.pos.z);
       if (!tgtOk || dr < dp) { dp = dr; tgtPos = RM.pos; tgtKind = 'remote'; tgtOk = true; }
     }
@@ -2023,14 +2028,11 @@ function hurtHouse(dmg, from) {
 // ---------------------------------------------------------------- traps & turrets
 function updateStructures(dt) {
   structures.update(dt);
-  if (isGuest()) {
-    for (const s of structures.list) if (s.alive && s.piece.kind === 'pad' && player.alive && G.phase === 'fight' && Math.abs(player.pos.x - s.x) < 1.2 && Math.abs(player.pos.z - s.z) < 1.2) player.hp = Math.min(player.maxHp, player.hp + 12 * dt);
-    return;
-  }
+  const vis = isGuest(); // the guest only animates the host's structures; damage happens on the host
   const tm = trapMult();
   for (const s of [...structures.list]) {
     if (!s.alive) continue;
-    if (s.temporary) {
+    if (s.temporary && !vis) {
       s.life -= dt;
       if (s.life <= 0) { structures.removeStructure(s); for (let i = 0; i < 12; i++) sparks.emit(s.x, 1, s.z, (Math.random() - 0.5) * 4, Math.random() * 3, (Math.random() - 0.5) * 4, 0.4, 0.3, COL.blue, 6); continue; }
     }
@@ -2048,7 +2050,7 @@ function updateStructures(dt) {
       const targets = G.enemies.filter(e => e.alive && e.spawnT <= 0 && !e.phased && Math.hypot(e.pos.x - s.x, e.pos.z - s.z) < p.range);
       const top = s.mesh.userData.top;
       if (top) top.rotation.y += dt * (targets.length ? 4 : 0.6);
-      if (!targets.length || s.cooldown > 0 || G.phase !== 'fight') continue;
+      if (!targets.length || s.cooldown > 0 || G.phase !== 'fight' || vis) continue;
       s.cooldown = 1 / p.rate;
       const from = V1.set(s.x, s.mesh.userData.topY || 4, s.z).clone();
       if (p.style === 'tesla') {
@@ -2077,9 +2079,9 @@ function updateStructures(dt) {
       for (const e of G.enemies) {
         if (!e.alive || e.spawnT > 0 || e.def.fly) continue;
         if (Math.abs(e.pos.x - s.x) < 1.1 + e.radius * 0.4 && Math.abs(e.pos.z - s.z) < 1.1 + e.radius * 0.4) {
-          damageEnemy(e, p.dps * tm * dt, { src: 'trap', quiet: true });
+          if (!vis) damageEnemy(e, p.dps * tm * dt, { src: 'trap', quiet: true });
           if (p.slow) { e.trapSlow = Math.min(e.trapSlow, 1 - p.slow); if (Math.random() < dt * 5) sparks.emit(e.pos.x, 0.4, e.pos.z, 0, 1, 0, 0.5, 0.25, COL.ice, 0); }
-          else if (p.burn) { if (e.alive) e.burn = { dps: p.dps * tm * 0.6, t: 2.5 }; }
+          else if (p.burn) { if (e.alive && !vis) e.burn = { dps: p.dps * tm * 0.6, t: 2.5 }; }
           else { e.trapSlow = Math.min(e.trapSlow, 0.75); if (Math.random() < dt * 6) sparks.emit(e.pos.x, 0.3, e.pos.z, (Math.random() - 0.5) * 2, 2, (Math.random() - 0.5) * 2, 0.3, 0.2, COL.blood, 8); }
           hit = true;
         }
@@ -2100,7 +2102,7 @@ function updateStructures(dt) {
       head.rotation.y = lerpAngle(head.rotation.y, aim, Math.min(1, dt * 10));
       head.userData.barrel.rotation.x = -Math.atan2(best.pos.y + best.height * 0.5 - hy, bd);
       s.cooldown -= dt;
-      if (s.cooldown <= 0 && G.phase === 'fight') {
+      if (s.cooldown <= 0 && G.phase === 'fight' && !vis) {
         s.cooldown = 1 / p.rate;
         s.recoil = 1;
         const from = head.userData.muzzle.getWorldPosition(new THREE.Vector3());
@@ -2138,9 +2140,12 @@ function updateCoins(dt, collectAll) {
     c.t += dt;
     c.spin += dt * 4;
     c.mesh.rotation.y = c.spin;
-    const tx = player.pos.x - p.x, ty = player.pos.y + 1 - p.y, tz = player.pos.z - p.z;
+    let tgt = player.pos, tAlive = player.alive;
+    const RMc = NET.remote;
+    if (RMc && RMc.alive && (!player.alive || RMc.pos.distanceTo(p) < player.pos.distanceTo(p))) { tgt = RMc.pos; tAlive = true; }
+    const tx = tgt.x - p.x, ty = (tgt.y || 0) + 1 - p.y, tz = tgt.z - p.z;
     const d = Math.hypot(tx, ty, tz);
-    if (c.state !== 'fly' && c.t > 0.4 && player.alive && (d < magnet || collectAll)) c.state = 'fly';
+    if (c.state !== 'fly' && c.t > 0.4 && tAlive && (d < magnet || collectAll)) c.state = 'fly';
     if (c.state !== 'fly') {
       if (c.state === 'drop') {
         c.vel.y -= 20 * dt;
@@ -2154,7 +2159,7 @@ function updateCoins(dt, collectAll) {
         save.coins += c.value;
         G.runCoins += c.value;
         NET.coinsOut += c.value;
-        sfx.coin();
+        if (tgt === player.pos) sfx.coin();
         const pill = $('coinPill');
         pill.classList.add('pop');
         setTimeout(() => pill.classList.remove('pop'), 90);
@@ -2175,6 +2180,7 @@ function clearArena() {
   for (const list of [G.rockets, G.globs, G.grenades]) { for (const r of list) scene.remove(r.mesh); list.length = 0; }
   G.novaQueue.length = 0;
   G.clouds.length = 0;
+  clearGhosts();
   sparks.clear(); smoke.clear(); tracers.clear(); dmgNums.clear(); bolts.clear(); rings.clear();
   for (const pt of world.portals) { pt.warnTarget = 0; pt.laneShow = 0; }
 }
@@ -2711,9 +2717,252 @@ function bindUi() {
 }
 
 // ---------------------------------------------------------------- co-op (2 players)
+// Host = the real simulation. Guest = its own hero/pet + a mirror of everything else.
+// Both sides share: players, pets, projectiles, fx (tracers, bolts, rings, explosions),
+// clouds, coins and (host -> guest) enemies, base, house and wave state.
+const nowS = () => performance.now() / 1000;
+const INTERP = 0.13;
+const r1 = (v) => Math.round(v * 10);
+const r2 = (v) => Math.round(v * 100);
+const colHex = (c) => (c && c.isColor ? c.getHex() : c) | 0;
+
+// ---- interpolation buffers: [t, a, b, c, ...]
+function bufPush(buf, t, vals) {
+  if (buf.length && t - buf[buf.length - 1][0] < 0.004) buf[buf.length - 1] = [t, ...vals];
+  else buf.push([t, ...vals]);
+  if (buf.length > 10) buf.shift();
+}
+// angleIdx: indices (into vals) that are angles
+function bufSample(buf, t, out, angleIdx = []) {
+  if (!buf.length) return false;
+  let a = buf[0], b = buf[0];
+  if (t >= buf[buf.length - 1][0]) a = b = buf[buf.length - 1];
+  else if (t > buf[0][0]) {
+    for (let i = 1; i < buf.length; i++) if (buf[i][0] >= t) { a = buf[i - 1]; b = buf[i]; break; }
+  }
+  const span = b[0] - a[0];
+  const k = span > 1e-4 ? clamp((t - a[0]) / span, 0, 1) : 1;
+  for (let i = 1; i < a.length; i++) {
+    out[i - 1] = angleIdx.includes(i - 1) ? lerpAngle(a[i], b[i], k) : a[i] + (b[i] - a[i]) * k;
+  }
+  return true;
+}
+
+// ---- fx replication (wrap the fx pools so every tracer/bolt/ring/explosion is mirrored)
+const fxOut = [];
+let fxSeq = 0, fxReplay = false, fxSeen = 0;
+function fxRecord(ev) {
+  if (fxReplay || !net.linked || G.state !== 'playing') return;
+  fxOut.push([nowS(), ++fxSeq, ...ev]);
+  if (fxOut.length > 40) fxOut.shift();
+}
+{
+  const tr = tracers.spawn.bind(tracers);
+  tracers.spawn = (a, b, c = 0xffe08a, w = 0.05, l = 0.08) => { fxRecord(['t', r1(a.x), r1(a.y), r1(a.z), r1(b.x), r1(b.y), r1(b.z), colHex(c), r2(w), r2(l)]); return tr(a, b, c, w, l); };
+  const bo = bolts.spawn.bind(bolts);
+  bolts.spawn = (a, b, c = 0xbfe6ff, l = 0.18, j = 0.6) => { fxRecord(['b', r1(a.x), r1(a.y), r1(a.z), r1(b.x), r1(b.y), r1(b.z), colHex(c), r2(l), r2(j)]); return bo(a, b, c, l, j); };
+  const ri = rings.spawn.bind(rings);
+  rings.spawn = (p, r, c = 0xffffff, l = 0.5) => { fxRecord(['r', r1(p.x), r1(p.y || 0), r1(p.z), r1(r), colHex(c), r2(l)]); return ri(p, r, c, l); };
+}
+function fxPlay(list) {
+  if (!Array.isArray(list)) return;
+  let max = fxSeen;
+  fxReplay = true;
+  try {
+    for (const ev of list) {
+      if (!Array.isArray(ev) || ev[0] <= fxSeen) continue;
+      max = Math.max(max, ev[0]);
+      const k = ev[1];
+      if (k === 't') tracers.spawn(V1.set(ev[2] / 10, ev[3] / 10, ev[4] / 10), V2.set(ev[5] / 10, ev[6] / 10, ev[7] / 10), ev[8], ev[9] / 100, ev[10] / 100);
+      else if (k === 'b') bolts.spawn(new THREE.Vector3(ev[2] / 10, ev[3] / 10, ev[4] / 10), new THREE.Vector3(ev[5] / 10, ev[6] / 10, ev[7] / 10), ev[8], ev[9] / 100, ev[10] / 100);
+      else if (k === 'r') rings.spawn(V1.set(ev[2] / 10, ev[3] / 10, ev[4] / 10), ev[5] / 10, ev[6], ev[7] / 100);
+      else if (k === 'x') explode(new THREE.Vector3(ev[2] / 10, ev[3] / 10, ev[4] / 10), 0, ev[5] / 10, { small: !!ev[6], color: new THREE.Color(ev[7]) });
+      else if (k === 'z') { sfx.zap(); }
+    }
+  } finally { fxReplay = false; }
+  fxSeen = max;
+}
+function fxPack() {
+  const t = nowS();
+  while (fxOut.length && t - fxOut[0][0] > 0.4) fxOut.shift();
+  return fxOut.slice(-14).map(e => e.slice(1));
+}
+
+// ---- projectiles, clouds, coins as shared lists
+let projSeq = 1;
+const PK = { rocket: 0, lob: 1, shell: 2, plasma: 3, glob: 4, bomb: 5, erocket: 6, nade: 7 };
+function projPack() {
+  const out = [];
+  for (const r of G.rockets) { if (!r.nid) r.nid = projSeq++; out.push([r.nid, r.plasma ? PK.plasma : r.gravity ? (r.src === 'trap' ? PK.shell : PK.lob) : PK.rocket, r1(r.mesh.position.x), r1(r.mesh.position.y), r1(r.mesh.position.z)]); }
+  for (const g of G.globs) { if (!g.nid) g.nid = projSeq++; out.push([g.nid, g.splash ? (g.trail ? PK.erocket : PK.bomb) : PK.glob, r1(g.mesh.position.x), r1(g.mesh.position.y), r1(g.mesh.position.z)]); }
+  for (const g of G.grenades) { if (!g.nid) g.nid = projSeq++; out.push([g.nid, PK.nade, r1(g.mesh.position.x), r1(g.mesh.position.y), r1(g.mesh.position.z)]); }
+  return out.slice(0, 24);
+}
+const ghostProj = new Map();
+function makeGhostProj(kind) {
+  let m;
+  const std = (c, e, ei = 1) => new THREE.MeshStandardMaterial({ color: c, emissive: e, emissiveIntensity: ei });
+  if (kind === PK.plasma) {
+    m = new THREE.Group();
+    m.add(new THREE.Mesh(new THREE.SphereGeometry(0.22, 12, 8), new THREE.MeshBasicMaterial({ color: 0xffffff })));
+    m.add(new THREE.Mesh(new THREE.SphereGeometry(0.42, 12, 8), new THREE.MeshBasicMaterial({ color: 0xa060ff, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false })));
+  } else if (kind === PK.rocket || kind === PK.erocket) {
+    m = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.55, 8), std(0x6a7a3a, 0x000000, 0));
+    body.rotation.x = Math.PI / 2;
+    const tip = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.2, 8), std(0xff6a3a, 0xff6a3a));
+    tip.rotation.x = Math.PI / 2; tip.position.z = 0.37;
+    m.add(body, tip);
+  } else if (kind === PK.glob) m = new THREE.Mesh(new THREE.SphereGeometry(0.22, 8, 6), std(0x9dff3a, 0x4aff1a, 1.2));
+  else if (kind === PK.bomb) m = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 6), std(0x2a2a2a, 0xff5020, 0.6));
+  else if (kind === PK.shell) m = new THREE.Mesh(new THREE.SphereGeometry(0.28, 10, 8), std(0x3a3a3a, 0xffc02e, 0.25));
+  else m = new THREE.Mesh(new THREE.SphereGeometry(0.16, 10, 8), std(0x3a5a2a, 0xff8a2a, 0.25));
+  scene.add(m);
+  return { mesh: m, kind, buf: [], last: new THREE.Vector3(), seen: 0 };
+}
+function syncGhostProj(list, t) {
+  const seen = new Set();
+  for (const a of list || []) {
+    if (!Array.isArray(a)) continue;
+    const [id, kind, x, y, z] = a;
+    seen.add(id);
+    let g = ghostProj.get(id);
+    if (!g) { g = makeGhostProj(kind); ghostProj.set(id, g); }
+    bufPush(g.buf, t, [x / 10, y / 10, z / 10]);
+  }
+  for (const [id, g] of ghostProj) if (!seen.has(id)) { g.gone = (g.gone || 0) + 1; if (g.gone > 1) { disposeGhost(g); ghostProj.delete(id); } } else g.gone = 0;
+}
+function disposeGhost(g) {
+  scene.remove(g.mesh);
+  g.mesh.traverse(o => { if (o.isMesh) { o.geometry.dispose(); o.material.dispose(); } });
+}
+const SMP = [0, 0, 0, 0, 0, 0, 0, 0];
+function updateGhostProj(t) {
+  for (const g of ghostProj.values()) {
+    if (!bufSample(g.buf, t, SMP)) continue;
+    const p = g.mesh.position;
+    g.last.copy(p);
+    p.set(SMP[0], SMP[1], SMP[2]);
+    if (g.kind === PK.rocket || g.kind === PK.erocket) {
+      if (p.distanceToSquared(g.last) > 1e-4) g.mesh.lookAt(V1.copy(p).sub(g.last).add(p));
+      smoke.emit(p.x, p.y, p.z, 0, 0.4, 0, 0.5, 0.4, COL.smoke, 0, 1, 1.8);
+      sparks.emit(p.x, p.y, p.z, 0, 0, 0, 0.12, 0.35, COL.fire);
+    } else if (g.kind === PK.plasma) sparks.emit(p.x, p.y, p.z, 0, 0, 0, 0.3, 0.5, COL.purple, 0);
+    else if (g.kind === PK.glob) { if (Math.random() < 0.6) sparks.emit(p.x, p.y, p.z, 0, 0, 0, 0.3, 0.2, COL.acid); }
+    else if (Math.random() < 0.6) sparks.emit(p.x, p.y, p.z, 0, 0, 0, 0.2, 0.18, COL.fire);
+    if (g.kind !== PK.rocket && g.kind !== PK.erocket) g.mesh.rotation.x += 0.2;
+  }
+}
+function clearGhosts() {
+  for (const g of ghostProj.values()) disposeGhost(g);
+  ghostProj.clear();
+  ghostClouds.length = 0;
+  for (const c of ghostCoins.values()) scene.remove(c.mesh);
+  ghostCoins.clear();
+}
+
+const ghostClouds = [];
+function cloudPack() { return G.clouds.slice(0, 8).map(c => [r1(c.pos.x), r1(c.pos.z), r1(c.r), c.friendly ? 1 : 0]); }
+function syncGhostClouds(list) {
+  ghostClouds.length = 0;
+  for (const a of list || []) if (Array.isArray(a)) ghostClouds.push({ x: a[0] / 10, z: a[1] / 10, r: a[2] / 10, friendly: !!a[3] });
+}
+function updateGhostClouds(dt) {
+  for (const c of ghostClouds) {
+    const col = c.friendly ? COL.acid : COL.toxic;
+    for (let k = 0; k < Math.ceil(c.r * 1.2); k++) {
+      if (Math.random() > dt * 10) continue;
+      const a = Math.random() * TAU, rr = Math.sqrt(Math.random()) * c.r;
+      smoke.emit(c.x + Math.cos(a) * rr, 0.3 + Math.random() * 0.8, c.z + Math.sin(a) * rr, 0, 0.4, 0, 1.2, 1.2, col, -0.2, 1.2, 2.2);
+    }
+  }
+}
+
+let coinSeq = 1;
+const ghostCoins = new Map();
+function coinPack() {
+  const out = [];
+  for (const c of G.coins) { if (!c.nid) c.nid = coinSeq++; out.push([c.nid, r1(c.mesh.position.x), r1(c.mesh.position.y), r1(c.mesh.position.z)]); if (out.length >= 24) break; }
+  return out;
+}
+function syncGhostCoins(list, t) {
+  const seen = new Set();
+  for (const a of list || []) {
+    if (!Array.isArray(a)) continue;
+    seen.add(a[0]);
+    let c = ghostCoins.get(a[0]);
+    if (!c) { const m = cloneStatic('coin', { height: 0.5 }); scene.add(m); c = { mesh: m, buf: [], spin: Math.random() * TAU }; ghostCoins.set(a[0], c); }
+    bufPush(c.buf, t, [a[1] / 10, a[2] / 10, a[3] / 10]);
+  }
+  for (const [id, c] of ghostCoins) if (!seen.has(id)) {
+    if (c.mesh.position.distanceTo(player.pos) < 2.5) { sfx.coin(); sparks.emit(c.mesh.position.x, c.mesh.position.y, c.mesh.position.z, 0, 1, 0, 0.25, 0.5, COL.coin); }
+    scene.remove(c.mesh); ghostCoins.delete(id);
+  }
+}
+function updateGhostCoins(t, dt) {
+  for (const c of ghostCoins.values()) {
+    if (bufSample(c.buf, t, SMP)) c.mesh.position.set(SMP[0], SMP[1], SMP[2]);
+    c.spin += dt * 4; c.mesh.rotation.y = c.spin;
+  }
+}
+
+// ---- guest -> host requests (things that must happen in the host's world)
+const rqOut = [];
+let rqSeq = 0, rqSeen = 0;
+function netRequest(ev) {
+  rqOut.push([nowS(), ++rqSeq, ...ev]);
+  if (rqOut.length > 30) rqOut.shift();
+}
+function rqPack() {
+  const t = nowS();
+  while (rqOut.length && t - rqOut[0][0] > 2.5) rqOut.shift();
+  return rqOut.map(e => e.slice(1));
+}
+function healHouse(amount) {
+  if (amount <= 0) return;
+  if (isGuest()) netRequest(['hh', Math.round(amount)]);
+  else G.houseHp = Math.min(G.houseMax, G.houseHp + amount);
+}
+function fixWall(s, amount) {
+  if (isGuest()) { netRequest(['wf', s.i, s.j, amount === 'revive' ? -1 : Math.round(amount)]); if (amount === 'revive') structures.revive(s); else structures.heal(s, amount); return; }
+  if (amount === 'revive') structures.revive(s); else structures.heal(s, amount);
+}
+function setChill(e, slow, t) {
+  e.chill = { slow, t };
+  if (e.mirror && G.time - (e.chillSent || -1) > 0.3) { e.chillSent = G.time; netRequest(['ch', e.id, r2(slow), r1(t)]); }
+}
+function hostRequests(list) {
+  if (!Array.isArray(list)) return;
+  let max = rqSeen;
+  for (const ev of list) {
+    if (!Array.isArray(ev) || ev[0] <= rqSeen) continue;
+    max = Math.max(max, ev[0]);
+    const k = ev[1];
+    if (G.state !== 'playing') continue;
+    if (k === 'hh') G.houseHp = Math.min(G.houseMax, G.houseHp + Math.min(G.houseMax * 0.2, +ev[2] || 0));
+    else if (k === 'wf') {
+      const s = structures.byCell.get(ev[2] + ',' + ev[3]);
+      if (s && s.piece.kind === 'wall') { if (ev[4] < 0) structures.revive(s); else structures.heal(s, Math.min(s.max, +ev[4] || 0)); }
+    } else if (k === 'ch') {
+      const e = G.enemies.find(o => o.id === ev[2]);
+      if (e && e.alive) e.chill = { slow: clamp(ev[3] / 100, 0, 0.9), t: clamp(ev[4] / 10, 0, 5) };
+    } else if (k === 'kb') {
+      const e = G.enemies.find(o => o.id === ev[2]);
+      if (e && e.alive && !e.def.boss && !e.def.fly) { e.pos.x += clamp(ev[3] / 10, -4, 4); e.pos.z += clamp(ev[4] / 10, -4, 4); }
+    } else if (k === 'tu') {
+      const s = structures.add('turret', 0, 0, 0, true);
+      s.x = clamp(ev[2] / 10, -WORLD_R, WORLD_R); s.z = clamp(ev[3] / 10, -WORLD_R, WORLD_R);
+      s.mesh.position.set(s.x, 0, s.z); s.life = 20; s.hx = s.hz = 0.6;
+      s.mesh.scale.setScalar(0.7);
+      for (let i = 0; i < 16; i++) sparks.emit(s.x, 1, s.z, (Math.random() - 0.5) * 5, Math.random() * 4, (Math.random() - 0.5) * 5, 0.5, 0.35, COL.blue, 6);
+    }
+  }
+  rqSeen = max;
+}
+
 function hurtRemoteNear(x, z, r, dmg) {
   const R = NET.remote;
-  if (R && R.alive && Math.hypot(R.pos.x - x, R.pos.z - z) < r) NET.hurtOut += dmg;
+  if (R && R.alive && !R.shield && Math.hypot(R.pos.x - x, R.pos.z - z) < r) NET.hurtOut += dmg;
 }
 
 function respawnPlayer() {
@@ -2731,21 +2980,20 @@ function respawnPlayer() {
   showBanner('BACK IN THE FIGHT', '', 'gold', 1.2);
 }
 
-const r1 = (v) => Math.round(v * 10);
-const r2 = (v) => Math.round(v * 100);
-
+// ---- what each side sends
 function playerSnap() {
-  const ch = player.char;
+  const def = petDef();
   return {
     x: r2(player.pos.x), z: r2(player.pos.z), f: r2(player.facing), yw: r2(player.yaw), pt: r2(player.pitch),
     h: save.hero, w: player.weaponId, r: player.gun ? player.gun.userData.rarity : 0, sc: NET.shots,
     al: player.alive ? 1 : 0, hp: Math.round(player.hp / player.maxHp * 100), sp: r1(Math.hypot(player.vel.x, player.vel.z)),
     a: G.time - player.lastShot < 0.9 ? 1 : 0, pl: G.state === 'playing' ? 1 : 0, run: isGuest() ? NET.guestRun : G.runId || 0,
-    fp: ch && !ch.body.visible ? 1 : 0,
+    sh: player.shieldT > 0 ? 1 : 0,
+    pe: pet.char ? [def.id, r2(pet.char.root.position.x), r2(pet.char.root.position.z), r2(pet.char.root.position.y), r2(pet.facing), r1(pet.speedNow), pet.atkT >= 0 ? r2(pet.atkT) : -1, petRec().level] : null,
   };
 }
 
-function hostSnapshot() {
+function hostSnapshot(maxE = 40) {
   const es = [];
   const push = (e) => {
     let fl = 0;
@@ -2759,30 +3007,45 @@ function hostSnapshot() {
     if (e.spawnT > 0) fl |= 128;
     es.push([e.id, ENEMY_KEYS.indexOf(e.type), r1(e.pos.x), r1(e.pos.z), r1(e.pos.y), r2(e.facing), Math.round(clamp(e.hp / e.maxHp, 0, 1) * 1000), fl]);
   };
-  for (const e of G.enemies) if (e.alive && es.length < 46) push(e);
-  for (const e of G.enemies) if (!e.alive && e.state === 'dying' && e.dieT < 0.5 && es.length < 52) push(e);
-  const st = structures.list.filter(x => !x.temporary).map(x => `${BUILD_PIECES.indexOf(x.piece)}.${x.i}.${x.j}.${x.rot}.${x.alive ? Math.max(1, Math.round(x.hp / x.max * 99)) : 0}`).join(',');
+  for (const e of G.enemies) if (e.alive && es.length < maxE) push(e);
+  for (const e of G.enemies) if (!e.alive && e.state === 'dying' && e.dieT < 0.6 && es.length < maxE + 6) push(e);
+  const perm = structures.list.filter(x => !x.temporary);
   return {
     w: save.wave, ph: G.state === 'playing' ? G.phase : 'base', pt: Math.round(G.phaseT * 10), run: G.runId || 0, fr: G.failReason || '',
-    hh: Math.round(G.houseHp), hm: Math.round(G.houseMax), e: es, st, hu: Math.round(NET.hurtOut), co: Math.round(NET.coinsOut), q: G.queue.length,
+    hh: Math.round(G.houseHp), hm: Math.round(G.houseMax), e: es,
+    sl: perm.map(x => `${BUILD_PIECES.indexOf(x.piece)}.${x.i}.${x.j}.${x.rot}`).join(','),
+    sw: perm.map(x => x.piece.kind === 'wall' ? (x.alive ? Math.max(1, Math.round(x.hp / x.max * 99)) : 0) : 1).join('.'),
+    tt: structures.list.filter(x => x.temporary && x.alive).map(x => [r1(x.x), r1(x.z)]),
+    hu: Math.round(NET.hurtOut), co: Math.round(NET.coinsOut), q: G.queue.length,
+    up: G.queue.slice(0, 4).map(s => [ENEMY_KEYS.indexOf(s.type), s.portal]),
   };
 }
 
 function sendNet() {
-  if (!net.active || G.time - NET.lastSend < 1 / 15) return;
+  if (!net.active || G.time - NET.lastSend < 1 / 20) return;
   NET.lastSend = G.time;
+  const playing = net.linked && G.state === 'playing';
+  const common = { p: playerSnap(), fx: playing ? fxPack() : [], pj: playing ? projPack() : [], cl: playing ? cloudPack() : [] };
+  let patch;
   if (net.role === 'host') {
-    let s = hostSnapshot();
-    if (JSON.stringify(s).length > 3300) { s.e = s.e.slice(0, 30); }
-    net.send({ p: playerSnap(), s });
+    patch = { ...common, s: hostSnapshot(), cn: playing ? coinPack() : [] };
+    // stay well inside the 4 KiB presence budget
+    for (let tries = 0; tries < 4 && JSON.stringify(patch).length > 3700; tries++) {
+      patch.fx = patch.fx.slice(-6); patch.cn = patch.cn.slice(0, 10); patch.pj = patch.pj.slice(0, 12);
+      patch.s = hostSnapshot(tries ? 24 : 32);
+    }
   } else {
     const d = [];
     for (const [id, v] of NET.dmgOut) if (NET.mirror.has(id)) d.push([id, r1(v)]); else NET.dmgOut.delete(id);
-    net.send({ p: playerSnap(), d: d.slice(0, 60) });
+    patch = { ...common, d: d.slice(0, 50), rq: rqPack() };
+    for (let tries = 0; tries < 3 && JSON.stringify(patch).length > 3700; tries++) { patch.fx = patch.fx.slice(-5); patch.pj = patch.pj.slice(0, 10); patch.d = patch.d.slice(0, 30); }
   }
+  NET.lastSize = JSON.stringify(patch).length;
+  NET.maxSize = Math.max(NET.maxSize || 0, NET.lastSize);
+  net.send(patch);
 }
 
-// ---- partner avatar (shown on both screens)
+// ---- partner avatar + partner pet (shown on both screens)
 function nameTag(text, color) {
   const c = document.createElement('canvas'); c.width = 256; c.height = 64;
   const g = c.getContext('2d');
@@ -2796,19 +3059,29 @@ function nameTag(text, color) {
 
 function removeAvatar() {
   const A = NET.avatar;
-  if (!A) return;
-  scene.remove(A.char.root);
-  A.char.dispose();
-  NET.avatar = null;
+  if (A) { scene.remove(A.char.root); A.char.dispose(); NET.avatar = null; }
+  removeRemotePet();
+}
+function removeRemotePet() {
+  const P = NET.rpet;
+  if (P) { scene.remove(P.char.root); P.char.dispose(); NET.rpet = null; }
 }
 
-function updateAvatar(dt, pp) {
+function avatarNewSnap(pp, t) {
+  const A = NET.avatar;
+  if (A) bufPush(A.buf, t, [pp.x / 100, pp.z / 100, pp.f / 100, pp.sp / 10, pp.pt / 100, pp.yw / 100]);
+  const P = NET.rpet;
+  if (P && Array.isArray(pp.pe)) bufPush(P.buf, t, [pp.pe[1] / 100, pp.pe[2] / 100, pp.pe[3] / 100, pp.pe[4] / 100, pp.pe[5] / 10, pp.pe[6] / 100]);
+}
+
+const ASMP = [0, 0, 0, 0, 0, 0];
+function updateAvatar(dt, pp, t) {
   const show = pp && pp.pl && G.state === 'playing' && pp.run === (isGuest() ? NET.guestRun : G.runId);
   if (!show) { removeAvatar(); NET.remote = null; return; }
   let A = NET.avatar;
   const def = heroById(pp.h) || HEROES[0];
   if (!A || A.hero !== def.id) {
-    removeAvatar();
+    if (A) { scene.remove(A.char.root); A.char.dispose(); }
     const ch = def.model === 'robot' ? new RobotChar({ color: def.color || 0x3d8bff, height: 2.0, eyes: def.color ? 0xffc02e : 0x3ce0ff }) : new KenneyChar(def.model, { height: 1.85 });
     scene.add(ch.root);
     const holder = new THREE.Group();
@@ -2819,7 +3092,8 @@ function updateAvatar(dt, pp) {
     const ring = new THREE.Mesh(new THREE.RingGeometry(0.62, 0.78, 40), new THREE.MeshBasicMaterial({ color: 0x6dff9a, transparent: true, opacity: 0.7, blending: THREE.AdditiveBlending, depthWrite: false }));
     ring.rotation.x = -Math.PI / 2; ring.position.y = 0.05;
     ch.root.add(ring);
-    A = NET.avatar = { char: ch, hero: def.id, holder, gunKey: '', gun: null, pos: new THREE.Vector3(pp.x / 100, 0, pp.z / 100), facing: pp.f / 100, sc: pp.sc, alive: true, speed: 0 };
+    A = NET.avatar = { char: ch, hero: def.id, holder, gunKey: '', gun: null, pos: new THREE.Vector3(pp.x / 100, 0, pp.z / 100), facing: pp.f / 100, sc: pp.sc, alive: true, buf: [], flashT: 0 };
+    bufPush(A.buf, t, [pp.x / 100, pp.z / 100, pp.f / 100, pp.sp / 10, pp.pt / 100, pp.yw / 100]);
   }
   const gk = pp.w + ':' + pp.r;
   if (A.gunKey !== gk && weaponById(pp.w)) {
@@ -2829,11 +3103,9 @@ function updateAvatar(dt, pp) {
     A.holder.add(A.gun);
     A.gunKey = gk;
   }
-  const k = Math.min(1, dt * 12);
-  const tx = pp.x / 100, tz = pp.z / 100;
-  if (Math.hypot(tx - A.pos.x, tz - A.pos.z) > 8) A.pos.set(tx, 0, tz);
-  A.pos.x += (tx - A.pos.x) * k; A.pos.z += (tz - A.pos.z) * k;
-  A.facing = lerpAngle(A.facing, pp.f / 100, k);
+  bufSample(A.buf, t - INTERP, ASMP, [2, 5]);
+  A.pos.set(ASMP[0], 0, ASMP[1]);
+  A.facing = ASMP[2];
   const ch = A.char;
   if (!pp.al && A.alive) { A.alive = false; ch.die(); A.holder.visible = false; }
   else if (pp.al && !A.alive) {
@@ -2843,9 +3115,9 @@ function updateAvatar(dt, pp) {
   }
   ch.root.position.copy(A.pos);
   ch.root.rotation.y = A.facing;
-  const aimP = pp.a && A.alive ? pp.pt / 100 + 0.06 : null;
-  ch.pose(dt, pp.sp / 10, -1, aimP);
-  ch.updateFlash(dt, 0);
+  const aimP = pp.a && A.alive ? ASMP[4] + 0.06 : null;
+  ch.pose(dt, ASMP[3], -1, aimP);
+  ch.updateFlash(dt, pp.sh ? 0x2a70c0 : 0);
   if (A.alive && A.gun) {
     ch.root.updateMatrixWorld(true);
     ch.handWorld(HAND);
@@ -2854,32 +3126,53 @@ function updateAvatar(dt, pp) {
     A.holder.position.y += 0.02;
     A.holder.rotation.set(aimP !== null ? -aimP : 0.25, 0, 0);
   }
-  // partner's shots
+  // partner's shots: muzzle flash + sound (their tracers arrive through fx)
   if (pp.sc > A.sc && A.gun && A.alive) {
-    const n = Math.min(2, pp.sc - A.sc);
-    const from = A.gun.userData.muzzle.getWorldPosition(new THREE.Vector3());
-    const yw = pp.yw / 100, pt = pp.pt / 100;
-    const dir = new THREE.Vector3(-Math.sin(yw) * Math.cos(pt), Math.sin(pt), -Math.cos(yw) * Math.cos(pt));
     const w = weaponById(pp.w);
-    const col = pp.r > 0 ? RARITIES[pp.r].hex : (w && w.beamColor) || 0xffe08a;
-    for (let i = 0; i < n; i++) {
-      const d = dir.clone();
-      d.x += (Math.random() - 0.5) * 0.03; d.y += (Math.random() - 0.5) * 0.03; d.z += (Math.random() - 0.5) * 0.03;
-      const len = Math.min(w ? w.range : 50, worldHitT(from, d.normalize(), w ? w.range : 50));
-      if (w && w.flame) sparks.emit(from.x, from.y, from.z, d.x * 14, d.y * 14 + 1, d.z * 14, 0.5, 0.7, COL.fire, -2, 2.5);
-      else tracers.spawn(from, from.clone().addScaledVector(d, len), col, w && w.beamWidth ? w.beamWidth : 0.045, 0.08);
-    }
     const fl = A.gun.userData.flash;
-    fl.visible = true; A.flashT = 0.05;
+    fl.visible = true; fl.material.rotation = Math.random() * TAU; A.flashT = 0.05;
+    if (w && w.flame) {
+      const from = A.gun.userData.muzzle.getWorldPosition(new THREE.Vector3());
+      const yw = ASMP[5], pt = ASMP[4];
+      const d = V2.set(-Math.sin(yw) * Math.cos(pt), Math.sin(pt), -Math.cos(yw) * Math.cos(pt));
+      for (let i = 0; i < 3; i++) { const s = 10 + Math.random() * 8; sparks.emit(from.x, from.y, from.z, d.x * s + (Math.random() - 0.5) * 2, d.y * s + Math.random() * 1.5, d.z * s + (Math.random() - 0.5) * 2, 0.55, 0.6, i ? COL.fire : COL.spark, -2, 2.5); }
+    }
+    if (w && A.pos.distanceTo(player.pos) < 45 && G.time - (A.sndT || 0) > 0.06) { A.sndT = G.time; sfx.shot(w.sound); }
   }
   A.sc = pp.sc;
   if (A.flashT > 0) { A.flashT -= dt; if (A.flashT <= 0 && A.gun) A.gun.userData.flash.visible = false; }
-  NET.remote = { pos: A.pos, alive: A.alive && !!pp.al, hp: pp.hp };
+  NET.remote = { pos: A.pos, alive: A.alive && !!pp.al, hp: pp.hp, shield: !!pp.sh };
+  updateRemotePet(dt, pp, t);
 }
 
-// ---- host: apply the guest's damage, fail only when both players are down
+function updateRemotePet(dt, pp, t) {
+  const pe = pp.pe;
+  const def = Array.isArray(pe) ? petById(pe[0]) : null;
+  if (!def) { removeRemotePet(); return; }
+  let P = NET.rpet;
+  if (!P || P.id !== def.id) {
+    removeRemotePet();
+    const ch = new PetChar(def.model, { height: def.fly ? 0.75 : 0.85 });
+    scene.add(ch.root);
+    const ri = rarityIndex(pe[7] || 1);
+    const ring = new THREE.Mesh(new THREE.RingGeometry(0.42, 0.52, 32), new THREE.MeshBasicMaterial({ color: RARITIES[ri].hex, transparent: true, opacity: 0.7, blending: THREE.AdditiveBlending, depthWrite: false }));
+    ring.rotation.x = -Math.PI / 2; ring.position.y = 0.05;
+    ch.root.add(ring);
+    P = NET.rpet = { char: ch, id: def.id, buf: [] };
+    bufPush(P.buf, t, [pe[1] / 100, pe[2] / 100, pe[3] / 100, pe[4] / 100, pe[5] / 10, pe[6] / 100]);
+  }
+  bufSample(P.buf, t - INTERP, ASMP, [3]);
+  P.char.root.position.set(ASMP[0], ASMP[2], ASMP[1]);
+  P.char.root.rotation.y = ASMP[3];
+  P.char.pose(dt, ASMP[4], ASMP[5] >= 0 ? ASMP[5] : -1);
+  P.char.updateFlash(dt, 0);
+}
+
+// ---- host: apply the guest's damage and requests
 function hostReceive(pp) {
-  if (!pp || !pp.d || G.state !== 'playing') return;
+  if (!pp || G.state !== 'playing') return;
+  hostRequests(pp.rq);
+  if (!Array.isArray(pp.d)) return;
   const byId = new Map();
   for (const e of G.enemies) byId.set(e.id, e);
   for (const pair of pp.d) {
@@ -2890,33 +3183,51 @@ function hostReceive(pp) {
     const prev = NET.applied.get(id) || 0;
     if (cum > prev) {
       NET.applied.set(id, cum);
-      if (e.alive && e.spawnT <= 0) damageEnemy(e, cum - prev, { src: 'remote', quiet: true });
+      if (e.alive && e.spawnT <= 0) damageEnemy(e, cum - prev, { src: 'remote' });
     }
   }
   if (NET.applied.size > 300) for (const id of [...NET.applied.keys()]) if (!byId.has(id)) NET.applied.delete(id);
 }
 
 // ---- guest: mirror the host's world
-function guestSyncStructures(st) {
-  const parts = st ? st.split(',').filter(Boolean).map(t => t.split('.').map(Number)) : [];
-  const key = parts.map(a => a.slice(0, 4).join('.')).join(',');
+function guestSyncStructures(hs) {
+  const parts = hs.sl ? hs.sl.split(',').filter(Boolean).map(t => t.split('.').map(Number)) : [];
+  const key = hs.sl || '';
   if (key !== NET.structKey || !NET.usingHostBase) {
     NET.structKey = key;
     NET.usingHostBase = true;
     structures.loadFrom(parts.filter(a => BUILD_PIECES[a[0]]).map(a => ({ p: BUILD_PIECES[a[0]].id, i: a[1], j: a[2], r: a[3] })));
     structures.resetForWave(wallMult());
   }
+  const hp = (hs.sw || '').split('.').map(Number);
   const list = structures.list.filter(x => !x.temporary);
-  parts.forEach((a, idx) => {
-    const s = list[idx];
-    if (!s || s.piece.kind !== 'wall') return;
-    const f = a[4] / 99;
-    if (f <= 0 && s.alive) structures.damage(s, s.hp + 1);
-    else if (f > 0) { if (!s.alive) structures.revive(s); s.hp = s.max * f; structures.heal(s, 0); }
+  list.forEach((s, idx) => {
+    if (s.piece.kind !== 'wall' || hp[idx] === undefined || isNaN(hp[idx])) return;
+    const f = hp[idx] / 99;
+    if (f <= 0) { if (s.alive) { structures.damage(s, s.hp + 1); sfx.fenceBreak(); for (let i = 0; i < 16; i++) smoke.emit(s.x + (Math.random() - 0.5) * 2, 0.5 + Math.random() * 2, s.z + (Math.random() - 0.5) * 2, (Math.random() - 0.5) * 6, 3 + Math.random() * 4, (Math.random() - 0.5) * 6, 1, 0.4, COL.wood, 12); } }
+    else {
+      if (!s.alive) structures.revive(s);
+      const nhp = s.max * f;
+      if (nhp < s.hp - 0.5) s.shake = 1;
+      s.hp = nhp; structures.heal(s, 0);
+    }
   });
+  // host's temporary turrets (e.g. Cyra's)
+  const tt = Array.isArray(hs.tt) ? hs.tt : [];
+  const temps = structures.list.filter(x => x.temporary);
+  for (let i = 0; i < Math.max(tt.length, temps.length); i++) {
+    if (i >= tt.length) { structures.removeStructure(temps[i]); continue; }
+    let s = temps[i];
+    if (!s) {
+      s = structures.add('turret', 0, 0, 0, true);
+      s.life = 999; s.hx = s.hz = 0.6; s.mesh.scale.setScalar(0.7);
+      for (let k = 0; k < 16; k++) sparks.emit(tt[i][0] / 10, 1, tt[i][1] / 10, (Math.random() - 0.5) * 5, Math.random() * 4, (Math.random() - 0.5) * 5, 0.5, 0.35, COL.blue, 6);
+    }
+    s.x = tt[i][0] / 10; s.z = tt[i][1] / 10; s.mesh.position.set(s.x, 0, s.z); s.life = 999;
+  }
 }
 
-function guestSyncEnemies(es) {
+function guestSyncEnemies(es, t) {
   const seen = new Set();
   for (const a of es || []) {
     if (!Array.isArray(a) || a.length < 8) continue;
@@ -2928,14 +3239,18 @@ function guestSyncEnemies(es) {
     if (!e) {
       if (fl & 1) continue;
       e = spawnEnemy(type, 0, new THREE.Vector3(x / 10, 0, z / 10));
-      e.id = id; e.mirror = true;
-      e.tx = x / 10; e.tz = z / 10; e.ty = y / 10; e.tf = f / 100;
+      e.id = id; e.mirror = true; e.buf = [];
+      e.facing = f / 100; e.char.root.rotation.y = e.facing;
+      if (!(fl & 128)) { e.spawnT = 0; e.char.root.scale.setScalar(1); }
+      else for (let i = 0; i < 16; i++) sparks.emit(x / 10, 1 + Math.random() * 2, z / 10, (Math.random() - 0.5) * 5, Math.random() * 3, (Math.random() - 0.5) * 5, 0.6, 0.5, COL.purple, 2, 1);
       NET.mirror.set(id, e);
     }
-    e.tx = x / 10; e.tz = z / 10; e.ty = y / 10; e.tf = f / 100;
+    bufPush(e.buf, t, [x / 10, z / 10, y / 10, f / 100]);
     e.netFl = fl;
     const hostHp = hp / 1000 * e.maxHp;
-    if (G.time - (e.lastHit || -10) > 0.5 || hostHp < e.hp) e.hp = hostHp;
+    if (hostHp < (e.hostHp ?? e.maxHp) - 0.5 && G.time - (e.lastHit || -10) > 0.15) e.char.flash(0.06);
+    e.hostHp = hostHp;
+    if (G.time - (e.lastHit || -10) > 0.6 || hostHp < e.hp) e.hp = hostHp;
     e.phased = !!(fl & 4); e.shielded = !!(fl & 8);
     if ((fl & 1) && e.alive) killEnemy(e, false, true);
   }
@@ -2946,8 +3261,10 @@ function guestSyncEnemies(es) {
   }
 }
 
+const ESMP = [0, 0, 0, 0];
 function updateMirrorEnemies(dt) {
   const list = G.enemies;
+  const t = nowS() - INTERP;
   for (let i = list.length - 1; i >= 0; i--) {
     const e = list[i];
     const ch = e.char;
@@ -2969,20 +3286,18 @@ function updateMirrorEnemies(dt) {
     if (e.burn) {
       e.burn.t -= dt;
       damageEnemy(e, e.burn.dps * dt, { src: 'weapon', quiet: true });
-      if (Math.random() < dt * 14) sparks.emit(e.pos.x + (Math.random() - 0.5) * 0.5, e.pos.y + Math.random() * e.height, e.pos.z + (Math.random() - 0.5) * 0.5, 0, 2, 0, 0.4, 0.35, COL.fire, -1);
       if (e.burn.t <= 0) e.burn = null;
     }
+    if (e.burn || (fl & 32)) { if (Math.random() < dt * 14) sparks.emit(e.pos.x + (Math.random() - 0.5) * 0.5, e.pos.y + Math.random() * e.height, e.pos.z + (Math.random() - 0.5) * 0.5, 0, 2, 0, 0.4, 0.35, COL.fire, -1); }
     if (e.chill) { e.chill.t -= dt; if (e.chill.t <= 0) e.chill = null; }
-    const k = Math.min(1, dt * 10);
-    const dx = e.tx - e.pos.x, dz = e.tz - e.pos.z;
-    if (Math.hypot(dx, dz) > 10) { e.pos.x = e.tx; e.pos.z = e.tz; }
-    else { e.pos.x += dx * k; e.pos.z += dz * k; }
-    e.pos.y += (e.ty - e.pos.y) * k;
-    e.speedNow += (Math.min(9, Math.hypot(dx, dz) * 5) - e.speedNow) * Math.min(1, dt * 6);
-    e.facing = lerpAngle(e.facing, e.tf, k);
+    if ((e.chill || (fl & 64)) && Math.random() < dt * 6) sparks.emit(e.pos.x, e.pos.y + Math.random() * e.height, e.pos.z, 0, 0.5, 0, 0.5, 0.2, COL.ice, 1);
+    const px = e.pos.x, pz = e.pos.z;
+    if (bufSample(e.buf, t, ESMP, [3])) { e.pos.set(ESMP[0], ESMP[2], ESMP[1]); e.facing = ESMP[3]; }
+    const v = Math.hypot(e.pos.x - px, e.pos.z - pz) / Math.max(dt, 1e-3);
+    e.speedNow += (Math.min(9, v) - e.speedNow) * Math.min(1, dt * 8);
     if (e.def.phase) { const want = e.phased ? 0.18 : 0.7; if (e.lastOp !== want) { e.lastOp = want; for (const m of ch.mats) m.opacity = want; } }
     let attackPhase = -1;
-    if (fl & 2) { e.atkAnim = ((e.atkAnim || 0) + dt / Math.min(0.9, e.def.rate * 0.8)); if (e.atkAnim >= 1) e.atkAnim = 0; attackPhase = e.atkAnim; }
+    if (fl & 2) { e.atkAnim = (e.atkAnim || 0) + dt / Math.min(0.9, e.def.rate * 0.8); if (e.atkAnim >= 1) e.atkAnim = 0; attackPhase = e.atkAnim; }
     else e.atkAnim = 0;
     const statusCol = (fl & 32) || e.burn ? 0x5a2000 : (fl & 64) || e.chill ? 0x2a7aa8 : (fl & 16) ? 0x6a0000 : (fl & 8) ? 0x0a3a6a : 0;
     ch.updateFlash(dt, statusCol);
@@ -2990,16 +3305,16 @@ function updateMirrorEnemies(dt) {
       const clip = ch.actions && ch.actions.Punch ? ch.actions.Punch.getClip() : null;
       ch.pose(dt, e.speedNow, attackPhase, null, { attackSpeed: clip ? clip.duration / Math.max(0.4, e.def.rate) : 1 });
     } else ch.pose(dt, 0, -1);
+    if (e.def.explode && Math.random() < dt * 3) sfx.beep();
     ch.root.position.set(e.pos.x, e.pos.y, e.pos.z);
     ch.root.rotation.y = e.facing;
     updateHpBar(e);
   }
 }
 
-function guestFollow(dt, hs) {
+function guestFollow(dt, hs, t, fresh) {
   if (!hs) return;
   NET.wave = Math.max(1, hs.w | 0);
-  // join the host's run when it starts
   const hostPlaying = ['countdown', 'fight', 'cleared'].includes(hs.ph);
   const idle = G.state === 'shop' || G.state === 'menu' || (G.state === 'playing' && G.phase === 'results');
   if (hostPlaying && idle && hs.run !== NET.guestRun) {
@@ -3007,7 +3322,10 @@ function guestFollow(dt, hs) {
     NET.lastWave = NET.wave;
     NET.hurtSeen = hs.hu | 0;
     for (const id of ['how', 'settings', 'coop', 'confirm']) if ($(id)) hideModal(id);
+    for (const e of G.enemies) removeEnemy(e);
+    G.enemies.length = 0;
     NET.mirror.clear();
+    clearGhosts();
     startWave(true);
     return;
   }
@@ -3019,14 +3337,24 @@ function guestFollow(dt, hs) {
     if (hs.ph === 'countdown') G.phaseT = hs.pt / 10;
     if (hs.ph === 'cleared' && !player.alive) respawnPlayer();
     G.houseMax = hs.hm || G.houseMax;
+    if (hs.hh < G.houseHp - 0.5) {
+      world.house.flash = 1;
+      if (G.time - (NET.houseSnd || 0) > 0.25) { NET.houseSnd = G.time; world.domeHit(); sfx.houseHit(); }
+    }
     G.houseHp = hs.hh;
-    guestSyncStructures(hs.st);
-    guestSyncEnemies(hs.e);
+    if (fresh) {
+      guestSyncStructures(hs);
+      guestSyncEnemies(hs.e, t);
+      const q = hs.q | 0, up = Array.isArray(hs.up) ? hs.up : [];
+      G.queue = Array.from({ length: q }, (_, i) => up[i] && ENEMY_KEYS[up[i][0]] ? { type: ENEMY_KEYS[up[i][0]], portal: up[i][1] | 0 } : { type: 'husk', portal: 0 });
+    }
     const hu = hs.hu | 0;
     if (hu > NET.hurtSeen) { hurtPlayer(hu - NET.hurtSeen); NET.hurtSeen = hu; }
     else NET.hurtSeen = hu;
+    // guest-side regen that belongs to the house
+    NET.regenT = (NET.regenT || 0) + dt;
+    if (NET.regenT >= 1) { NET.regenT = 0; if (G.phase === 'fight') healHouse((HS.perks.has('basekit') ? 6 : 0) + 5 * PS.count('repair')); }
   } else {
-    // the host's run ended
     G.failReason = hs.fr === 'player' ? 'player' : hs.fr === 'quit' ? 'quit' : 'house';
     G.phase = 'failed';
     G.phaseT = 3;
@@ -3037,6 +3365,14 @@ function guestFollow(dt, hs) {
 }
 
 function updateGuestWave(dt) {
+  if (G.phase === 'fight') {
+    const upcoming = G.queue.slice(0, 4).map(s => s.portal);
+    for (const pt of world.portals) {
+      const idx = upcoming.indexOf(pt.index);
+      pt.warnTarget = idx === 0 ? 1 : idx > 0 ? 0.55 : 0;
+      pt.laneShow = idx >= 0 ? (idx === 0 ? 1 : 0.5) : 0;
+    }
+  } else if (G.phase === 'cleared') for (const pt of world.portals) { pt.warnTarget = 0; pt.laneShow = 0; }
   if (G.phase === 'failed') {
     G.phaseT -= dt;
     if (G.phaseT <= 0) showResults();
@@ -3058,30 +3394,43 @@ function syncCoins(hs) {
 
 let coopStatusKey = '';
 function updateNet(dt) {
-  if (!net.active) { if (NET.avatar) removeAvatar(); NET.remote = null; return; }
+  if (!net.active) { if (NET.avatar) removeAvatar(); NET.remote = null; if (ghostProj.size || ghostCoins.size) clearGhosts(); return; }
   const pr = net.poll(dt);
   const linked = net.linked;
-  if (linked && !NET.wasLinked) { toast(net.role === 'host' ? 'Your friend joined!' : 'Connected to the host!'); sfx.levelUp(false); NET.coinsSeen = null; }
+  const t = nowS();
+  if (linked && !NET.wasLinked) { toast(net.role === 'host' ? 'Your friend joined!' : 'Connected to the host!'); sfx.levelUp(false); NET.coinsSeen = null; fxSeen = 0; rqSeen = 0; NET.lastP = null; }
   if (!linked && NET.wasLinked) {
     toast(net.role === 'host' ? 'Your friend left' : 'Lost the host');
+    clearGhosts();
     if (isGuest() && G.state === 'playing' && ['countdown', 'fight', 'cleared'].includes(G.phase)) {
       G.failReason = 'left'; G.phase = 'failed'; G.phaseT = 1.5; input.setEnabled(false);
     }
   }
   NET.wasLinked = linked;
   if (linked) {
-    updateAvatar(dt, pr.p);
+    // presence objects are frozen and only replaced when they change
+    const fresh = pr !== NET.lastP;
+    NET.lastP = pr;
+    const playing = G.state === 'playing';
+    if (fresh && pr.p) avatarNewSnap(pr.p, t);
     if (net.role === 'host') {
-      hostReceive(pr);
-      if (G.state === 'playing' && G.phase === 'fight' && !player.alive && !(NET.remote && NET.remote.alive)) failWave('player');
+      if (fresh) hostReceive(pr);
+      if (playing && G.phase === 'fight' && !player.alive && !(NET.remote && NET.remote.alive)) failWave('player');
     } else {
       syncCoins(pr.s);
-      guestFollow(dt, pr.s);
+      guestFollow(dt, pr.s, t, fresh);
+      if (fresh && G.state === 'playing') syncGhostCoins(pr.cn, t);
     }
+    updateAvatar(dt, pr.p, t);
+    if (G.state === 'playing') {
+      if (fresh) { fxPlay(pr.fx); syncGhostProj(pr.pj, t); syncGhostClouds(pr.cl); }
+      updateGhostProj(t - INTERP);
+      updateGhostClouds(dt);
+      updateGhostCoins(t - INTERP, dt);
+    } else if (ghostProj.size || ghostCoins.size || ghostClouds.length) clearGhosts();
   } else { removeAvatar(); NET.remote = null; }
   if (NET.coinDirty && G.time - (NET.coinSaveT || 0) > 3) { NET.coinDirty = false; NET.coinSaveT = G.time; writeSave(); }
   sendNet();
-  // lobby / shop status
   const key = `${net.role}|${net.code}|${linked}|${G.state}|${net.connected()}`;
   if (key !== coopStatusKey) { coopStatusKey = key; renderCoop(); syncShopCoop(); }
   if (G.state === 'playing') {
@@ -3289,7 +3638,7 @@ boot();
 window.__game = {
   G, player, input, camera, renderer, scene, THREE, get world() { return world; }, get structures() { return structures; },
   killAll: () => { G.queue.length = 0; G.enemies.forEach(e => e.alive && killEnemy(e)); },
-  net, NET, curWave, hurtPlayer,
+  net, NET, curWave, hurtPlayer, ghostProj, ghostCoins, sendSize: () => NET.lastSize,
   save: () => save, pet, startWave, spawnEnemy, goToShop, enterBuild, exitBuild, useAbility, setupHeroModel, setupPet, equipWeapon, refreshHero,
   addXpTo: (kind, id, n) => { const r = kind === 'hero' ? save.heroes[id] : save.weapons[id]; const from = r.level; addXp(r, n); onLevel(kind, kind === 'hero' ? heroById(id).name : weaponById(id).name, from, r.level); },
 };
