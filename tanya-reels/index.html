@@ -1,0 +1,991 @@
+<meta charset="utf-8">
+<title>Tanya Reels</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F2F2F3">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,500;0,7..72,600;1,7..72,400&family=Frank+Ruhl+Libre:wght@400;500&family=Noto+Rashi+Hebrew:wght@400;500&display=swap">
+<style>
+
+/* Mono base from Nefesh, with techelet blue and one color per part of the book. */
+:root{
+  --ink:#0B0B0C; --ink-80:rgba(11,11,12,.80); --ink-55:rgba(11,11,12,.56); --ink-40:rgba(11,11,12,.42);
+  --ink-25:rgba(11,11,12,.26); --ink-12:rgba(11,11,12,.13);
+  --bg:#F3F4F8; --card:#FFFFFF; --fill:rgba(11,11,12,.06); --fill-2:rgba(11,11,12,.12); --sep:rgba(11,11,12,.10);
+  --accent:#2750D6; --on-accent:#FFFFFF; --accent-tint:#E7ECFB;
+  --c1:#2750D6; --c2:#0E8C7C; --c3:#D4602A; --c4:#7B4FD1; --c5:#B8862B; --c6:#C23F5E; --c7:#6B7280;
+  --shadow:0 0 0 .5px rgba(0,0,0,.08);
+  --sans:"Rubik",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+  --serif:"Literata","Iowan Old Style",Georgia,serif;
+  --r-card:18px; --r-ctl:13px; --r-pill:980px;
+  --ease:cubic-bezier(.32,.72,0,1); --ease-out:cubic-bezier(.25,.46,.45,.94);
+  --hebrew:"Frank Ruhl Libre","Times New Roman",serif;
+  --rashi:"Noto Rashi Hebrew","Frank Ruhl Libre",serif;
+  --tabbar:49px; --fs:19px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  color-scheme:dark;
+  --ink:#F5F5F7; --ink-80:rgba(245,245,247,.80); --ink-55:rgba(245,245,247,.58); --ink-40:rgba(245,245,247,.42);
+  --ink-25:rgba(245,245,247,.26); --ink-12:rgba(245,245,247,.13);
+  --bg:#0E1015; --card:#1A1D24; --fill:rgba(245,245,247,.08); --fill-2:rgba(245,245,247,.15); --sep:rgba(245,245,247,.12);
+  --accent:#7C9BFF; --on-accent:#0E1015; --accent-tint:#232A3D; --shadow:0 0 0 .5px rgba(255,255,255,.06);
+  --c1:#7C9BFF; --c2:#3CC4B0; --c3:#F08A57; --c4:#A98BF0; --c5:#E0B35A; --c6:#F0708F; --c7:#9CA3AF;}}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --ink:#F5F5F7; --ink-80:rgba(245,245,247,.80); --ink-55:rgba(245,245,247,.58); --ink-40:rgba(245,245,247,.42);
+  --ink-25:rgba(245,245,247,.26); --ink-12:rgba(245,245,247,.13);
+  --bg:#0E1015; --card:#1A1D24; --fill:rgba(245,245,247,.08); --fill-2:rgba(245,245,247,.15); --sep:rgba(245,245,247,.12);
+  --accent:#7C9BFF; --on-accent:#0E1015; --accent-tint:#232A3D; --shadow:0 0 0 .5px rgba(255,255,255,.06);
+  --c1:#7C9BFF; --c2:#3CC4B0; --c3:#F08A57; --c4:#A98BF0; --c5:#E0B35A; --c6:#F0708F; --c7:#9CA3AF;}
+
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:22px;letter-spacing:0;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit;letter-spacing:inherit}
+button{background:none;border:0;padding:0;cursor:pointer}
+h1,h2,h3,p{margin:0}
+:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+
+.app{max-width:600px;margin:0 auto;padding:0 16px calc(var(--tabbar) + env(safe-area-inset-bottom,0px) + 28px)}
+.view{display:none}.view.on{display:block}
+.topbar{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:14px 0 2px}
+.greet{color:var(--ink-55);font-size:15px;line-height:20px}
+.t-large{font-size:34px;line-height:41px;font-weight:600;letter-spacing:-.015em}
+.gear{width:36px;height:36px;flex:none;display:grid;place-items:center;border-radius:var(--r-pill);background:var(--fill);color:var(--ink)}
+.gear:active{transform:scale(.92)}
+.sec{margin:26px 0 8px;display:flex;align-items:center;gap:6px}
+.sec h2{font-size:13px;line-height:18px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-40)}
+.card{background:var(--card);border-radius:var(--r-card);box-shadow:var(--shadow)}
+.group{background:var(--card);border-radius:var(--r-card);overflow:hidden;box-shadow:var(--shadow)}
+.row{display:flex;align-items:center;gap:12px;min-height:44px;padding:11px 16px;width:100%;text-align:left;position:relative;transition:background .12s}
+.row + .row:before{content:"";position:absolute;left:16px;right:0;top:0;height:.5px;background:var(--sep)}
+.row:active{background:var(--fill)}
+.row-main{flex:1;min-width:0}
+.row-title{display:block;font-size:17px;line-height:22px}
+.row-sub{display:block;font-size:13px;line-height:18px;color:var(--ink-40);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .num{font-variant-numeric:tabular-nums;font-size:13px;color:var(--ink-40);flex:none}
+.chev{color:var(--ink-25);flex:none;width:8px;height:13px}
+.ring{width:26px;height:26px;flex:none}
+.ring circle{fill:none;stroke-width:3}
+.ring .bgc{stroke:var(--fill-2)}.ring .fgc{stroke:var(--ink);stroke-linecap:round;transform:rotate(-90deg);transform-origin:50% 50%}
+.done-dot{width:26px;height:26px;border-radius:50%;background:var(--ink);color:var(--card);display:grid;place-items:center;flex:none;font-size:13px;font-weight:700}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:44px;padding:0 20px;border-radius:var(--r-ctl);font-size:17px;font-weight:600;background:var(--accent);color:var(--on-accent);width:100%;transition:transform .12s var(--ease-out)}
+.btn:active{transform:scale(.975)}
+.btn.sec{background:var(--accent-tint);color:var(--ink)}
+.btn.sm{min-height:34px;padding:0 14px;font-size:15px;border-radius:10px;width:auto}
+
+.hero{padding:18px 16px 16px;display:flex;flex-direction:column;gap:12px}
+.kicker{font-size:13px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-40)}
+.hero h2{font-size:28px;line-height:34px;font-weight:600;letter-spacing:-.015em}
+.hero .line{font-family:var(--serif);font-size:16px;line-height:23px;color:var(--ink-80);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.track{height:4px;border-radius:4px;background:var(--fill-2);overflow:hidden}
+.track i{display:block;height:100%;background:var(--c,var(--accent));border-radius:4px}
+.meta{display:flex;justify-content:space-between;font-size:13px;color:var(--ink-55);font-variant-numeric:tabular-nums}
+
+
+/* tab bar */
+.tabbar{position:fixed;inset:auto 0 0 0;z-index:30;padding-bottom:env(safe-area-inset-bottom,0px);background:color-mix(in srgb,var(--bg) 80%,transparent);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-top:.5px solid var(--sep)}
+.tabbar-inner{max-width:600px;margin:0 auto;height:var(--tabbar);display:grid;grid-template-columns:1fr 1fr}
+.tabbtn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--ink-40);font-size:10px;font-weight:500;letter-spacing:.01em}
+.tabbtn svg{width:24px;height:24px}
+.tabbtn.on{color:var(--accent)}
+
+/* sheets */
+.scrim{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.32);opacity:0;pointer-events:none;transition:opacity .3s var(--ease)}
+.scrim.on{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:61;max-width:600px;margin:0 auto;max-height:88%;overflow-y:auto;background:var(--card);border-radius:20px 20px 0 0;padding:8px 16px calc(20px + env(safe-area-inset-bottom,0px));transform:translateY(105%);transition:transform .42s var(--ease)}
+.sheet.on{transform:none}
+.grabber{width:36px;height:5px;border-radius:3px;background:var(--ink-25);margin:0 auto 14px}
+.sheet h2{font-size:22px;line-height:28px;font-weight:600;letter-spacing:-.015em}
+.sheet .lead{margin-top:6px;color:var(--ink-55);font-size:15px;line-height:20px}
+.sheet .note-body{margin-top:12px;font-family:var(--serif);font-size:17px;line-height:25px}
+.field{display:flex;flex-direction:column;gap:6px;margin-top:16px}
+.field label{font-size:13px;font-weight:600;color:var(--ink-55)}
+.field input,.field textarea{background:var(--fill);border:0;border-radius:10px;padding:11px 12px;font-size:17px;width:100%}
+.field textarea{min-height:160px;resize:vertical;font-family:var(--serif);line-height:23px}
+.sheet-acts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px}
+.fine{font-size:13px;line-height:18px;color:var(--ink-55);margin-top:14px}
+.fine a{color:var(--ink)}
+
+/* reader */
+#reader{position:fixed;inset:0;z-index:50;background:var(--bg);display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px)}
+.rtop{display:flex;align-items:center;gap:10px;padding:8px 16px 8px}
+.rtop .t{flex:1;min-width:0;text-align:center;font-size:17px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pbar{height:3px;margin:0 16px 8px;border-radius:2px;background:var(--fill-2);overflow:hidden}
+.pbar i{display:block;height:100%;background:var(--c,var(--accent));width:0;transition:width .2s}
+#reels{flex:1;overflow-y:auto;scroll-snap-type:y mandatory;overscroll-behavior:contain;scrollbar-width:none}
+#reels::-webkit-scrollbar{display:none}
+.reel{scroll-snap-align:start;scroll-snap-stop:always;height:100%;padding:4px 16px calc(12px + env(safe-area-inset-bottom,0px));display:flex}
+.rcard{flex:1;min-height:0;background:var(--card);border-radius:22px;box-shadow:var(--shadow);display:flex;flex-direction:column;padding:22px 22px 16px}
+.rcard .rk{color:var(--c,var(--accent))!important;display:flex;justify-content:space-between;font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-40);font-variant-numeric:tabular-nums}
+.rtxt{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;padding:16px 0}
+.rtxt .inner{margin:auto 0;display:flex;flex-direction:column;gap:.75em;font-family:var(--serif);font-size:var(--fs);line-height:1.6;letter-spacing:0;max-width:34em;font-optical-sizing:auto}
+.rtxt p{margin:0}
+.gloss{display:block;font-size:.86em;line-height:1.5;color:var(--ink-80);border-left:2px solid var(--ink-25);padding-left:12px;margin:.3em 0}
+sup{font-size:.62em;line-height:0}
+.fn{font-family:var(--sans);font-weight:700;color:var(--c,var(--accent));background:color-mix(in srgb,var(--c,var(--accent)) 14%,transparent);border-radius:6px;padding:1px 5px;margin-left:1px;cursor:pointer;vertical-align:super;font-size:.58em;line-height:1}
+.rfoot{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px;color:var(--ink-40);font-variant-numeric:tabular-nums}
+.chip{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:0 13px;border-radius:var(--r-pill);background:var(--fill);color:var(--ink-80);font-size:14px}
+.chip:active{transform:scale(.95)}
+.endcard{align-items:center;justify-content:center;text-align:center;gap:14px}
+.endcard .big{font-size:34px;line-height:41px;font-weight:600;letter-spacing:-.015em}
+.fsb{width:36px;height:32px;border-radius:10px;background:var(--fill);font-size:14px;font-weight:600}
+.empty{padding:22px 16px;color:var(--ink-55);font-size:15px;line-height:20px}
+ .he{direction:rtl;text-align:right;font-family:var(--hebrew);font-size:calc(var(--fs) * 1.08);line-height:1.7;color:var(--ink)}
+.both .he{margin-top:.4em;padding-top:.8em;border-top:.5px solid var(--sep);color:var(--ink-80);font-size:calc(var(--fs) * 1.0)}
+.he .gloss{border-left:0;border-right:2px solid var(--ink-25);padding-left:0;padding-right:12px;font-family:var(--rashi);font-size:.9em}
+.hw{cursor:pointer;border-radius:4px;transition:background .15s}
+.hw:hover,.hw.on{background:var(--fill-2)}
+.wd-he{font-family:var(--hebrew);font-size:40px;line-height:1.3;direction:rtl;text-align:right;margin-top:4px}
+.wd-tr{font-size:15px;color:var(--ink-55);margin-top:2px}
+.wd-mean{font-size:22px;line-height:28px;font-weight:700;letter-spacing:-.02em;margin-top:14px}
+.wd-row{margin-top:12px;font-family:var(--serif);font-size:17px;line-height:25px}
+.wd-row b{display:block;font-family:var(--sans);font-size:13px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-40);margin-bottom:2px}
+.gl{font:inherit;font-style:italic;color:inherit;text-decoration:underline dotted var(--c,var(--accent));text-underline-offset:3px;cursor:pointer}
+.ctx .inner{gap:14px}
+.rcard.ctx{background:color-mix(in srgb,var(--c,var(--accent)) 9%,var(--card))}
+.ctx .ch-no{color:var(--c,var(--accent))!important}
+.hw:hover,.hw.on{background:color-mix(in srgb,var(--c,var(--accent)) 20%,transparent)!important}
+.overview-tag{display:inline-block;font-family:var(--sans);font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--c,var(--accent));background:color-mix(in srgb,var(--c,var(--accent)) 12%,transparent);border-radius:var(--r-pill);padding:3px 8px}
+.ctx .ch-no{font-family:var(--sans);font-size:13px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-40);display:flex;justify-content:space-between}
+.ctx .ch-no span:last-child{font-family:var(--hebrew);font-size:16px;letter-spacing:0;text-transform:none}
+.ctx h3{font-family:var(--sans);font-size:30px;line-height:36px;font-weight:600;letter-spacing:-.015em}
+.ctx .cx{font-family:var(--serif);font-size:calc(var(--fs) * .95);line-height:1.55;color:var(--ink-80)}
+.terms{display:flex;flex-wrap:wrap;gap:8px}
+.ctx .lbl{font-family:var(--sans);font-size:13px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-40);margin-top:6px}
+.toast{position:fixed;left:50%;bottom:calc(var(--tabbar) + env(safe-area-inset-bottom,0px) + 16px);transform:translate(-50%,20px);z-index:80;background:var(--ink);color:var(--card);padding:10px 16px;border-radius:var(--r-pill);font-size:15px;opacity:0;pointer-events:none;transition:opacity .25s,transform .35s var(--ease)}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+/* ---------- road map ---------- */
+.here{padding:18px 16px 16px;display:flex;flex-direction:column;gap:10px;margin-top:16px}
+.here .kicker{display:flex;align-items:center;gap:8px}
+.here .kicker i{width:8px;height:8px;border-radius:50%;background:var(--c,var(--accent));box-shadow:0 0 0 4px color-mix(in srgb,var(--c,var(--accent)) 22%,transparent)}
+.here .kicker{color:var(--c,var(--accent))}
+.here h2{font-size:26px;line-height:31px;font-weight:600;letter-spacing:-.015em}
+.here .where{font-size:15px;color:var(--ink-55)}
+.overall{display:flex;align-items:center;gap:12px;margin-top:14px;font-size:13px;color:var(--ink-55);font-variant-numeric:tabular-nums}
+.overall .track{flex:1}
+.map{display:flex;flex-direction:column;margin-top:8px}
+.ms{display:flex;align-items:center;gap:14px;width:100%;text-align:left;padding:12px 0}
+.ms .badge{width:42px;height:42px;flex:none;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:15px;
+  background:color-mix(in srgb,var(--c,var(--accent)) 12%,var(--card));color:var(--c,var(--accent));position:relative;font-variant-numeric:tabular-nums}
+.ms .badge svg{position:absolute;inset:0}
+.ms.done .badge{background:var(--c,var(--accent));color:#fff}
+.ms .ms-main{flex:1;min-width:0}
+.ms .ms-t{display:block;font-size:17px;font-weight:600;line-height:22px}
+.ms .ms-s{display:flex;gap:8px;font-size:13px;color:var(--ink-40);line-height:18px;margin-top:1px;white-space:nowrap}
+.ms .ms-s span:first-child{overflow:hidden;text-overflow:ellipsis;min-width:0}
+.ms .ms-s .he-n{flex:none;margin-left:auto}
+.t-large .he-mark{font-family:var(--hebrew);font-weight:500;font-size:.8em;color:var(--ink-40);margin-left:10px}
+.ms .ms-s .he-n{font-family:var(--hebrew);font-size:15px}
+.ms .chev{transition:transform .25s var(--ease)}
+.ms[aria-expanded="true"] .chev{transform:rotate(90deg)}
+.stops{margin-left:20px;padding-bottom:6px}
+.stops .about{border-left:2px solid var(--fill-2);padding:2px 0 12px 22px;font-size:14px;line-height:19px;color:var(--ink-55)}
+.stop{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border-left:2px solid var(--fill-2);padding:9px 0 9px 22px;position:relative}
+.stop::before{content:"";position:absolute;left:-7px;top:50%;margin-top:-6px;width:12px;height:12px;border-radius:50%;background:var(--bg);box-shadow:inset 0 0 0 2px var(--ink-25)}
+.stop.done{border-left-color:var(--c,var(--accent))}
+.stop.done::before{background:var(--c,var(--accent));box-shadow:none}
+.stop.started::before{box-shadow:inset 0 0 0 2px var(--c,var(--accent));background:linear-gradient(90deg,var(--c,var(--accent)) 50%,var(--bg) 50%)}
+.stop.now::before{width:16px;height:16px;left:-9px;margin-top:-8px;background:var(--c,var(--accent));box-shadow:0 0 0 5px color-mix(in srgb,var(--c,var(--accent)) 25%,transparent)}
+.stop.empty-stop .st-t{color:var(--ink-40)}
+.stop:active{background:var(--fill)}
+.stop .st-main{flex:1;min-width:0}
+.stop .st-t{display:block;font-size:16px;line-height:21px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stop .st-s{display:block;font-size:13px;line-height:18px;color:var(--ink-40);font-variant-numeric:tabular-nums}
+.pill{flex:none;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;background:var(--c,var(--accent));color:#fff;border-radius:var(--r-pill);padding:3px 8px}
+.pill.soft{background:color-mix(in srgb,var(--c,var(--accent)) 12%,transparent);color:var(--c,var(--accent))}
+.links{display:flex;flex-direction:column}
+.links a{color:var(--ink);text-decoration:none}
+.field select{background:var(--fill);border:0;border-radius:10px;padding:11px 12px;font-size:17px;width:100%}
+.field textarea.he-in{direction:rtl;text-align:right;font-family:var(--hebrew)}
+.src{font-size:13px;color:var(--ink-55)}
+/* this week */
+.week-card{margin-top:16px;padding:14px 12px 12px}
+.wk-top{display:flex;align-items:center;justify-content:space-between;padding:0 4px 10px}
+.wk-t{font-size:15px;font-weight:600}
+.streak{display:inline-flex;align-items:center;gap:3px;color:var(--c3);font-size:14px}
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
+.day{display:flex;flex-direction:column;align-items:center;gap:6px}
+.day .dr{width:38px;height:38px;position:relative;display:grid;place-items:center;font-size:12px;font-weight:500;color:var(--ink-55)}
+.day .dr svg{position:absolute;inset:0}
+.day.today .dr{color:#fff}
+.day.today .dr::before{content:"";position:absolute;inset:5px;border-radius:50%;background:var(--accent)}
+.day .dr span{position:relative}
+.day .dot{width:5px;height:5px;border-radius:50%;background:transparent}
+.day.hit .dot{background:var(--c2)}
+.day.future .dr{color:var(--ink-25)}
+.wk-goal{font-size:12px;color:var(--ink-40);text-align:center;margin-top:8px}
+/* stat tiles */
+.stats{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:12px -16px 0;padding:0 16px}
+.stats::-webkit-scrollbar{display:none}
+.tile{flex:none;min-width:104px;background:var(--card);border-radius:14px;box-shadow:var(--shadow);padding:10px 12px;display:flex;flex-direction:column;gap:3px}
+.tile .tl{font-size:12px;color:var(--ink-55)}
+.tile .tv{font-size:19px;font-weight:600;font-variant-numeric:tabular-nums;display:flex;align-items:baseline;gap:4px}
+.tile .tv small{font-size:12px;font-weight:500;color:var(--ink-40)}
+/* today's tasks */
+.tasks{display:flex;flex-direction:column;gap:10px}
+.task{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--card);border-radius:16px;box-shadow:var(--shadow);padding:12px 14px}
+.task:active{transform:scale(.985)}
+.task .tk-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.tag{align-self:flex-start;font-size:11px;font-weight:600;color:#fff;background:var(--c,var(--accent));border-radius:5px;padding:2px 7px}
+.task .tk-s{font-size:13px;color:var(--ink-55)}
+.task .tk-t{font-size:17px;font-weight:600;line-height:22px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.task .tk-m{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-55);font-variant-numeric:tabular-nums}
+.task .tk-m .track{flex:1;max-width:140px}
+.task .chev{color:var(--c,var(--accent))}
+.task.done-task{opacity:.6}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <g id="i-book" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5C6.5 4.3 9.5 4.3 12 6c2.5-1.7 5.5-1.7 8-.5v13c-2.5-1.2-5.5-1.2-8 .5-2.5-1.7-5.5-1.7-8-.5z"/><path d="M12 6v13"/></g>
+  <g id="i-flame" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5c.5 3-3.5 5-3.5 9a3.5 3.5 0 0 0 7 0c0-1.6-.8-2.8-1.5-3.6.1 1.3-.6 2.3-1.4 2.6.6-2.8-.2-5.8-.6-8z"/><path d="M6.5 13.5a5.5 5.5 0 0 0 11 0"/><path d="M12 20.5v1"/></g>
+  <g id="i-sun" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></g>
+  <g id="i-moon" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 14.5A7.5 7.5 0 0 1 9.5 4.5a7.5 7.5 0 1 0 10 10z"/></g>
+  <g id="i-chev" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 4.5 16 12l-7.5 7.5"/></g>
+  <g id="i-x" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></g>
+  <g id="i-plus" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></g>
+</defs></svg>
+
+<div class="app">
+  <!-- ===================== TANYA ROAD MAP ===================== -->
+  <section class="view on" id="v-book">
+    <div class="topbar">
+      <div><p class="greet">Rabbi Shneur Zalman of Liadi</p><h1 class="t-large">Tanya<span class="he-mark" lang="he">תניא</span></h1></div>
+      <button class="gear theme-btn" aria-label="Switch to dark mode"><svg viewBox="0 0 24 24" width="19" height="19"><use href="#i-moon"/></svg></button>
+    </div>
+
+    <div class="card week-card">
+      <div class="wk-top"><span class="wk-t">This week</span><span class="streak" id="streak" title="Days in a row"><svg viewBox="0 0 24 24" width="15" height="15"><use href="#i-flame"/></svg><b id="streak-n">0</b></span></div>
+      <div class="week" id="week"></div>
+      <p class="wk-goal" id="wk-goal">Daily goal: 5 reels</p>
+    </div>
+
+    <div class="stats" id="stats"></div>
+
+    <div class="sec"><h2>Today</h2><span style="flex:1"></span><span id="today-n" style="font-size:13px;color:var(--ink-40)"></span></div>
+    <div class="tasks" id="tasks"></div>
+
+    <div class="card here" id="here" hidden>
+      <p class="kicker"><i></i><span id="here-kicker">Loading the text…</span></p>
+      <h2 id="here-title"></h2><p class="where" id="here-where"></p>
+      <div class="track"><i id="here-bar" style="width:0%"></i></div>
+      <button class="btn" id="here-go" disabled>Start reading</button>
+    </div>
+    <div class="overall" hidden><span id="overall-n"></span><div class="track"><i id="overall-bar"></i></div><span id="overall-pct"></span></div>
+
+    <div class="sec"><h2>Road map</h2></div>
+    <div class="map" id="map"></div>
+
+    <p class="fine">English translation, notes and Hebrew © Kehot Publication Society, via <a href="https://www.sefaria.org/Tanya" target="_blank" rel="noopener">Sefaria</a>, CC-BY-NC. The bracketed explanations and footnotes are the translators' commentary. The chapter introductions, part introductions and glossary are written for this app and are not part of the book. Every word and every note is kept.</p>
+    <p class="fine">Tap a Hebrew word to translate it, a small number for a footnote, or an underlined term for its meaning. <span id="sync-note">Your place is saved on this device.</span></p>
+  </section>
+
+  <!-- ===================== SICHOT ROAD MAP ===================== -->
+  <section class="view" id="v-sichot">
+    <div class="topbar">
+      <div><p class="greet">Through the year, parsha by parsha</p><h1 class="t-large">Sichot of the Rebbe</h1></div>
+      <button class="gear theme-btn" aria-label="Switch to dark mode"><svg viewBox="0 0 24 24" width="19" height="19"><use href="#i-moon"/></svg></button>
+    </div>
+
+    <div class="card here" id="s-here" hidden>
+      <p class="kicker"><i></i><span id="s-here-kicker">Continue</span></p>
+      <h2 id="s-here-title"></h2>
+      <p class="where" id="s-here-where"></p>
+      <div class="track"><i id="s-here-bar" style="width:0%"></i></div>
+      <button class="btn" id="s-here-go">Continue</button>
+    </div>
+
+    <button class="btn" id="add-sicha" style="margin-top:16px"><svg viewBox="0 0 24 24" width="18" height="18"><use href="#i-plus"/></svg>Add a sicha</button>
+    <p class="fine">The Rebbe's sichot themselves are under copyright, so they can't be built in. The road map starts with short overviews of well-known themes, written for this app and paired with the Hebrew verse each one centres on. Add the full sichot you're learning, in English and the Hebrew or Yiddish original, and they become bilingual reels with nothing cut. Free places to read them:</p>
+    <div class="group links" style="margin-top:10px">
+      <a class="row" href="https://www.chabad.org/therebbe/article_cdo/aid/68159/jewish/Likkutei-Sichot-in-English.htm" target="_blank" rel="noopener"><span class="row-main"><span class="row-title">Likkutei Sichot in English</span><span class="row-sub">Chabad.org</span></span><svg class="chev" viewBox="0 0 24 24"><use href="#i-chev"/></svg></a>
+      <a class="row" href="https://shop.sie.org/" target="_blank" rel="noopener"><span class="row-main"><span class="row-title">Sichos In English</span><span class="row-sub">sie.org · free translations</span></span><svg class="chev" viewBox="0 0 24 24"><use href="#i-chev"/></svg></a>
+      <a class="row" href="https://projectlikkuteisichos.org/" target="_blank" rel="noopener"><span class="row-main"><span class="row-title">Project Likkutei Sichos</span><span class="row-sub">The full text, week by week</span></span><svg class="chev" viewBox="0 0 24 24"><use href="#i-chev"/></svg></a>
+    </div>
+
+    <div class="sec"><h2>Road map</h2><span style="flex:1"></span><span id="s-tally" style="font-size:13px;color:var(--ink-40)"></span></div>
+    <div class="map" id="s-map"></div>
+  </section>
+</div>
+
+<nav class="tabbar"><div class="tabbar-inner">
+  <button class="tabbtn on" data-tab="book"><svg viewBox="0 0 24 24"><use href="#i-book"/></svg><span>Tanya</span></button>
+  <button class="tabbtn" data-tab="sichot"><svg viewBox="0 0 24 24"><use href="#i-flame"/></svg><span>Sichot</span></button>
+</div></nav>
+
+<!-- ===================== READER ===================== -->
+<section id="reader" hidden aria-label="Reader">
+  <div class="rtop">
+    <button class="gear" id="close" aria-label="Back to the road map"><svg viewBox="0 0 24 24" width="17" height="17"><use href="#i-x"/></svg></button>
+    <div class="t" id="r-title"></div>
+    <button class="fsb" id="smaller" aria-label="Smaller text">A−</button>
+    <button class="fsb" id="bigger" aria-label="Bigger text">A+</button>
+  </div>
+  <div class="pbar"><i id="r-bar"></i></div>
+  <div id="reels" tabindex="0"></div>
+</section>
+
+<div class="scrim" id="scrim"></div>
+
+<div class="sheet" id="sheet-word" role="dialog" aria-label="Word">
+  <div class="grabber"></div>
+  <p class="kicker">Word</p>
+  <p class="wd-he" id="wd-he" lang="he"></p>
+  <p class="wd-tr" id="wd-tr"></p>
+  <p class="wd-mean" id="wd-mean"></p>
+  <div id="wd-rows"></div>
+  <p class="fine">Translated by Claude for this passage, so check anything important against a teacher or dictionary.</p>
+  <div style="margin-top:16px"><button class="btn" data-close>Done</button></div>
+</div>
+
+<div class="sheet" id="sheet-note" role="dialog" aria-label="Note">
+  <div class="grabber"></div>
+  <h2 id="note-title">Note</h2>
+  <div class="note-body" id="note-body"></div>
+  <div style="margin-top:20px"><button class="btn" data-close>Done</button></div>
+</div>
+
+<div class="sheet" id="sheet-add" role="dialog" aria-label="Add a sicha">
+  <div class="grabber"></div>
+  <form id="add-form">
+    <h2 id="add-h">Add a sicha</h2>
+    <p class="lead">Open the sicha on Chabad.org, select all and copy, then paste it into the first box. English and Hebrew or Yiddish paragraphs sort themselves into the right boxes.</p>
+    <div class="field"><label for="f-parsha">Parsha or occasion</label><select id="f-parsha"></select></div>
+    <a class="btn sec" id="find-chabad" href="#" target="_blank" rel="noopener" style="margin-top:12px;text-decoration:none">Find this parsha's sichot on Chabad.org ↗</a>
+    <div class="field"><label for="f-title">Title</label><input id="f-title" required maxlength="90" placeholder="The first Rashi in Bereishit" autocomplete="off"></div>
+    <div class="field"><label for="f-source">Source (optional)</label><input id="f-source" maxlength="90" placeholder="Chabad.org · Likkutei Sichot vol. 5" autocomplete="off"></div>
+    <div class="field"><label for="f-en">English</label><textarea id="f-en" placeholder="Paste the sicha here — English, Hebrew or both"></textarea></div>
+    <div class="field"><label for="f-he">Hebrew or Yiddish</label><textarea id="f-he" class="he-in" dir="rtl" placeholder="הדביקו כאן את המקור"></textarea></div>
+    <p class="fine" id="add-msg" role="status"></p>
+    <div class="sheet-acts"><button type="button" class="btn sec" data-close>Cancel</button><button type="submit" class="btn">Save sicha</button></div>
+    <button type="button" class="btn sec" id="del-sicha" style="margin-top:10px" hidden>Delete</button>
+  </form>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="overviews.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const KEY = 'tanyaReels.v4';
+const LEN = 70;                       // every reel is medium length
+// S.at[key]  = the passage you were on in that section (an anchor, see below); S.done[key] = finished
+let S = {fs:19, at:{}, done:{}, last:null, lastS:null, open:{}, sichot:[], log:{}, t:0};
+const GOAL = 5;                       // reels a day
+try{
+  const cur = JSON.parse(localStorage.getItem(KEY));
+  if(cur) Object.assign(S, cur);
+  else {                              // carry over v3 (and its migrated v2) state
+    const v3 = JSON.parse(localStorage.getItem('tanyaReels.v3'));
+    if(v3) Object.assign(S, {fs:v3.fs||19, at:v3.at||{}, done:v3.done||{}, last:v3.last??null, legacyMine:v3.mine||[]});
+  }
+}catch(e){}
+let syncTimer = null;
+const save = ()=>{ S.t = Date.now(); try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} clearTimeout(syncTimer); syncTimer = setTimeout(pushRemote, 1200); };
+let BOOK = null;
+const esc = s => String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const wc = s => (s.match(/\S+/g)||[]).length;
+const reelsTxt = n => n === 1 ? '1 reel' : `${n} reels`;
+const plainTxt = h => h.replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim();
+
+/* ---------- parshiyot for the sichot road map ---------- */
+const BOOKS = [
+  ['Bereishit','בראשית',[['Bereishit','בראשית'],['Noach','נח'],['Lech Lecha','לך לך'],['Vayera','וירא'],['Chayei Sarah','חיי שרה'],['Toldot','תולדות'],['Vayetzei','ויצא'],['Vayishlach','וישלח'],['Vayeshev','וישב'],['Miketz','מקץ'],['Vayigash','ויגש'],['Vayechi','ויחי']]],
+  ['Shemot','שמות',[['Shemot','שמות'],['Vaera','וארא'],['Bo','בא'],['Beshalach','בשלח'],['Yitro','יתרו'],['Mishpatim','משפטים'],['Terumah','תרומה'],['Tetzaveh','תצוה'],['Ki Tisa','כי תשא'],['Vayakhel','ויקהל'],['Pekudei','פקודי']]],
+  ['Vayikra','ויקרא',[['Vayikra','ויקרא'],['Tzav','צו'],['Shemini','שמיני'],['Tazria','תזריע'],['Metzora','מצורע'],['Acharei Mot','אחרי מות'],['Kedoshim','קדושים'],['Emor','אמור'],['Behar','בהר'],['Bechukotai','בחוקותי']]],
+  ['Bamidbar','במדבר',[['Bamidbar','במדבר'],['Nasso','נשא'],['Behaalotecha','בהעלותך'],['Shelach','שלח'],['Korach','קרח'],['Chukat','חוקת'],['Balak','בלק'],['Pinchas','פינחס'],['Matot','מטות'],['Masei','מסעי']]],
+  ['Devarim','דברים',[['Devarim','דברים'],['Vaetchanan','ואתחנן'],['Eikev','עקב'],['Re’eh','ראה'],['Shoftim','שופטים'],['Ki Teitzei','כי תצא'],['Ki Tavo','כי תבוא'],['Nitzavim','נצבים'],['Vayelech','וילך'],['Haazinu','האזינו'],['Vezot Haberachah','וזאת הברכה']]],
+  ['Holidays & dates','מועדים',[['Rosh Hashanah','ראש השנה'],['Yom Kippur','יום כיפור'],['Sukkot','סוכות'],['Simchat Torah','שמחת תורה'],['Chanukah','חנוכה'],['19 Kislev','י״ט כסלו'],['Purim','פורים'],['Pesach','פסח'],['Sefirat HaOmer','ספירת העומר'],['Shavuot','שבועות'],['12–13 Tammuz','י״ב-י״ג תמוז'],['The Three Weeks','בין המצרים'],['Elul','אלול']]],
+  ['Other','שונות',[['Other','שונות']]],
+];
+const PARSHA = {};  BOOKS.forEach(([b,bh,ps],bi)=>ps.forEach(([n,h])=>PARSHA[n]={n,h,b:bi}));
+
+/* ---------- units and reels ---------- */
+// Tanya sections come pre-cut into sentence units (tools/build_data.py verifies every word).
+// Reels are whole units packed together, so nothing can be dropped.
+function packUnits(units, target){
+  const reels = []; let cur = [], w = 0;
+  for(const u of units){
+    const over = w + u.w > target*1.3, paraBreak = u.p && w >= target*0.6;
+    if(cur.length && (over || paraBreak)){ reels.push(cur); cur = []; w = 0; }
+    cur.push(u); w += u.w;
+  }
+  if(cur.length){
+    const last = reels[reels.length-1];
+    if(last && w < target*0.3 && last.reduce((a,u)=>a+u.w,0) + w <= target*1.6) last.push(...cur); else reels.push(cur);
+  }
+  return reels;
+}
+// Pasted text -> units: sentence groups, one paragraph number (s) per unit so the other language can pair with it.
+function unitsFromText(text){
+  const units = [];
+  text.split(/\n\s*\n/).filter(p=>p.trim()).forEach((par,s)=>{
+    const parts = par.match(/[^.!?…]+(?:[.!?…]+["'”’)\]]*|$)\s*/g) || [par];
+    let buf = '', first = true;
+    parts.forEach((x,i)=>{
+      buf += x;
+      if(wc(buf) >= 20 || i === parts.length-1){
+        if(buf.trim()) units.push({h:esc(buf.trim()).replace(/\n/g,' '), w:wc(buf), p:first?1:0, s});
+        buf = ''; first = false;
+      }
+    });
+  });
+  return units;
+}
+const paras = t => t.split(/\n\s*\n/).map(p=>p.trim()).filter(Boolean);
+// A saved sicha becomes a "section" shaped like a Tanya chapter: English units + Hebrew paragraphs paired by position.
+const sichaCache = new Map();
+function sichaSection(x){
+  const k = x.id + ':' + x.t; if(sichaCache.has(k)) return sichaCache.get(k);
+  const u = unitsFromText(x.en || '');
+  const E = new Set(u.map(v=>v.s)).size, H = paras(x.he || '');
+  let he;
+  if(!u.length) he = H.map(p=>esc(p).replace(/\n/g,'<br>'));                 // original only
+  else { he = Array.from({length:E}, ()=>[]);                                  // spread every Hebrew paragraph over the English ones
+         H.forEach((p,j)=>he[Math.min(E-1, Math.floor(j*E/H.length))].push(esc(p).replace(/\n/g,'<br>')));
+         he = he.map(a=>a.join('<br><br>')); }
+  const p = PARSHA[x.parsha] || PARSHA.Other;
+  const sec = {id:'s-'+x.id, sicha:x, t:x.title, ht:p.h, hd:x.title, cx:x.source||'', u, n:[], he};
+  sichaCache.set(k, sec); return sec;
+}
+
+/* ---------- a section's reels: context card, then English with its Hebrew ---------- */
+function reelsOf(ch){
+  const out = [{ctx:true}];
+  if(!ch.u.length){                                     // Hebrew/Yiddish only
+    let cur = [], w = 0;
+    ch.he.forEach((h,si)=>{ const hw = wc(plainTxt(h));
+      if(cur.length && w + hw > LEN*1.3){ out.push({he:cur}); cur=[]; w=0; }
+      cur.push(si); w += hw; });
+    if(cur.length) out.push({he:cur});
+    return out;
+  }
+  const lastReelOf = {};                                // the Hebrew of a passage sits on the reel where its English ends
+  packUnits(ch.u, LEN).forEach(us=>{ const r = {units:us, he:[]}; out.push(r); us.forEach(u=>lastReelOf[u.s] = r); });
+  Object.entries(lastReelOf).forEach(([s,r])=>{ if(ch.he[s]) r.he.push(+s); });
+  return out;
+}
+// anchors: for English sections, the index in ch.u of a reel's first unit; for original-only, its first paragraph. -1 = the context card
+function reelAnchor(r, ch){
+  if(r.ctx) return -1;
+  if(r.units) return ch.u.indexOf(r.units[0]);
+  return r.he[0];
+}
+function anchorToReel(reels, ch, a){
+  if(a == null || a < 0) return 0;
+  if(!ch.u.length){ const i = reels.findIndex(r=>r.he && r.he.includes(a)); return i < 0 ? 0 : i; }
+  const u = ch.u[Math.min(a, ch.u.length-1)];
+  const i = reels.findIndex(r=>r.units && r.units.includes(u)); return i < 0 ? 0 : i;
+}
+function progress(ch){
+  const reels = reelsOf(ch), n = reels.length - 1, a = S.at[ch.id], done = !!S.done[ch.id];
+  const size = ch.u.length || ch.he.length;
+  const reelNo = Math.max(1, anchorToReel(reels, ch, a));
+  return {n, done, reelNo, started: a != null && a >= 0 && !done,
+          pct: done ? 1 : a == null || a < 0 ? 0 : Math.min(.99, (a+1)/size)};
+}
+
+/* ---------- glossary ---------- */
+const GL = () => (BOOK && BOOK.glossary) || {};
+function linkTerms(h){ const g = GL(); return h.replace(/<i>([^<]{2,30})<\/i>/g, (m,t)=> g[t.trim().toLowerCase()] ? `<button class="gl" data-g="${esc(t.trim().toLowerCase())}">${t}</button>` : m); }
+function chapterTerms(ch){
+  const g = GL(), seen = new Map();
+  ch.u.forEach(u=>{ for(const m of u.h.matchAll(/<i>([^<]{2,30})<\/i>/g)){ const t = m[1].trim().toLowerCase(); if(g[t]) seen.set(t,(seen.get(t)||0)+1); } });
+  return [...seen.entries()].sort((a,b)=>b[1]-a[1]).slice(0,8).map(x=>x[0]);
+}
+function showTerm(t){ $('note-title').textContent = t.replace(/\b\w/g,c=>c.toUpperCase()); $('note-body').textContent = GL()[t]||''; openSheet('sheet-note'); }
+
+/* ---------- road map (Tanya) ---------- */
+function ring(p){ const r = 19, c = 2*Math.PI*r;
+  return `<svg viewBox="0 0 42 42"><circle cx="21" cy="21" r="${r}" fill="none" stroke="var(--c,var(--accent))" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${c*(1-p)}" transform="rotate(-90 21 21)"/></svg>`; }
+const partOf = ch => BOOK.parts[ch.p];
+const colorOf = ch => ch.sicha ? `var(--c${(PARSHA[ch.sicha.parsha]||PARSHA.Other).b+1})` : `var(--c${ch.p+1})`;
+function currentIndex(){
+  let i = BOOK.chapters.findIndex(c=>c.id===S.last);
+  if(i >= 0 && !S.done[BOOK.chapters[i].id]) return i;
+  const next = BOOK.chapters.findIndex((c,k)=>k > i && !S.done[c.id]);      // after finishing, "here" moves on
+  if(next >= 0) return next;
+  const first = BOOK.chapters.findIndex(c=>!S.done[c.id]);
+  return first < 0 ? 0 : first;
+}
+/* ---------- this week, stats and today ---------- */
+const dayKey = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+function logReel(r, ch){
+  const k = dayKey(new Date()), e = S.log[k] || (S.log[k] = {r:0, w:0});
+  e.r++; e.w += r.units ? r.units.reduce((a,u)=>a+u.w,0) : r.he.reduce((a,si)=>a+wc(plainTxt(ch.he[si])),0);
+  save();
+}
+function streak(){
+  let n = 0; const d = new Date();
+  if(!(S.log[dayKey(d)]||{}).r) d.setDate(d.getDate()-1);       // today not started yet: count up to yesterday
+  while((S.log[dayKey(d)]||{}).r){ n++; d.setDate(d.getDate()-1); }
+  return n;
+}
+function dayRing(p, color){ const r = 16, c = 2*Math.PI*r;
+  return `<svg viewBox="0 0 38 38"><circle cx="19" cy="19" r="${r}" fill="none" stroke="var(--fill-2)" stroke-width="3"/>${p>0?`<circle cx="19" cy="19" r="${r}" fill="none" stroke="${color}" stroke-width="3" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${c*(1-Math.min(1,p))}" transform="rotate(-90 19 19)"/>`:''}</svg>`; }
+function renderDash(){
+  const now = new Date(), today = dayKey(now), start = new Date(now); start.setDate(now.getDate() - now.getDay());
+  const names = ['Su','Mo','Tu','We','Th','Fr','Sh'], cols = ['--c1','--c4','--c3','--c1','--c3','--c4','--c2'];
+  $('week').innerHTML = names.map((nm,i)=>{
+    const d = new Date(start); d.setDate(start.getDate()+i); const k = dayKey(d), e = S.log[k]||{r:0};
+    const cls = ['day', k===today?'today':'', d>now && k!==today?'future':'', e.r>=GOAL?'hit':''].join(' ');
+    return `<div class="${cls}" title="${e.r} reels"><div class="dr">${dayRing(e.r/GOAL, `var(${cols[i]})`)}<span>${nm}</span></div><i class="dot"></i></div>`;
+  }).join('');
+  $('streak-n').textContent = streak();
+  const te = S.log[today]||{r:0,w:0};
+  $('wk-goal').textContent = te.r >= GOAL ? `Daily goal reached · ${te.r} reels today` : `Daily goal: ${GOAL} reels · ${te.r} so far today`;
+  const weekR = names.reduce((a,_,i)=>{ const d = new Date(start); d.setDate(start.getDate()+i); return a + ((S.log[dayKey(d)]||{}).r||0); },0);
+  const totalW = Object.values(S.log).reduce((a,e)=>a+(e.w||0),0);
+  const secDone = BOOK ? BOOK.chapters.filter(c=>S.done[c.id]).length : 0;
+  const tiles = [['Today', te.r, 'reels'], ['This week', weekR, 'reels'], ['Streak', streak(), streak()===1?'day':'days'],
+    ['Tanya', secDone, `/ ${BOOK ? BOOK.chapters.length : 120}`], ['Words read', totalW.toLocaleString(), '']];
+  $('stats').innerHTML = tiles.map(([l,v,u])=>`<div class="tile"><span class="tl">${l}</span><span class="tv">${v}${u?`<small>${u}</small>`:''}</span></div>`).join('');
+
+  // today's tasks
+  const tasks = [];
+  if(BOOK){
+    const cur = currentIndex(), ch = BOOK.chapters[cur], pr = progress(ch), p = partOf(ch);
+    tasks.push({tag:'Tanya', c:`var(--c${ch.p+1})`, sub: pr.started ? 'Continue where you left off' : 'Next stop on the road map',
+      t: ch.hd, meta: `Part ${p.n} · ${ch.t}`, pct: pr.pct, pl: pr.started ? `reel ${pr.reelNo} of ${pr.n}` : reelsTxt(pr.n), go: ()=>openBook(cur)});
+  }
+  const sList = allSichot();
+  const lastS = sList.find(x=>x.id===S.lastS && !S.done['s-'+x.id]);
+  const nextS = lastS || sList.find(x=>!S.done['s-'+x.id]);
+  if(nextS){ const sec = sichaSection(nextS), pr = progress(sec);
+    tasks.push({tag:'Sicha', c: colorOf(sec), sub: `${nextS.parsha}${nextS.overview ? ' · overview' : ''}`, t: nextS.title,
+      meta:'', pct: pr.pct, pl: pr.started ? `reel ${pr.reelNo} of ${pr.n}` : reelsTxt(pr.n), go: ()=>openSicha(nextS.id)}); }
+  tasks.push({tag:'Goal', c:'var(--c2)', sub:'Daily goal', t: te.r >= GOAL ? 'Done for today' : `Read ${GOAL} reels`, meta:'',
+    pct: te.r/GOAL, pl: `${Math.min(te.r,GOAL)}/${GOAL} reels`, done: te.r >= GOAL, go: tasks[0] ? tasks[0].go : null});
+  $('today-n').textContent = `${tasks.filter(t=>t.done || t.pct>=1).length}/${tasks.length} done`;
+  const box = $('tasks'); box.innerHTML = '';
+  tasks.forEach(t=>{
+    const b = document.createElement('button'); b.className = 'task' + (t.done ? ' done-task' : ''); b.style.setProperty('--c', t.c);
+    b.innerHTML = `<span class="tk-main"><span class="tag">${esc(t.tag)}</span><span class="tk-s"></span><span class="tk-t"></span>
+      <span class="tk-m"><span class="track"><i style="width:${Math.round(Math.min(1,t.pct)*100)}%"></i></span><span>${esc(t.pl)}</span></span></span>
+      <svg class="chev" viewBox="0 0 24 24" width="8" height="13"><use href="#i-chev"/></svg>`;
+    b.querySelector('.tk-s').textContent = t.meta ? `${t.sub} · ${t.meta}` : t.sub;
+    b.querySelector('.tk-t').textContent = t.t;
+    if(t.go) b.onclick = t.go;
+    box.appendChild(b);
+  });
+}
+
+function renderMap(){
+  renderDash();
+  if(!BOOK) return;
+  const cur = currentIndex(), curCh = BOOK.chapters[cur], info = progress(curCh), p = partOf(curCh);
+  $('here-kicker').textContent = info.started ? 'You are here' : S.last ? 'Next stop' : 'Start here';
+  $('here-title').textContent = curCh.hd;
+  $('here-where').textContent = `Part ${p.n} · ${p.name} · ${curCh.t}` + (info.started ? ` · reel ${info.reelNo} of ${info.n}` : ` · ${reelsTxt(info.n)}`);
+  $('here-bar').style.width = Math.round(info.pct*100)+'%';
+  $('here-go').disabled = false;
+  $('here-go').textContent = info.started ? `Continue from reel ${info.reelNo}` : 'Start reading';
+  $('here-go').onclick = ()=>openBook(cur);
+  $('here').style.setProperty('--c', `var(--c${curCh.p+1})`);
+  const total = BOOK.chapters.length, doneAll = BOOK.chapters.filter(c=>S.done[c.id]).length;
+  $('overall-n').textContent = `${doneAll} of ${total} sections`;
+  $('overall-bar').style.width = (doneAll/total*100)+'%';
+  $('overall-pct').textContent = Math.round(doneAll/total*100)+'%';
+
+  if(S.open[curCh.p] === undefined) S.open[curCh.p] = true;
+  const map = $('map'); map.innerHTML = '';
+  BOOK.parts.forEach((part,pi)=>{
+    const chs = BOOK.chapters.map((c,i)=>[c,i]).filter(([c])=>c.p===pi);
+    const d = chs.filter(([c])=>S.done[c.id]).length, open = !!S.open[pi];
+    const ms = document.createElement('button');
+    ms.className = 'ms' + (d === chs.length ? ' done' : ''); ms.setAttribute('aria-expanded', open); ms.style.setProperty('--c', `var(--c${pi+1})`);
+    ms.innerHTML = `<span class="badge">${d === chs.length ? '✓' : esc(part.n)}${d && d < chs.length ? ring(d/chs.length) : ''}</span>
+      <span class="ms-main"><span class="ms-t">${esc(part.name)}</span>
+      <span class="ms-s"><span>${esc(part.en)} · ${d}/${chs.length}</span><span class="he-n" dir="rtl">${esc(part.he)}</span></span></span>
+      <svg class="chev" viewBox="0 0 24 24" width="8" height="13"><use href="#i-chev"/></svg>`;
+    ms.onclick = ()=>{ S.open[pi] = !open; save(); renderMap(); };
+    map.appendChild(ms);
+    if(!open) return;
+    const stops = document.createElement('div'); stops.className = 'stops'; stops.style.setProperty('--c', `var(--c${pi+1})`);
+    stops.innerHTML = `<p class="about">${esc(part.c)}</p>`;
+    // finished stops before where you are fold into one row, so "You are here" is in view
+    let lead = 0; while(lead < chs.length && S.done[chs[lead][0].id] && chs[lead][1] < cur) lead++;
+    const fold = lead > 2 && !S.open['all'+pi];
+    if(fold){
+      const st = document.createElement('button'); st.className = 'stop done';
+      st.innerHTML = `<span class="st-main"><span class="st-t">${lead} stops read</span><span class="st-s">${esc(chs[0][0].t)} – ${esc(chs[lead-1][0].t)} · tap to show</span></span>`;
+      st.onclick = ()=>{ S.open['all'+pi] = true; save(); renderMap(); };
+      stops.appendChild(st);
+    }
+    chs.slice(fold ? lead : 0).forEach(([c,i])=>{
+      const pr = progress(c), now = i === cur;
+      const st = document.createElement('button');
+      st.className = 'stop' + (pr.done ? ' done' : '') + (pr.started ? ' started' : '') + (now ? ' now' : '');
+      st.innerHTML = `<span class="st-main"><span class="st-t"></span><span class="st-s">${esc(c.t)} · <span dir="rtl">${esc(c.ht)}</span> · ${pr.started ? `reel ${pr.reelNo} of ${pr.n}` : pr.done ? 'read' : reelsTxt(pr.n)}</span></span>
+        ${now ? '<span class="pill">You are here</span>' : ''}`;
+      st.querySelector('.st-t').textContent = c.hd;
+      st.onclick = ()=>openBook(i);
+      stops.appendChild(st);
+    });
+    map.appendChild(stops);
+  });
+}
+
+/* ---------- road map (sichot) ---------- */
+// built-in overviews (our own words, see overviews.js) plus the sichot you paste
+const OV = (window.OVERVIEWS||[]).map((o,i)=>({id:'o'+i, parsha:o.parsha, title:o.title, source:o.src, en:o.en, he:o.he, t:1, overview:1}));
+const allSichot = () => [...OV, ...S.sichot.filter(x=>!x.deleted)];
+function renderSichot(){
+  const items = allSichot();
+  $('s-tally').textContent = items.length ? `${items.filter(x=>S.done['s-'+x.id]).length} of ${items.length} read` : '';
+  // continue card
+  const last = items.find(x=>x.id===S.lastS);
+  $('s-here').hidden = !last;
+  if(last){
+    const sec = sichaSection(last), pr = progress(sec);
+    $('s-here-kicker').textContent = pr.done ? 'Last read' : 'You are here';
+    $('s-here-title').textContent = last.title;
+    $('s-here-where').textContent = `${last.parsha}${last.source ? ' · ' + last.source : ''} · ` + (pr.started ? `reel ${pr.reelNo} of ${pr.n}` : reelsTxt(pr.n));
+    $('s-here-bar').style.width = Math.round(pr.pct*100)+'%';
+    $('s-here-go').textContent = pr.started ? `Continue from reel ${pr.reelNo}` : pr.done ? 'Read again' : 'Start reading';
+    $('s-here-go').onclick = ()=>openSicha(last.id);
+    $('s-here').style.setProperty('--c', colorOf(sec));
+  }
+  const map = $('s-map'); map.innerHTML = '';
+  BOOKS.forEach(([bn,bh,ps],bi)=>{
+    const inBook = items.filter(x=>(PARSHA[x.parsha]||PARSHA.Other).b === bi);
+    if(bi === BOOKS.length-1 && !inBook.length) return;          // "Other" only when used
+    const d = inBook.filter(x=>S.done['s-'+x.id]).length, key = 's'+bi;
+    if(S.open[key] === undefined) S.open[key] = inBook.length > 0 && bi === (last ? (PARSHA[last.parsha]||PARSHA.Other).b : 0);
+    const open = !!S.open[key];
+    const ms = document.createElement('button');
+    ms.className = 'ms' + (inBook.length && d === inBook.length ? ' done' : ''); ms.setAttribute('aria-expanded', open); ms.style.setProperty('--c', `var(--c${bi+1})`);
+    ms.innerHTML = `<span class="badge">${inBook.length && d === inBook.length ? '✓' : inBook.length}</span>
+      <span class="ms-main"><span class="ms-t">${esc(bn)}</span><span class="ms-s"><span>${inBook.length ? `${d}/${inBook.length} read` : 'No sichot yet'}</span><span class="he-n" dir="rtl">${esc(bh)}</span></span></span>
+      <svg class="chev" viewBox="0 0 24 24" width="8" height="13"><use href="#i-chev"/></svg>`;
+    ms.onclick = ()=>{ S.open[key] = !open; save(); renderSichot(); };
+    map.appendChild(ms);
+    if(!open) return;
+    const stops = document.createElement('div'); stops.className = 'stops'; stops.style.setProperty('--c', `var(--c${bi+1})`);
+    ps.forEach(([pn,ph])=>{
+      const mine = inBook.filter(x=>x.parsha===pn);
+      if(!mine.length){
+        const st = document.createElement('button'); st.className = 'stop empty-stop';
+        st.innerHTML = `<span class="st-main"><span class="st-t">${esc(pn)} <span dir="rtl" class="src">${esc(ph)}</span></span><span class="st-s">Tap to find and add a sicha</span></span><span class="pill soft">+</span>`;
+        st.onclick = ()=>addSicha(pn);
+        stops.appendChild(st); return;
+      }
+      mine.forEach(x=>{
+        const pr = progress(sichaSection(x)), now = x.id === S.lastS && !pr.done;
+        const st = document.createElement('button');
+        st.className = 'stop' + (pr.done ? ' done' : '') + (pr.started ? ' started' : '') + (now ? ' now' : '');
+        st.innerHTML = `<span class="st-main"><span class="st-t"></span><span class="st-s">${esc(pn)} · <span dir="rtl">${esc(ph)}</span> · ${pr.started ? `reel ${pr.reelNo} of ${pr.n}` : pr.done ? 'read' : reelsTxt(pr.n)}</span></span>
+          ${now ? '<span class="pill">You are here</span>' : x.overview ? '<span class="pill soft">Overview</span>' : '<span class="pill soft" data-edit>Edit</span>'}`;
+        st.querySelector('.st-t').textContent = x.title;
+        st.onclick = e=>{ if(e.target.closest('[data-edit]')) editSicha(x.id); else openSicha(x.id); };
+        stops.appendChild(st);
+      });
+    });
+    map.appendChild(stops);
+  });
+}
+
+/* ---------- reader ---------- */
+let R = null;
+function openBook(i){
+  const ch = BOOK.chapters[i]; S.last = ch.id; save();
+  const nx = BOOK.chapters[i+1];
+  openReader(ch, nx ? {label: nx.p !== ch.p ? `On to Part ${BOOK.parts[nx.p].n}` : 'Next stop', go: ()=>openBook(i+1)} : null);
+}
+function openSicha(id){
+  const x = allSichot().find(s=>s.id===id); if(!x) return;
+  S.lastS = id; save();
+  openReader(sichaSection(x), null);
+}
+function openReader(ch, next){
+  R = ch;
+  $('reader').style.setProperty('--c', colorOf(ch));
+  const reels = reelsOf(ch), notes = Object.fromEntries(ch.n), isBook = !ch.sicha;
+  $('r-title').textContent = isBook ? `Part ${partOf(ch).n} · ${ch.t}` : ch.t;
+  const box = $('reels'); box.innerHTML = '';
+  const reelCount = reels.length - 1;
+  reels.forEach((r,k)=>{
+    const d = document.createElement('div'); d.className='reel';
+    if(r.ctx){
+      const terms = chapterTerms(ch);
+      const about = isBook ? (ch.own ? ch.cx : `<span class="lbl" style="display:block">About Part ${esc(partOf(ch).n)} · ${esc(partOf(ch).en)}</span>${esc(ch.cx)}`)
+                           : (ch.sicha.overview ? '<span class="overview-tag">Overview · written for this app</span><br>' : '') + esc([ch.sicha.parsha, ch.sicha.source].filter(Boolean).join(' · '))
+                             + (ch.sicha.overview ? '<br><br>This is a short summary of a well-known theme in our own words, not the Rebbe\'s words or a translation. The Hebrew is the verse or source it centres on. Use the links in the Sichot tab to read the sichot themselves.' : '');
+      d.innerHTML = `<article class="rcard ctx"><div class="rk"><span>Before you read</span><span>${reelsTxt(reelCount)}</span></div>
+        <div class="rtxt"><div class="inner">
+          <div class="ch-no"><span>${esc(isBook ? `Part ${partOf(ch).n} · ${ch.t}` : 'Sicha')}</span><span dir="rtl">${esc(ch.ht)}</span></div>
+          <h3></h3><p class="cx">${isBook && ch.own ? esc(about) : about}</p>
+          ${terms.length?`<p class="lbl">Key terms</p><div class="terms">${terms.map(t=>`<button class="chip gl-chip" data-g="${esc(t)}">${esc(t)}</button>`).join('')}</div>`:''}
+        </div></div>
+        <div class="rfoot"><span>${isBook ? 'Context written for this app' : ch.sicha.overview ? 'Overview' : 'Your sicha'}</span><span>Swipe up to begin</span></div></article>`;
+      d.querySelector('h3').textContent = ch.hd;
+      box.appendChild(d); return;
+    }
+    let html = '', words = 0;
+    if(r.units){
+      let open = false;
+      r.units.forEach((u,j)=>{
+        words += u.w;
+        if(u.p || j===0){ if(open) html += '</p>'; html += `<p dir="auto">`; open = true; } else html += ' ';
+        html += linkTerms(u.h).replace(/<sup>(.*?)<\/sup>/g, (m,n)=> notes[n]!==undefined ? `<button class="fn" data-n="${esc(n)}" aria-label="Footnote ${esc(n)}">${esc(n)}</button>` : m);
+      });
+      if(open) html += '</p>';
+    }
+    if(r.he.length){
+      html += r.he.map(si=>`<p class="he" lang="he" data-s="${si}">${ch.he[si]}</p>`).join('');
+      if(!r.units) words = r.he.reduce((a,si)=>a+wc(plainTxt(ch.he[si])),0);
+    }
+    const fnCount = (html.match(/class="fn"/g)||[]).length;
+    d.innerHTML = `<article class="rcard${r.units&&r.he.length?' both':''}"><div class="rk"><span>${k} / ${reelCount}</span><span>${words} ${r.units?'words':'מילים'}</span></div>
+      <div class="rtxt"><div class="inner">${html}</div></div>
+      <div class="rfoot"><span>${fnCount? fnCount+(fnCount>1?' notes · tap a number':' note · tap the number') : ''}</span><span>${k<reelCount?'Swipe up':'Last reel'}</span></div></article>`;
+    box.appendChild(d);
+  });
+  const end = document.createElement('div'); end.className='reel';
+  const total = ch.u.length ? ch.u.reduce((a,u)=>a+u.w,0) : ch.he.reduce((a,h)=>a+wc(plainTxt(h)),0);
+  end.innerHTML = `<article class="rcard endcard"><p class="kicker">Stop complete</p><p class="big"></p>
+    <p class="greet">${total.toLocaleString()} words · ${reelsTxt(reelCount)} · nothing skipped</p>
+    <div style="display:flex;flex-direction:column;gap:10px;width:100%;max-width:320px;margin-top:8px">
+      ${next?`<button class="btn" id="go-next">${esc(next.label)}</button>`:''}<button class="btn sec" id="go-back">Back to the road map</button></div></article>`;
+  end.querySelector('.big').textContent = ch.hd;
+  box.appendChild(end);
+  end.querySelector('#go-back').onclick = closeReader;
+  if(next) end.querySelector('#go-next').onclick = next.go;
+  box.querySelectorAll('p.he').forEach(wrapHebrewWords);
+  box.onclick = e=>{ const hw = e.target.closest('.hw'); if(hw) return lookupWord(hw);
+    const f = e.target.closest('.fn'); if(f) return showNote(f.dataset.n, notes[f.dataset.n]);
+    const g = e.target.closest('.gl,.gl-chip'); if(g) showTerm(g.dataset.g); };
+  $('reader').hidden = false; document.body.style.overflow='hidden';
+  const n = reels.length; let ready = false; const seen = new Set();
+  box.onscroll = ()=>{
+    const idx = Math.round(box.scrollTop / box.clientHeight);
+    $('r-bar').style.width = (Math.min(idx+1,n)/n*100)+'%';
+    if(!ready) return;                                  // don't overwrite your place while restoring it
+    if(idx > 0 && idx < n && !seen.has(idx)){ seen.add(idx); logReel(reels[idx], ch); }
+    if(idx >= n){ if(!S.done[ch.id]){ S.done[ch.id] = 1; save(); } }
+    else { const a = reelAnchor(reels[idx], ch); if(S.at[ch.id] !== a){ S.at[ch.id] = a; save(); } }
+  };
+  const start = S.done[ch.id] ? 0 : anchorToReel(reels, ch, S.at[ch.id]);
+  requestAnimationFrame(()=>{ box.scrollTop = start*box.clientHeight; box.onscroll(); ready = true; box.focus();
+    if(start > 0) toast(`Back where you left off · reel ${start}`); });
+}
+function closeReader(){ $('toast').classList.remove('on'); $('reader').hidden = true; document.body.style.overflow=''; R=null; renderMap(); renderSichot(); }
+$('close').onclick = closeReader;
+function setFs(v){ S.fs = Math.max(15, Math.min(28, v)); document.documentElement.style.setProperty('--fs', S.fs+'px'); }
+$('smaller').onclick = ()=>{ setFs(S.fs-1); save(); };
+$('bigger').onclick = ()=>{ setFs(S.fs+1); save(); };
+document.addEventListener('keydown', e=>{
+  if($('reader').hidden) return;
+  if(document.querySelector('.sheet.on')){ if(e.key==='Escape') closeSheets(); return; }
+  const box = $('reels');
+  if(['ArrowDown','PageDown',' '].includes(e.key)){ e.preventDefault(); box.scrollBy({top:box.clientHeight}); }
+  if(['ArrowUp','PageUp'].includes(e.key)){ e.preventDefault(); box.scrollBy({top:-box.clientHeight}); }
+  if(e.key==='Escape') closeReader();
+});
+
+/* ---------- sheets ---------- */
+function openSheet(id){ $('scrim').classList.add('on'); $(id).classList.add('on'); }
+function closeSheets(){ $('scrim').classList.remove('on'); document.querySelectorAll('.sheet').forEach(s=>s.classList.remove('on')); }
+$('scrim').onclick = closeSheets;
+document.querySelectorAll('[data-close]').forEach(b=>b.onclick = closeSheets);
+function showNote(n, html){ $('note-title').textContent = 'Note '+n; $('note-body').innerHTML = html; openSheet('sheet-note'); }
+/* ---------- light / dark ---------- */
+function curTheme(){ return document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); }
+function applyTheme(t, stamp=true){
+  if(stamp) document.documentElement.dataset.theme = t;
+  const dark = t === 'dark';
+  document.querySelectorAll('.theme-btn').forEach(b=>{ b.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode'); b.querySelector('use').setAttribute('href', dark ? '#i-sun' : '#i-moon'); });
+  document.querySelector('meta[name=theme-color]')?.setAttribute('content', dark ? '#000000' : '#F2F2F3');
+}
+let savedTheme = null; try{ savedTheme = localStorage.getItem('tanyaReels.theme'); }catch(e){}
+applyTheme(savedTheme || 'light');   // light by default; the moon button switches
+document.querySelectorAll('.theme-btn').forEach(b=>b.onclick = ()=>{ const t = curTheme() === 'dark' ? 'light' : 'dark'; applyTheme(t); try{ localStorage.setItem('tanyaReels.theme', t); }catch(e){} });
+
+/* ---------- adding sichot ---------- */
+const sel = $('f-parsha');
+BOOKS.forEach(([bn,bh,ps])=>{ const g = document.createElement('optgroup'); g.label = bn; ps.forEach(([pn,ph])=>{ const o = document.createElement('option'); o.value = pn; o.textContent = `${pn} · ${ph}`; g.appendChild(o); }); sel.appendChild(g); });
+let editing = null;
+/* one-tap search for a parsha's sichot on Chabad.org, and a paste that sorts itself */
+const chabadSearch = pn => 'https://www.google.com/search?q=' + encodeURIComponent(`site:chabad.org Likkutei Sichot ${pn}`);
+function syncFind(){ $('find-chabad').href = chabadSearch(sel.value); }
+sel.addEventListener('change', syncFind);
+const isHebrewPara = p => { const he = (p.match(/[א-ת]/g)||[]).length, la = (p.match(/[A-Za-z]/g)||[]).length; return he > la; };
+$('f-en').addEventListener('paste', ()=>setTimeout(()=>{
+  const all = $('f-en').value.replace(/\r\n?/g,'\n');
+  const ps = all.split(/\n\s*\n|\n(?=\S)/).map(p=>p.trim()).filter(Boolean);
+  const he = ps.filter(isHebrewPara), en = ps.filter(p=>!isHebrewPara(p));
+  if(he.length && en.length){
+    $('f-en').value = en.join('\n\n');
+    $('f-he').value = [$('f-he').value.trim(), ...he].filter(Boolean).join('\n\n');
+    $('add-msg').textContent = `Sorted: ${en.length} English and ${he.length} Hebrew/Yiddish paragraphs.`;
+  } else if(he.length && !en.length){
+    $('f-he').value = [$('f-he').value.trim(), all.trim()].filter(Boolean).join('\n\n'); $('f-en').value = '';
+    $('add-msg').textContent = 'Moved to the Hebrew/Yiddish box.';
+  }
+  if(!$('f-title').value.trim()){ const first = (en[0]||he[0]||'').split('\n')[0].trim(); if(first.length < 90) $('f-title').value = first; }
+}, 0));
+
+function addSicha(parsha){
+  editing = null; $('add-form').reset(); if(parsha) sel.value = parsha;
+  $('add-h').textContent = 'Add a sicha'; $('del-sicha').hidden = true; $('add-msg').textContent = ''; syncFind();
+  openSheet('sheet-add');
+}
+function editSicha(id){
+  const x = S.sichot.find(s=>s.id===id); if(!x) return; editing = id;
+  sel.value = x.parsha; $('f-title').value = x.title; $('f-source').value = x.source||''; $('f-en').value = x.en||''; $('f-he').value = x.he||'';
+  $('add-h').textContent = 'Edit sicha'; $('del-sicha').hidden = false; $('add-msg').textContent = '';
+  openSheet('sheet-add');
+}
+$('add-sicha').onclick = ()=>addSicha();
+$('add-form').onsubmit = e=>{
+  e.preventDefault();
+  const clean = v => v.replace(/\r\n?/g,'\n').trim();
+  const x = {parsha: sel.value, title: $('f-title').value.trim(), source: $('f-source').value.trim(), en: clean($('f-en').value), he: clean($('f-he').value)};
+  if(!x.title) return;
+  if(!x.en && !x.he){ $('add-msg').textContent = 'Paste the sicha in English, Hebrew or Yiddish, or both.'; return; }
+  const test = sichaSection({...x, id:'check', t:Date.now()});
+  const enOk = test.u.reduce((a,u)=>a+u.w,0) === wc(x.en), heOk = test.he.reduce((a,h)=>a+wc(plainTxt(h)),0) === wc(x.he);
+  if(!enOk || !heOk){ $('add-msg').textContent = 'This text could not be split without losing words, so it was not saved.'; return; }
+  if(editing){ const cur = S.sichot.find(s=>s.id===editing); Object.assign(cur, x, {t:Date.now()}); delete S.at['s-'+cur.id]; delete S.done['s-'+cur.id]; pushItem(cur); }
+  else { const it = {...x, id: Date.now().toString(36) + Math.random().toString(36).slice(2,6), t: Date.now()}; S.sichot.push(it); S.lastS = it.id; pushItem(it); }
+  S.open['s' + (PARSHA[x.parsha]||PARSHA.Other).b] = true;
+  save(); renderSichot(); closeSheets();
+  toast(`${reelsTxt(reelsOf(test).length-1)} · every word kept`);
+};
+const delBtn = $('del-sicha');
+delBtn.onclick = ()=>{
+  if(delBtn.dataset.armed){
+    const x = S.sichot.find(s=>s.id===editing);
+    if(x){ Object.assign(x, {deleted:1, en:'', he:'', t:Date.now()}); pushItem(x); }
+    S.sichot = S.sichot.filter(s=>!s.deleted || s.id===editing);
+    save(); renderSichot(); closeSheets(); toast('Deleted'); delete delBtn.dataset.armed; delBtn.textContent='Delete'; return;
+  }
+  delBtn.dataset.armed='1'; delBtn.textContent='Tap again to delete';
+  setTimeout(()=>{ delete delBtn.dataset.armed; delBtn.textContent='Delete'; },3000);
+};
+
+/* ---------- tap a Hebrew or Yiddish word ---------- */
+const HEB = /[א-ת][א-ת֑-ׇ׳״"']*/g;
+function wrapHebrewWords(p){
+  const walker = document.createTreeWalker(p, NodeFilter.SHOW_TEXT);
+  const nodes = []; while(walker.nextNode()) nodes.push(walker.currentNode);
+  nodes.forEach(n=>{
+    const t = n.nodeValue; HEB.lastIndex = 0;
+    if(!HEB.test(t)) return; HEB.lastIndex = 0;
+    const frag = document.createDocumentFragment(); let last = 0, m;
+    while((m = HEB.exec(t))){
+      const w = m[0].replace(/["'׳״]+$/,'');
+      if(m.index > last) frag.append(t.slice(last, m.index));
+      const sp = document.createElement('span'); sp.className = 'hw'; sp.textContent = w; frag.append(sp);
+      last = m.index + w.length;
+    }
+    if(last < t.length) frag.append(t.slice(last));
+    n.replaceWith(frag);
+  });
+}
+const noNikud = w => w.replace(/[֑-ׇ]/g,'');
+let sampleFn, wordCtl, wordCache = {};
+try{ wordCache = JSON.parse(localStorage.getItem('tanyaReels.words'))||{}; }catch(e){}
+window.claude?.use?.('sample').then(f=>{ sampleFn = f; }).catch(()=>{});
+async function lookupWord(el){
+  document.querySelectorAll('.hw.on').forEach(x=>x.classList.remove('on')); el.classList.add('on');
+  const word = el.textContent, si = +el.closest('p.he').dataset.s, ch = R;
+  const he = plainTxt(ch.he[si]);
+  const en = ch.u.filter(u=>u.s===si).map(u=>plainTxt(u.h.replace(/<sup>.*?<\/sup>/g,''))).join(' ');
+  $('wd-he').textContent = word; $('wd-tr').textContent = ''; $('wd-rows').innerHTML = '';
+  $('wd-mean').textContent = 'Translating…';
+  openSheet('sheet-word');
+  const key = ch.id + '|' + si + '|' + noNikud(word);
+  if(wordCache[key]) return showWord(wordCache[key]);
+  if(!sampleFn){ $('wd-mean').textContent = 'Word translation needs this page open in Claude. It isn’t available here.'; return; }
+  wordCtl?.abort(); wordCtl = new AbortController();
+  const what = ch.sicha ? `a sicha (talk) of the Lubavitcher Rebbe, "${ch.t}", in the original Hebrew or Yiddish` : `the Tanya (${partOf(ch).name}, ${ch.t}) in the original Hebrew`;
+  const prompt = `You are helping someone read ${what}.
+Translate the single tapped word as it is used in this passage.
+
+Tapped word: ${word}
+Original passage: ${he.slice(0,1800)}
+${en ? `English translation of the same passage (for context): ${en.slice(0,1800)}` : ''}
+
+Reply with only a JSON object:
+{"translit": "transliteration in English letters", "meaning": "short English meaning here (1-5 words)", "parts": "prefixes/suffixes and base word, e.g. וְ (and) + נֶפֶשׁ (soul); empty string if none", "root": "three-letter root in Hebrew letters, or empty string", "context": "one sentence on what the word means in this passage${en ? ' and which English words translate it' : ''}"}`;
+  try{
+    const r = await sampleFn.json(prompt, {modelTier:'quick', signal:wordCtl.signal, cache:{gcTime:86400000}});
+    if(!r || typeof r.meaning !== 'string') throw {code:'invalid_json'};
+    wordCache[key] = r; try{ localStorage.setItem('tanyaReels.words', JSON.stringify(wordCache)); }catch(e){}
+    if(el.classList.contains('on')) showWord(r);
+  }catch(e){
+    if(e.code === 'cancelled') return;
+    $('wd-mean').textContent = {not_granted:'Word translation was not allowed. You can allow it next time you open the page.',
+      rate_limited:'Too many lookups right now. Try again in a minute.', session_expired:'Sign in to Claude again to translate words.'}[e.code]
+      || 'Could not translate this word. Tap it again to retry.';
+    if(['not_granted','sampling_disabled','not_declared','capability_disabled','capability_removed'].includes(e.code)) sampleFn = null;
+  }
+}
+function showWord(r){
+  $('wd-tr').textContent = r.translit || '';
+  $('wd-mean').textContent = r.meaning;
+  $('wd-rows').innerHTML = '';
+  [['Parts', r.parts], ['Root', r.root], ['In this passage', r.context]].filter(x=>x[1]).forEach(([k,v])=>{
+    const d = document.createElement('p'); d.className='wd-row'; d.innerHTML = `<b>${k}</b>`; d.append(String(v)); $('wd-rows').append(d); });
+}
+
+let tt; function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('on'); clearTimeout(tt); tt=setTimeout(()=>t.classList.remove('on'),2200); }
+
+/* ---------- tabs ---------- */
+document.querySelectorAll('.tabbtn').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.tabbtn').forEach(x=>x.classList.toggle('on',x===b));
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('on', v.id==='v-'+b.dataset.tab));
+  window.scrollTo(0,0);
+});
+
+/* ---------- saving your place: this device, and your Claude account when available ---------- */
+function migrateLegacyMine(){
+  // texts pasted into the old "My texts" tab move to Sichot → Other
+  (S.legacyMine||[]).forEach(m=>{ if(m && m.text) S.sichot.push({id:'m'+Math.random().toString(36).slice(2,8), parsha:'Other', title:m.title, source:'', en:m.text, he:'', t:Date.now()}); });
+  if(S.legacyMine){ delete S.legacyMine; save(); }
+}
+let remote = null;
+const remoteReady = (async ()=>{
+  try{
+    const [db, user] = await Promise.all([window.claude?.use?.('db'), window.claude?.use?.('user')]);
+    if(!db || !user) return null;
+    const id = await user.id(); if(!id) return null;
+    remote = {progress: db.doc('data/users/'+id+'/progress'), items: db.doc('data/users/'+id+'/library').collection('sichot')};
+    $('sync-note').textContent = 'Your place and your sichot are saved on this device and to your Claude account, so they follow you to other devices.';
+    return remote;
+  }catch(e){ return null; }
+})();
+const snapshot = () => ({log:S.log, at:S.at, done:S.done, last:S.last, lastS:S.lastS, open:S.open, fs:S.fs, t:S.t});
+async function pushRemote(){ const r = remote || await remoteReady; if(!r) return; try{ await r.progress.set(snapshot()); }catch(e){} }
+async function pushItem(x){ const r = remote || await remoteReady; if(!r) return; try{ await r.items.doc(x.id).set({...x}); }catch(e){} }
+async function pullRemote(){
+  const r = await remoteReady; if(!r) return;
+  try{
+    const [snap, list] = await Promise.all([r.progress.get(), r.items.get()]);
+    let changed = false;
+    // sichot: newest copy of each wins; send up any this device has that the account doesn't
+    const theirs = new Map(list.docs.filter(d=>d.exists).map(d=>[d.id, d.data()]));
+    theirs.forEach((x,id)=>{ const mine = S.sichot.find(s=>s.id===id);
+      if(!mine){ S.sichot.push(x); changed = true; } else if((x.t||0) > (mine.t||0)){ Object.assign(mine, x); changed = true; } });
+    S.sichot.forEach(x=>{ const t = theirs.get(x.id); if(!t || (x.t||0) > (t.t||0)) pushItem(x); });
+    S.sichot = S.sichot.filter(x=>!x.deleted);
+    if(snap.exists && (snap.data().t||0) > (S.t||0)){
+      const d = snap.data(); Object.assign(S, {log:d.log||S.log||{}, at:d.at||{}, done:d.done||{}, last:d.last??null, lastS:d.lastS??null, open:d.open||{}, fs:d.fs||S.fs, t:d.t}); changed = true;
+    } else pushRemote();
+    if(changed){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} setFs(S.fs); if($('reader').hidden){ renderMap(); renderSichot(); } }
+  }catch(e){}
+}
+addEventListener('pagehide', ()=>{ clearTimeout(syncTimer); pushRemote(); });
+document.addEventListener('visibilitychange', ()=>{ if(document.hidden){ clearTimeout(syncTimer); pushRemote(); } });
+
+setFs(S.fs);
+migrateLegacyMine();
+renderSichot();
+fetch('tanya.json').then(r=>{ if(!r.ok) throw new Error(r.status); return r.json(); })
+  .then(d=>{ BOOK = d; renderMap(); renderSichot(); pullRemote(); })
+  .catch(()=>{ $('map').innerHTML = '<div class="empty">The Tanya text could not load. Open this page from its published link, or serve the folder with a local web server (browsers block loading files from disk).</div>'; $('here-kicker').textContent = 'Text unavailable'; });
+</script>
