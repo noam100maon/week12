@@ -3057,8 +3057,8 @@ function nameTag(text, color) {
   g.font = 'bold 40px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
   g.lineWidth = 8; g.strokeStyle = 'rgba(0,0,0,.7)'; g.strokeText(text, 128, 32);
   g.fillStyle = color; g.fillText(text, 128, 32);
-  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), depthTest: false, transparent: true }));
-  sp.scale.set(2, 0.5, 1); sp.renderOrder = 12;
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), depthTest: false, transparent: true, sizeAttenuation: false }));
+  sp.scale.set(0.12, 0.03, 1); sp.renderOrder = 12; // constant size on screen
   return sp;
 }
 
