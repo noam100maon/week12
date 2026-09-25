@@ -849,6 +849,7 @@ function useAbility() {
 
 // ---------------------------------------------------------------- poison / plague clouds
 function spawnCloud(pos, r, dps, t, friendly, kind = '', owner = true) {
+  if (G.clouds.length >= 14) G.clouds.shift();
   G.clouds.push({ pos: pos.clone(), r, dps, t, max: t, friendly, kind, owner });
 }
 
@@ -2548,19 +2549,18 @@ function updateStructures(dt) {
 }
 
 // ---------------------------------------------------------------- coins
-function dropCoins(pos, total, count) {
+// Coins go straight into the bank (no pickups on the floor).
+function dropCoins(pos, total) {
   total = Math.max(1, Math.round(total));
-  count = Math.min(count, total);
-  let left = total;
-  for (let i = 0; i < count; i++) {
-    const v = i === count - 1 ? left : Math.floor(total / count);
-    left -= v;
-    const m = cloneStatic('coin', { height: 0.5 });
-    m.position.set(pos.x, Math.max(1, pos.y), pos.z);
-    scene.add(m);
-    const a = Math.random() * TAU, s = 1.5 + Math.random() * 2.5;
-    G.coins.push({ mesh: m, vel: new THREE.Vector3(Math.cos(a) * s, 5 + Math.random() * 3, Math.sin(a) * s), value: v, state: 'drop', t: 0, spin: Math.random() * TAU });
-  }
+  save.coins += total;
+  G.runCoins += total;
+  NET.coinsOut += total;
+  dmgNums.spawn(new THREE.Vector3(pos.x, (pos.y || 0) + 2.2, pos.z), '+' + total, 'coin');
+  for (let i = 0; i < 6; i++) sparks.emit(pos.x, (pos.y || 0) + 1.5, pos.z, (Math.random() - 0.5) * 3, 2 + Math.random() * 2, (Math.random() - 0.5) * 3, 0.5, 0.35, COL.coin, 4);
+  if (G.time - (G.coinSnd || 0) > 0.08) { G.coinSnd = G.time; sfx.coin(); }
+  const pill = $('coinPill');
+  pill.classList.add('pop');
+  setTimeout(() => pill.classList.remove('pop'), 90);
 }
 
 function updateCoins(dt, collectAll) {
