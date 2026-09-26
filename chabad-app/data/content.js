@@ -26,6 +26,12 @@
   Every question needs a unique "id".
 */
 
+/* Module files in data/modules/ call this to replace a module's stub lessons. */
+window.CP_LESSONS = function (moduleId, lessons) {
+  const m = window.CONTENT.modules.find(x => x.id === moduleId);
+  if (m) { m.lessons = lessons; m.built = true; }
+};
+
 window.BRACHOS = ["Hamotzi", "Mezonos", "Hagafen", "Ha'etz", "Ha'adama", "Shehakol"];
 
 window.CONTENT = {

@@ -167,10 +167,15 @@
     }
     const os = optionsFor(q);
     const cls = q.t === "tf" ? "tf" : (q.t === "bracha" && !q.o ? "brachos" : "");
-    el.innerHTML = `${head}<div class="opts ${cls}">${os.map((o, i) => `<button class="opt" data-i="${i}">${esc(o)}</button>`).join("")}</div><div id="fb"></div>`;
+    // Shuffle option order (except true/false and the fixed brachos grid) so position gives nothing away.
+    const order = os.map((_, i) => i);
+    if (q.t === "mc" || q.t === "scenario" || (q.t === "bracha" && q.o)) {
+      for (let i = order.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; }
+    }
+    el.innerHTML = `${head}<div class="opts ${cls}">${order.map(i => `<button class="opt" data-i="${i}">${esc(os[i])}</button>`).join("")}</div><div id="fb"></div>`;
     $$(".opt", el).forEach(b => b.onclick = () => {
       const pick = Number(b.dataset.i), ci = correctIndex(q), ok = pick === ci;
-      $$(".opt", el).forEach((x, i) => { x.disabled = true; if (i === ci) x.classList.add("right"); else if (i === pick) x.classList.add("wrong"); });
+      $$(".opt", el).forEach(x => { const i = Number(x.dataset.i); x.disabled = true; if (i === ci) x.classList.add("right"); else if (i === pick) x.classList.add("wrong"); });
       $("#fb", el).innerHTML = `<div class="feedback ${ok ? "right" : "wrong"}"><b>${ok ? "Correct." : `Wrong. The answer is: ${esc(os[ci])}.`}</b>${esc(q.x || "")}</div>
         <div class="btn-row"><button class="btn" id="qNext">${esc(cont)}</button></div>`;
       $("#qNext", el).onclick = () => onDone(ok);
