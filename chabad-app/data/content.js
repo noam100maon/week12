@@ -770,6 +770,26 @@ window.CONTENT = {
     ]
   },
 
+  /* Starting levels from the setup interview (Sept 2026). Used on first open
+     instead of the placement quiz. level: Advanced | Review | Foundation.
+     note = what the interview showed. */
+  interviewPlacement: {
+    m0:  { level: "Review",     note: "Knew the Chabad na'anuim order; didn't know Hoshana Rabbah; Yom Tov Sheni status unresolved" },
+    m1:  { level: "Foundation", note: "Couldn't name the Rebbeim; didn't know the Mitteler Rebbe" },
+    m4:  { level: "Foundation", note: "Missed Borer (fish bones); over-strict on carrying; doesn't know the 39 melachos" },
+    m3:  { level: "Review",     note: "Missed rice (Mezonos); got banana and cereal with milk right" },
+    m5:  { level: "Review",     note: "Knew the 6-hour wait; keeps kosher; new to Israel-specific mitzvos" },
+    m9:  { level: "Review",     note: "Knew what Chitas stands for; doesn't do it yet" },
+    m2:  { level: "Foundation", note: "Didn't know the order of Shacharis" },
+    m7:  { level: "Foundation", note: "Didn't know Yud Tes Kislev" },
+    m8:  { level: "Foundation", note: "Got the beinoni definition wrong; didn't know iskafya" },
+    m6:  { level: "Foundation", note: "Only really knows Pesach" },
+    m11: { level: "Review",     note: "Knew what a mashpia is; weak on Yiddish and farbrengen culture" },
+    m10: { level: "Review",     note: "Not tested" },
+    m13: { level: "Foundation", note: "Named Chabad terms as a weak spot" },
+    m12: { level: "Review",     note: "Not tested; later priority" }
+  },
+
   /* Extra glossary entries not tied to a specific lesson */
   glossaryExtra: [
     { t: "Chabad", h: "חב״ד", m: "Acronym of Chochmah, Binah, Daas: the Chassidic movement founded by the Alter Rebbe" },

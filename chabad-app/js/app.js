@@ -372,18 +372,20 @@
     $("#obSkip").onclick = () => { OB.scores[m.id] = { score: 0, of: qs.length, skipped: true }; OB.mi++; OB.qi = 0; viewOnboarding(); };
   }
   function levelFor(score, of) { if (score >= of) return "Advanced"; if (score >= of - 1) return "Review"; return "Foundation"; }
+  /* Sets a module's level and marks intro lessons as tested out when Advanced. */
+  function applyPlacement(mid, p) {
+    S.placement[mid] = p;
+    modules[moduleNum[mid]].lessons.forEach(l => {
+      if (!lessonById[l.id].built) return;
+      const st = S.lessons[l.id] || {};
+      if (p.level === "Advanced" && l.intro && !st.done) st.skipped = true;
+      if (p.level !== "Advanced" && st.skipped && !st.done) delete st.skipped;
+      S.lessons[l.id] = st;
+    });
+  }
   function finishOnboarding() {
     Object.entries(OB.scores).forEach(([mid, s]) => {
-      const lvl = levelFor(s.score, s.of);
-      S.placement[mid] = { score: s.score, of: s.of, level: lvl, skipped: !!s.skipped, date: today() };
-      const m = modules[moduleNum[mid]];
-      m.lessons.forEach(l => {
-        if (!lessonById[l.id].built) return;
-        const st = S.lessons[l.id] || {};
-        if (lvl === "Advanced" && l.intro && !st.done) st.skipped = true;
-        if (lvl !== "Advanced" && st.skipped && !st.done) delete st.skipped;
-        S.lessons[l.id] = st;
-      });
+      applyPlacement(mid, { score: s.score, of: s.of, level: levelFor(s.score, s.of), skipped: !!s.skipped, date: today() });
     });
     S.onboarded = true; save();
     const rows = modules.map(m => {
@@ -893,7 +895,7 @@
         <p class="small" style="margin:12px 0 0"><button class="linkish" id="impFileBtn">Restore from a file instead</button></p>
         <input type="file" id="impFile" accept="application/json" class="hidden"></div>
       <div class="card"><h3>Placement</h3>
-        <p class="small muted">Retaking the quiz resets your module levels. Lessons you've finished stay finished.</p>
+        <p class="small muted">Your starting levels come from the setup interview. You can retake the quiz any time; it resets your module levels, and lessons you've finished stay finished.</p>
         <button class="btn ghost block" id="retake">Retake placement quiz</button></div>
       <div class="card"><h3>Reset</h3><button class="btn danger block" id="reset">Erase all progress</button></div>`;
     $$("[data-th]").forEach(b => b.onclick = () => { S.settings.theme = b.dataset.th; save(); applyTheme(); viewSettings(); });
@@ -922,6 +924,12 @@
   }
 
   /* ---------------- Boot ---------------- */
+  // First open: start from the levels found in the setup interview instead of
+  // re-asking the same questions. The quiz stays available in Settings.
+  if (!S.onboarded && C.interviewPlacement) {
+    Object.entries(C.interviewPlacement).forEach(([mid, p]) => { if (moduleNum[mid] !== undefined) applyPlacement(mid, Object.assign({ date: today(), fromInterview: true }, p)); });
+    S.onboarded = true; save();
+  }
   applyTheme();
   route();
   if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
