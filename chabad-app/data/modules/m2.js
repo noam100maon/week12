@@ -41,16 +41,16 @@ CP_LESSONS("m2", [
 <p><b>The mitzvah.</b> "Bind them as a sign on your arm, and as totafos between your eyes" (Devarim 6:8). The shel yad goes on the arm, facing the heart; the shel rosh on the head, above the hairline. Together they bind your mind and heart to Hashem.</p>
 <p><b>Order.</b></p>
 <ol>
-<li>Tallis first.</li>
+<li>Tzitzis on first. (A married man puts on the tallis gadol before tefillin. Chabad bochurim don't wear a tallis gadol until marriage.)</li>
 <li>Then the shel yad on the <b>weaker</b> arm (the left for a righty), on the biceps muscle, tilted toward the heart.</li>
-<li>Say the bracha, tighten, and wrap seven times around the forearm.</li>
+<li>Say the bracha, then tighten the knot, and wrap seven times around the forearm.</li>
 <li>Then put on the shel rosh without speaking in between.</li>
 <li>Then finish the wraps on the hand.</li>
 </ol>
 <p><b>Chabad specifics.</b></p>
 <ul>
-<li><b>One bracha</b>, <i>l'haniach tefillin</i>, on the shel yad, covering both. <span class="diff">Difference: Ashkenazim who follow the Rema say a second bracha, "al mitzvas tefillin", on the shel rosh.</span></li>
-<li><b>Wrapping direction:</b> Chabad wraps the strap on the forearm inward, toward the body. <span class="diff">Difference: many Ashkenazim wrap outward.</span></li>
+<li><b>One bracha</b>, <i>l'haniach tefillin</i>, on the shel yad, covering both. <span class="diff">Difference: Ashkenazim who follow the Rema say a second bracha, "al mitzvas tefillin", on the shel rosh.</span> If you did interrupt between them (for example, by talking), Chabad practice is to say "al mitzvas tefillin" on the shel rosh. Ask Zalmy.</li>
+<li><b>Wrapping:</b> customs differ on the direction of the wraps. Have Zalmy show you the Chabad way in person.</li>
 <li><b>Knot and script:</b> Chabad tefillin have a specific knot, and are written in <i>Ksav Admor HaZaken</i>, the Alter Rebbe's script.</li>
 <li><b>Covering:</b> the shel yad is covered by your sleeve.</li>
 </ul>
@@ -65,10 +65,10 @@ CP_LESSONS("m2", [
       { t: "Mivtza tefillin", h: "מבצע תפילין", m: "The tefillin campaign" }
     ],
     source: "Devarim 6:8; Menachos 35b to 36a; Shulchan Aruch, Orach Chaim 25 to 27; Shulchan Aruch HaRav, Orach Chaim 25; Siddur Admor HaZaken",
-    doToday: "Tomorrow, put on tefillin paying attention to three details: one bracha, inward wrapping, no talking between shel yad and shel rosh.",
+    doToday: "Tomorrow, put on tefillin paying attention to three details: one bracha, tighten after the bracha, no talking between shel yad and shel rosh. Ask Zalmy to check your wrapping.",
     quiz: [
       { id: "m2-2-q1", t: "mc", q: "How many brachos does Chabad say on tefillin?", o: ["One: l'haniach tefillin", "Two", "None", "Three"], a: 0, x: "Per the Alter Rebbe's siddur." },
-      { id: "m2-2-q2", t: "mc", q: "Chabad wraps the strap on the forearm:", o: ["Inward, toward the body", "Outward", "Either way", "Only three times"], a: 0, x: "Many Ashkenazim wrap outward." },
+      { id: "m2-2-q2", t: "mc", q: "You talked between the shel yad and the shel rosh. Chabad practice on the shel rosh:", o: ["Say \"al mitzvas tefillin\"", "Take off the shel yad and start over", "No bracha at all", "Say l'haniach again"], a: 0, x: "Normally no bracha on the shel rosh; after an interruption, al mitzvas tefillin. Confirm with Zalmy." },
       { id: "m2-2-q3", t: "mc", q: "The shel yad goes on:", o: ["The weaker arm, on the biceps, toward the heart", "The stronger arm", "The wrist", "Either arm"], a: 0, x: "For a righty, the left arm." },
       { id: "m2-2-q4", t: "tf", q: "You may talk between putting on the shel yad and the shel rosh if it's quick.", a: false, x: "False. No interruption between them." },
       { id: "m2-2-q5", t: "mc", q: "When did the Rebbe launch mivtza tefillin?", o: ["1967, before the Six Day War", "1951", "1994", "1940"], a: 0, x: "Citing Menachos 35b." },
@@ -131,7 +131,7 @@ CP_LESSONS("m2", [
 <li>The series of morning thanks, including the three identity brachos: "shelo asani goy", "shelo asani aved", "shelo asani isha".</li>
 </ul>
 <p><b>Chabad.</b> In the Alter Rebbe's siddur they follow a specific order. Bochurim at Mayanot typically say them in shul, or before coming, and answer amen to each other. Answering amen to someone else's Birchos HaShachar is a practice many encourage.</p>
-<p><b>Tallis katan.</b> The bracha on tzitzis is said when you put on the tallis katan. Chabad custom is to say it when putting on the tallis gadol and have the tallis katan in mind, for those who wear one. Ask Zalmy for the details.</p>`,
+<p><b>Tallis katan.</b> Chabad bochurim don't wear a tallis gadol until marriage, so you say the bracha on your tallis katan (tzitzis) in the morning. A married man says it on the tallis gadol and has the tallis katan in mind. Ask Zalmy for the exact wording and timing.</p>`,
     terms: [
       { t: "Birchos HaShachar", h: "ברכות השחר", m: "The morning brachos" },
       { t: "Birchos HaTorah", h: "ברכות התורה", m: "The brachos on Torah learning" },
@@ -318,7 +318,7 @@ CP_LESSONS("m2", [
     id: "m2-9", title: "Tachanun to Aleinu", minutes: 5, intro: false,
     teach: `
 <p><b>Tachanun.</b> After the Amidah on most weekdays comes <i>nefilas apayim</i>: resting your head on your arm while saying a psalm of Dovid: Tehillim 25 in Nusach Ari (Nusach Ashkenaz uses Tehillim 6). You sit, and rest your head on the arm without tefillin (on your right arm while wearing tefillin on the left). On Monday and Thursday there's a longer Tachanun (V'hu Rachum) and a Torah reading.</p>
-<p><b>No Tachanun</b> on: Rosh Chodesh, all of Nissan, Chanukah, Purim, Tu B'Shvat, Lag BaOmer, from Rosh Chodesh Sivan until after Shavuos, Tishah B'Av, Tu B'Av, from Erev Yom Kippur through the end of Tishrei, when a chosson is present, and <b>on Chabad days of redemption</b> such as Yud Tes Kislev and Yud Beis to Yud Gimmel Tammuz. Check a Chabad luach.</p>
+<p><b>No Tachanun</b> on: Rosh Chodesh, all of Nissan, Chanukah, Purim and Purim Katan, Tu B'Shvat, Pesach Sheni, Lag BaOmer, from Rosh Chodesh Sivan through 12 Sivan, Tishah B'Av, Tu B'Av, from Erev Yom Kippur through the end of Tishrei, when a chosson is present, and <b>on Chabad days of redemption</b> such as Yud Tes Kislev and Yud Beis to Yud Gimmel Tammuz. Check a Chabad luach.</p>
 <p><b>After Tachanun.</b></p>
 <ul>
 <li><b>Ashrei</b> again.</li>
@@ -356,7 +356,7 @@ CP_LESSONS("m2", [
 <p><b>Mincha.</b> The afternoon prayer, corresponding to the afternoon Tamid. The Gemara (Berachos 6b) says a person should be especially careful with Mincha, since Eliyahu was answered at Mincha. It interrupts the busy day, which is exactly the point.</p>
 <ul>
 <li><b>Time:</b> from half an hour after midday (<i>mincha gedolah</i>) until sunset. Chabad calendars follow the Alter Rebbe's times.</li>
-<li><b>Structure:</b> Chabad begins with the passage of the Korban Tamid, then Ashrei, half Kaddish, the Amidah (repeated with a minyan), Tachanun on most days, and Aleinu.</li>
+<li><b>Structure:</b> Ashrei, half Kaddish, the Amidah (repeated with a minyan), Tachanun on most days, and Aleinu.</li>
 </ul>
 <p><b>Your business.</b> Mincha in Israel falls in the Bay Area's early morning, when messages start coming in. Guard it: phone face down, and daven first.</p>
 <p><b>Maariv.</b> The evening prayer, corresponding to the burning of the parts of the korbanos at night. Its structure:</p>

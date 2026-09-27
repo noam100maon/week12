@@ -600,7 +600,7 @@ CP_LESSONS("m4", [
 <li>Close out Friday bookings on Thursday night, Israel time.</li>
 <li>Tell customers clearly (in auto-replies, on the website) when you're unavailable, without needing to explain.</li>
 </ul>
-<p><b>Yom Tov.</b> The same applies to Yom Tov, including Yom Tov Sheni if you keep two days. Map out the whole year's Yamim Tovim with Ari in advance.</p>
+<p><b>Yom Tov.</b> The same applies to every Yom Tov. This year you keep the Israeli days (one day each, lesson m0-1). Once you're home, it's two days in chutz la'aretz. Map out the whole year's Yamim Tovim with Ari in advance.</p>
 <p class="flag">How your business may operate during your Shabbos is covered in the next two lessons. Confirm with a rav.</p>`,
     terms: [
       { t: "Zman", h: "זמן", m: "A halachic time (candle lighting, nightfall, etc.)" },
@@ -618,7 +618,7 @@ CP_LESSONS("m4", [
       { id: "m4-15-q5", t: "mc", q: "Best practice for Friday bookings:", o: ["Close them out Thursday night Israel time", "Handle them on Shabbos quickly", "Let Ari figure it out on Shabbos", "Ignore them"], a: 0, x: "Prepare before, so Shabbos is clean." }
     ],
     deeper: [
-      { id: "m4-15-d1", t: "recall", q: "If you keep two days of Yom Tov, what extra planning does the business need?", model: "Map every Yom Tov and Yom Tov Sheni in the year into Pacific time, and set blackout windows and handovers for each, including two-day and three-day stretches (Yom Tov next to Shabbos).", x: "Do this with Ari at the start of each season." }
+      { id: "m4-15-d1", t: "recall", q: "When you move back to the US and keep two days of Yom Tov, what extra planning does the business need?", model: "Map every Yom Tov, including Yom Tov Sheni, into the calendar, and set blackout windows and handovers for each, including two-day and three-day stretches (Yom Tov next to Shabbos).", x: "Do this with Ari at the start of each season." }
     ],
     reflect: "How do you feel about telling customers you're unavailable Friday to Saturday? What's the actual cost, and what's the gain?",
     sayIt: { phrase: "I'm offline from Friday morning to Saturday morning, Pacific.", h: "", meaning: "Your practical Shabbos window, in business terms.", when: "To customers and Ari. No need to explain further." }

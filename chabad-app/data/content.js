@@ -50,53 +50,62 @@ window.CONTENT = {
           minutes: 5,
           intro: false,
           teach: `
-<p><b>Why two days exist.</b> In the time of the Sanhedrin, the new month was declared by testimony about the new moon. Messengers then carried the date out. Communities too far to hear in time kept two days of Yom Tov out of doubt. After the calendar was fixed (attributed to Hillel II, 4th century CE), the Sages still told the communities of chutz la'aretz: <i>"Be careful with the custom of your fathers in your hands"</i> (Beitzah 4b). So chutz la'aretz keeps two days. Eretz Yisrael keeps one (except Rosh Hashanah, which is two everywhere).</p>
-<p><b>So what about you?</b> The rule follows where you are <i>from</i>, not where you are standing. The Shulchan Aruch (Orach Chaim 496:3) rules that a visitor from chutz la'aretz who intends to return keeps two days even in Israel. Someone who has settled in Israel keeps one. The Alter Rebbe rules the same way in Shulchan Aruch HaRav (Orach Chaim 496). Some poskim follow the Chacham Tzvi, who held a visitor keeps one day, but that is not the Chabad approach.</p>
-<p><b>A yeshiva bochur for one year.</b> The deciding factor is your intention. A bochur who plans to go home after the year keeps two days according to most poskim, and this is the position generally cited in the name of the Rebbe. If you are genuinely undecided, considering aliyah, or your situation is unusual, poskim differ. In the interview you said you are keeping one day. That may be wrong for you. This is exactly a question for Zalmy or a rav at Mayanot.</p>
-<p><b>What two days looks like in Israel.</b> On your second day you daven the Yom Tov davening (Mayanot and most yeshivos with chutznikim have a minyan for this), make Kiddush and eat Yom Tov meals, and do no melacha: no phone, no business, no messages. You still take the lulav on 16 Tishrei, because that obligation continues every day of Sukkos except Shabbos.</p>
-<p><b>This year's dates.</b> 15 Tishrei (Sat 26 Sept) was Shabbos and the first day. For a two-day person, 16 Tishrei (Sun 27 Sept) is Yom Tov. Shemini Atzeres and Simchas Torah in Israel fall together on 22 Tishrei (Sat 3 Oct). A two-day person also keeps 23 Tishrei (Sun 4 Oct) as Simchas Torah.</p>
-<p class="flag">Your status is a personal psak. Confirm with a rav.</p>`,
+<p><b>Why two days exist.</b> In the time of the Sanhedrin, the new month was declared by testimony about the new moon, and messengers carried the date out. Communities too far to hear in time kept two days of Yom Tov out of doubt. After the calendar was fixed (attributed to Hillel II, 4th century CE), the Sages still told chutz la'aretz: <i>"Be careful with the custom of your fathers"</i> (Beitzah 4b). So chutz la'aretz keeps two days and Eretz Yisrael keeps one (except Rosh Hashanah, which is two everywhere).</p>
+<p><b>The Chabad ruling for visitors.</b> The Alter Rebbe, in Shulchan Aruch HaRav (Orach Chaim 496), follows the view of the Chacham Tzvi: someone from chutz la'aretz who is in Eretz Yisrael for Yom Tov keeps <b>one day</b>, like the local residents. It doesn't matter how long you're staying or whether you plan to go home. Chabad chassidim follow this. So <b>you keep one day this year</b>, the same as Israelis.</p>
+<p><span class="diff">Difference: most other poskim, following the Shulchan Aruch (Orach Chaim 496:3) and Rav Yaakov Emden, rule that a visitor who intends to return home keeps two days in Israel. That's why many American yeshiva students here run a second-day minyan. Don't be thrown by it: it's their shittah, not yours.</span></p>
+<p><b>The reverse case.</b> The same Chabad logic runs the other way: an Israeli visiting chutz la'aretz keeps two days there. The place decides.</p>
+<p><b>What it means for your year.</b></p>
+<ul>
+<li><b>Sukkos:</b> 16 Tishrei was already Chol HaMoed for you.</li>
+<li><b>Shemini Atzeres and Simchas Torah:</b> one day, 22 Tishrei (Shabbos, 3 Oct this year).</li>
+<li><b>Pesach:</b> seven days, one seder.</li>
+<li><b>Shavuos:</b> one day.</li>
+<li><b>Business:</b> no second-day blackout. Plan only around the Israeli Yamim Tovim.</li>
+</ul>
+<p><b>When you go home,</b> you're back to two days in chutz la'aretz.</p>
+<p class="flag">Details can still come up, like which day to start v'sein tal umatar, or a Yom Tov you spend partly in Israel and partly abroad. Confirm with Zalmy or a rav at Mayanot.</p>`,
           terms: [
             { t: "Yom Tov Sheni shel Galuyos", h: "יום טוב שני של גליות", m: "The second festival day kept in the Diaspora" },
             { t: "Chutz la'aretz", h: "חוץ לארץ", m: "Outside the Land of Israel" },
             { t: "Ben chutz la'aretz", h: "בן חוץ לארץ", m: "A person whose home is outside Israel" },
+            { t: "Chacham Tzvi", h: "חכם צבי", m: "Rabbi Tzvi Ashkenazi (1656 to 1718), who held that visitors to Israel keep one day" },
             { t: "Hizharu b'minhag avoseichem", h: "הזהרו במנהג אבותיכם", m: "\"Be careful with the custom of your fathers\" (Beitzah 4b)" },
-            { t: "Isru Chag", h: "אסרו חג", m: "The day after a festival" },
-            { t: "Psak", h: "פסק", m: "A halachic ruling given by a rav for a specific case" }
+            { t: "Shittah", h: "שיטה", m: "A halachic position or approach" }
           ],
-          source: "Beitzah 4b; Shulchan Aruch, Orach Chaim 496:3; Shulchan Aruch HaRav, Orach Chaim 496",
-          doToday: "Ask Zalmy or a rav at Mayanot: \"I'm here for this year and I plan to go back to the US. Do I keep one day or two?\" Do it before 22 Tishrei. Log the answer in your Questions notebook.",
+          source: "Beitzah 4b; Shulchan Aruch HaRav, Orach Chaim 496 (following the Chacham Tzvi); compare Shulchan Aruch, Orach Chaim 496:3",
+          doToday: "Tell Zalmy you learned the Alter Rebbe's ruling that a visitor keeps one day, and ask whether there's anything else about Yom Tov in Israel you should know for this year. Log the answer in your notebook.",
           quiz: [
             { id: "m0-1-q1", t: "mc", q: "Why did communities outside Israel originally keep two days of Yom Tov?",
               o: ["Doubt about the date, since messengers could not reach them in time", "To give the exile a longer celebration", "A Kabbalistic tikkun for the exile", "Because they used the Babylonian calendar"],
               a: 0, x: "The date depended on the Sanhedrin declaring the new month from witnesses. Distant communities could not know in time, so they kept two days out of doubt." },
             { id: "m0-1-q2", t: "tf", q: "Once the calendar was fixed and there was no more doubt, chutz la'aretz stopped keeping two days.",
-              a: false, x: "False. The Gemara (Beitzah 4b) says the Sages instructed: keep the custom of your fathers. Two days remained binding in chutz la'aretz." },
-            { id: "m0-1-q3", t: "mc", q: "According to Shulchan Aruch 496:3, a visitor from chutz la'aretz in Israel who intends to go home keeps:",
-              o: ["One day, like the locals", "Two days", "One day, but no melacha in public on the second", "Whatever his host does"],
-              a: 1, x: "Two days. The rule follows your home. The Alter Rebbe rules the same way." },
-            { id: "m0-1-q4", t: "scenario", q: "Suppose you keep two days. On 16 Tishrei an Israeli friend invites you on a Chol HaMoed trip by bus. What do you do?",
-              o: ["Go. It's Chol HaMoed in Israel", "Don't go. For you it is Yom Tov", "Go, as long as someone else pays the fare"],
-              a: 1, x: "If you keep two days, 16 Tishrei is Yom Tov for you. Riding a bus, paying, using a phone, and travel beyond the techum are all problems. Go on 17 Tishrei instead." },
-            { id: "m0-1-q5", t: "recall", q: "Name three things a two-day person in Israel does differently on the second day.",
-              model: "1) Davens the Yom Tov davening (not Chol HaMoed). 2) Makes Kiddush and eats Yom Tov meals. 3) Does no melacha: no phone, no business, no travel.",
-              x: "Also note what does NOT change: the lulav is still taken on 16 Tishrei." },
-            { id: "m0-1-q6", t: "mc", q: "This year (5787), a two-day person in Israel keeps Simchas Torah on:",
-              o: ["22 Tishrei (Sat 3 Oct)", "23 Tishrei (Sun 4 Oct)", "21 Tishrei (Fri 2 Oct)"],
-              a: 1, x: "Israel keeps Shemini Atzeres and Simchas Torah together on 22 Tishrei. A two-day person keeps 22 as Shemini Atzeres and 23 as Simchas Torah." },
-            { id: "m0-1-q7", t: "tf", q: "If you keep two days, you skip the lulav on 16 Tishrei because it is Yom Tov for you.",
-              a: false, x: "False. The lulav is taken every day of Sukkos except Shabbos. Yom Tov does not cancel it; the first day of Sukkos is Yom Tov and it is the main day of the mitzvah." }
+              a: false, x: "False. The Gemara (Beitzah 4b) says the Sages instructed: keep the custom of your fathers." },
+            { id: "m0-1-q3", t: "mc", q: "According to the Alter Rebbe (Shulchan Aruch HaRav 496), a visitor from chutz la'aretz in Israel for Yom Tov keeps:",
+              o: ["One day, like the locals", "Two days if he plans to go home", "Two days always", "Whatever his host does"],
+              a: 0, x: "One day, following the Chacham Tzvi, regardless of how long he stays or whether he plans to return. Chabad follows this." },
+            { id: "m0-1-q4", t: "mc", q: "Most non-Chabad poskim, following the Shulchan Aruch (496:3), say a visitor who intends to return home keeps:",
+              o: ["Two days, even in Israel", "One day", "One and a half days", "No Yom Tov at all"],
+              a: 0, x: "That's the majority view, and why you'll see second-day minyanim for American students. Chabad follows the Alter Rebbe instead." },
+            { id: "m0-1-q5", t: "scenario", q: "16 Tishrei this year. An Israeli friend invites you on a Chol HaMoed trip. As a Chabad bochur visiting for the year:",
+              o: ["Go: it's Chol HaMoed for you too", "Don't go: it's your second day of Yom Tov", "Go only if you don't use money"],
+              a: 0, x: "Following the Alter Rebbe, you keep one day in Israel, so 16 Tishrei is Chol HaMoed for you. (Keep the normal Chol HaMoed rules.)" },
+            { id: "m0-1-q6", t: "mc", q: "An Israeli spending Pesach in New York, according to the Chabad approach, keeps:",
+              o: ["Two days, like the locals", "One day", "Whatever his parents do"],
+              a: 0, x: "The place decides, in both directions." },
+            { id: "m0-1-q7", t: "recall", q: "Name three practical effects of keeping one day this year.",
+              model: "Any three: 16 Tishrei was Chol HaMoed; Shemini Atzeres and Simchas Torah are one day (22 Tishrei); Pesach is seven days with one seder; Shavuos is one day; no second-day business blackout.",
+              x: "And when you go home, you're back to two days." }
           ],
           deeper: [
-            { id: "m0-1-d1", t: "mc", q: "The Chacham Tzvi held that a visitor to Israel keeps one day. What does Chabad follow?",
-              o: ["The Chacham Tzvi", "The Shulchan Aruch and the Alter Rebbe: two days for one who intends to return", "One day for bochurim, two for adults"],
-              a: 1, x: "Chabad follows the Shulchan Aruch and Shulchan Aruch HaRav. Personal circumstances (intention, age, dependence on parents) still matter, which is why you ask a rav." },
-            { id: "m0-1-d2", t: "recall", q: "Why does your intention to return matter halachically, rather than just your physical location?",
-              model: "Yom Tov Sheni is a communal custom of chutz la'aretz. You carry the obligation of your home community with you as long as you remain part of it, which depends on whether you intend to return.",
-              x: "This is why the same bochur could keep one day if he decided to settle in Israel." }
+            { id: "m0-1-d1", t: "mc", q: "Whose view does the Alter Rebbe follow on visitors to Israel?",
+              o: ["The Chacham Tzvi", "Rav Yaakov Emden", "The Shulchan Aruch (496:3)"],
+              a: 0, x: "The Chacham Tzvi. Notably, the Chacham Tzvi's own son, Rav Yaakov Emden, disagreed with him." },
+            { id: "m0-1-d2", t: "recall", q: "What's the underlying logic of the Chabad ruling, and why does it cut both ways?",
+              model: "Yom Tov Sheni is tied to the place, not the person: in Eretz Yisrael everyone keeps the Israeli day, and in chutz la'aretz everyone keeps two. So a visitor to Israel keeps one, and an Israeli abroad keeps two.",
+              x: "Most poskim instead tie it to the person's home community." }
           ],
-          reflect: "What are your real plans for next year? Have you told Zalmy? If you keep two days, how will you set up the business (auto-replies, Ari's expectations) for the second days?",
-          sayIt: { phrase: "I'm a ben chutz la'aretz, so I'm keeping two days.", h: "בן חוץ לארץ", meaning: "Someone whose home is outside Israel.", when: "When Israelis ask why you're still in Yom Tov mode on their Chol HaMoed. Say it only once you've confirmed your psak." }
+          reflect: "You kept one day this Sukkos by instinct, and it turns out that's the Chabad ruling. Where else do you have a halachic instinct you should check against a source, rather than assume?",
+          sayIt: { phrase: "I hold like the Alter Rebbe: one day in Eretz Yisrael.", h: "שולחן ערוך הרב", meaning: "You follow Shulchan Aruch HaRav 496: a visitor keeps one day.", when: "When friends in a second-day minyan ask why you're not keeping two." }
         },
 
         /* ---------------------------------------------------------- */
@@ -373,7 +382,7 @@ window.CONTENT = {
 <p><b>What it is.</b> The seventh day of Sukkos, 21 Tishrei. This year it is Friday 2 October, and Shemini Atzeres (Shabbos) begins that evening. It's still Chol HaMoed, but in tone it is a serious day. The Zohar describes it as the day when the judgment of Yom Kippur is finalized and "sent out". So the greeting is <i>piska tava</i> (Aramaic) or <i>a gut kvitel</i> (Yiddish): "a good note".</p>
 <p><b>Hakafos with the lulav.</b> Every day of Sukkos we circle the bimah once with the lulav while saying Hoshanos. On Hoshana Rabbah we circle seven times.</p>
 <p><b>The aravos.</b> After Hoshanos, each person takes a bundle of five aravos and beats it on the ground. The Gemara (Sukkah 44a) calls this a <i>minhag nevi'im</i>, a practice from the prophets. It is separate from the aravos in your lulav set, so buy a bundle in advance.</p>
-<p><b>The night before.</b> The custom is to stay up learning. The Chabad custom is to say the entire Tehillim during the night, and afterward to eat an apple dipped in honey (Sefer HaMinhagim). It's the last "sweet year" moment of Tishrei.</p>
+<p><b>The night before.</b> The custom is to stay up learning. Sefer Devarim is read before midnight. After midnight, Chabad says the entire Tehillim together in shul, and afterward the gabbai hands out apples dipped in honey (Sefer HaMinhagim). It's the last "sweet year" moment of Tishrei.</p>
 <p><b>This year's timing.</b> Hoshana Rabbah is Friday, so the day runs straight into Shabbos and Shemini Atzeres. Get your Shabbos preparations done early. In Israel, that Shabbos is also Simchas Torah.</p>
 <p><b>The Chassidus.</b> The aravah is the simplest of the four minim: no taste, no smell. Yet on Hoshana Rabbah it gets a mitzvah of its own. The simple Jew, and the simple act, are the climax of the season.</p>`,
           terms: [
@@ -431,8 +440,8 @@ window.CONTENT = {
 <p><b>Israel vs. chutz la'aretz.</b></p>
 <ul>
 <li><b>In Israel:</b> Shemini Atzeres and Simchas Torah are one day (this year Shabbos, 3 Oct), with hakafos at night and in the day. Hakafos shniyos on the night after are a widespread Israeli custom.</li>
-<li><b>In chutz la'aretz:</b> Shemini Atzeres is 22 Tishrei and Simchas Torah is 23 Tishrei. The Chabad custom there is to eat in the sukkah on Shemini Atzeres, without the bracha of leishev basukkah, and not on Simchas Torah. Chabad in chutz la'aretz also holds hakafos on the night of Shemini Atzeres, following the Arizal.</li>
-<li><b>If you keep two days in Israel:</b> how you handle the sukkah and the davening on 22 Tishrei needs a rav. Ask Zalmy how Mayanot runs it.</li>
+<li><b>In chutz la'aretz:</b> Shemini Atzeres is 22 Tishrei and Simchas Torah is 23 Tishrei. The Chabad custom there is to eat and drink everything in the sukkah on Shemini Atzeres, even water and even in the rain, without the bracha of leishev basukkah, and not on Simchas Torah. Chabad in chutz la'aretz also holds hakafos on the night of Shemini Atzeres, following the Arizal.</li>
+<li><b>You, this year:</b> following the Alter Rebbe, you keep the Israeli day (lesson m0-1): one day, 22 Tishrei, Shemini Atzeres and Simchas Torah together.</li>
 </ul>`,
           terms: [
             { t: "Shemini Atzeres", h: "שמיני עצרת", m: "\"The eighth day of assembly\"" },
@@ -774,7 +783,7 @@ window.CONTENT = {
      instead of the placement quiz. level: Advanced | Review | Foundation.
      note = what the interview showed. */
   interviewPlacement: {
-    m0:  { level: "Review",     note: "Knew the Chabad na'anuim order; didn't know Hoshana Rabbah; Yom Tov Sheni status unresolved" },
+    m0:  { level: "Review",     note: "Knew the Chabad na'anuim order; didn't know Hoshana Rabbah; kept one day by instinct, which matches the Chabad ruling" },
     m1:  { level: "Foundation", note: "Couldn't name the Rebbeim; didn't know the Mitteler Rebbe" },
     m4:  { level: "Foundation", note: "Missed Borer (fish bones); over-strict on carrying; doesn't know the 39 melachos" },
     m3:  { level: "Review",     note: "Missed rice (Mezonos); got banana and cereal with milk right" },

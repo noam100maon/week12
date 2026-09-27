@@ -253,7 +253,7 @@ CP_LESSONS("m11", [
 <p><b>Famous Chabad niggunim.</b></p>
 <ul>
 <li><b>The Alter Rebbe's Niggun of Four Stanzas (Dalet Bavos).</b> Sung at weddings under the chuppah, and on special occasions. It's considered especially holy, and chassidim treat it with great respect.</li>
-<li><b>Napoleon's March:</b> sung after Neilah on Yom Kippur.</li>
+<li><b>Napoleon's March:</b> sung at the end of Neilah on Yom Kippur, right before the shofar.</li>
 <li><b>Niggunim of each Rebbe,</b> sung on their special days.</li>
 <li><b>Niggunim the Rebbe taught</b> at farbrengens, many sung to verses (e.g., "Tzama Lecha Nafshi", "Hoshia Es Amecha").</li>
 </ul>
@@ -270,7 +270,7 @@ CP_LESSONS("m11", [
     quiz: [
       { id: "m11-7-q1", t: "recall", q: "Complete: \"Words are the pen of the heart...\"", model: "\"...melody is the pen of the soul.\"", x: "Attributed to the Alter Rebbe." },
       { id: "m11-7-q2", t: "mc", q: "The Alter Rebbe's Niggun of Four Stanzas is sung:", o: ["Under the chuppah and on special occasions", "Every day", "Only on Purim", "Never"], a: 0, x: "Treated with great respect." },
-      { id: "m11-7-q3", t: "mc", q: "Which niggun is sung after Neilah?", o: ["Napoleon's March", "Dalet Bavos", "Tzama Lecha", "Hoshia"], a: 0, x: "A joyous close." },
+      { id: "m11-7-q3", t: "mc", q: "Which niggun is sung at the end of Neilah, before the shofar?", o: ["Napoleon's March", "Dalet Bavos", "Tzama Lecha", "Hoshia"], a: 0, x: "A song of victory." },
       { id: "m11-7-q4", t: "mc", q: "Niggunei hisbonenus are:", o: ["Slow and contemplative", "Fast dance songs", "Sad only", "Silent"], a: 0, x: "To prepare the soul." },
       { id: "m11-7-q5", t: "tf", q: "Many Chassidic niggunim have no words.", a: true, x: "True: music beyond words." }
     ],

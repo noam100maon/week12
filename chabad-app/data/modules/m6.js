@@ -45,7 +45,7 @@ CP_LESSONS("m6", [
 </ul>
 <p>If you forget ya'aleh v'yavo at Shacharis or Mincha, you go back. At Maariv, you don't, since the month isn't sanctified at night (Shulchan Aruch 422:1).</p>
 <p><b>Shabbos Mevarchim.</b> On the Shabbos before, the coming Rosh Chodesh is announced and blessed. Chabad says the whole Tehillim that morning (lesson m4-14).</p>
-<p><b>Kiddush Levana.</b> The blessing on the renewing moon, said outside at night when the moon is visible, in the first half of the month after it has grown for some days. The Chabad custom is to say it on Motzei Shabbos when possible, in nice clothing, joyfully. Ask Zalmy for the exact window Chabad uses.</p>
+<p><b>Kiddush Levana.</b> The blessing on the renewing moon, said outside at night when the moon is visible, in the first half of the month. Chabad waits until seven full days have passed since the molad (following the Kabbalah, as the Alter Rebbe writes in his siddur), and prefers Motzei Shabbos, in nice clothing, joyfully. Ask Zalmy what to do in a cloudy month.</p>
 <p><b>The idea.</b> The Jewish people are compared to the moon. It wanes and seems to disappear, then renews. Rosh Chodesh is a monthly reminder that renewal is always possible.</p>`,
     terms: [
       { t: "Rosh Chodesh", h: "ראש חודש", m: "The beginning of the month" },
@@ -242,12 +242,12 @@ CP_LESSONS("m6", [
 </ul>
 <p><b>Chabad customs.</b></p>
 <ul>
-<li><b>No gebrokts.</b> Chabad doesn't eat matzah that has come into contact with water (no matzah balls, no matzah brei). Matzah is kept covered at the table, away from liquids, as a stringency against any trace of chametz. <span class="diff">Difference: many Ashkenazim and Sephardim do eat gebrokts.</span></li>
+<li><b>No gebrokts.</b> Chabad doesn't eat matzah that has come into contact with water (no matzah balls, no matzah brei), except on the last day of Pesach, when Chabad makes a point of eating gebrokts. Matzah is kept covered at the table, away from liquids, as a stringency against any trace of chametz. <span class="diff">Difference: many Ashkenazim and Sephardim do eat gebrokts.</span></li>
 <li><b>Hand-baked shmurah matzah</b> for the seder, and many use it all Pesach.</li>
 <li><b>The seder</b> follows the Alter Rebbe's Haggadah, and the ke'arah (seder plate) is arranged according to the Arizal.</li>
 </ul>
-<p><b>Moshiach's Seudah.</b> On the last day of Pesach, in the afternoon, a festive meal with matzah and four cups of wine. It was the Baal Shem Tov's custom; the Rebbe Rashab added the four cups in 1906. The Haftarah that day is about Moshiach (Yeshayahu 11).</p>
-<p><b>In Israel.</b> Pesach is seven days, with one day of Yom Tov at each end. If you keep two days (Module 0), you'll have an extra day at each end, and a second seder. Ask Zalmy.</p>
+<p><b>Moshiach's Seudah.</b> On the last day of Pesach, in the afternoon, a festive meal with matzah and four cups of wine. It was the Baal Shem Tov's custom; the Rebbe Rashab added the four cups in 1906. In chutz la'aretz, that day's Haftarah is about Moshiach (Yeshayahu 11). In Israel, Pesach ends on the seventh day, so Moshiach's Seudah (and the gebrokts) is on the seventh day. That's when you'll have it this year.</p>
+<p><b>In Israel.</b> Pesach is seven days, with one day of Yom Tov at each end and one seder. Following the Alter Rebbe, a visitor keeps the Israeli days (lesson m0-1), so this applies to you this year. Back home, it's eight days and two sedarim.</p>
 <p><b>Pesach Sheni</b> (14 Iyar): a second chance. The Rebbe emphasized its lesson: it's never too late.</p>`,
     terms: [
       { t: "Gebrokts", h: "געבראקטס", m: "Yiddish: matzah that has touched water" },
@@ -285,7 +285,7 @@ CP_LESSONS("m6", [
 <p><b>Mourning.</b> Rabbi Akiva's 24,000 students died in this period for not showing respect to each other (Yevamos 62b). Customs of mourning include no weddings and no haircuts.</p>
 <ul>
 <li><b>Chabad:</b> no haircuts through the whole Sefirah until Erev Shavuos, including Lag BaOmer, following the Arizal.</li>
-<li><b>Weddings:</b> Chabad holds weddings from Lag BaOmer on.</li>
+<li><b>Weddings:</b> not during Sefirah. In later years the Rebbe allowed weddings on Lag BaOmer itself. Ask a rav about specific dates.</li>
 </ul>
 <p><b>Lag BaOmer</b> (18 Iyar): the hilula of Rabbi Shimon bar Yochai, author of the Zohar, and the day the plague on Rabbi Akiva's students stopped. It's celebrated with bonfires, a pilgrimage to Meron, and Chabad's <b>Lag BaOmer parades</b> for children, which the Rebbe promoted as a show of Jewish pride and unity.</p>`,
     terms: [
@@ -392,9 +392,9 @@ CP_LESSONS("m6", [
 <p><b>The king in the field.</b> The Alter Rebbe's famous parable (Likkutei Torah, Re'eh): during the year, the king sits in his palace, and approaching him takes appointments and ceremony. In Elul the king comes out to the field. Anyone can approach him, and he receives everyone with a smile. Elul is when Hashem is most accessible.</p>
 <p><b>Customs.</b></p>
 <ul>
-<li><b>Shofar</b> is blown each weekday after Shacharis, from Rosh Chodesh Elul.</li>
-<li><b>Tehillim 27</b> ("L'Dovid Hashem ori") is added twice daily.</li>
-<li><b>Chabad (the Baal Shem Tov's custom):</b> saying three extra chapters of Tehillim every day from Rosh Chodesh Elul until Yom Kippur. On Yom Kippur, the remaining 36 chapters complete the book.</li>
+<li><b>Shofar</b> is blown each weekday after Shacharis, from the second day of Rosh Chodesh Elul until Erev Rosh Hashanah (not on Erev Rosh Hashanah itself).</li>
+<li><b>Tehillim 27</b> ("L'Dovid Hashem ori") is added twice daily, from the second day of Rosh Chodesh Elul through Sukkos. Ask Zalmy the exact last day in Chabad.</li>
+<li><b>Chabad (the Baal Shem Tov's custom):</b> saying three extra chapters of Tehillim every day from Rosh Chodesh Elul until Yom Kippur. It starts on the second day of Rosh Chodesh Elul. On Yom Kippur, the remaining 36 chapters complete the book: 9 before Kol Nidrei, 9 before sleeping, 9 after Musaf, and 9 after Neilah.</li>
 <li><b>Checking tefillin and mezuzos.</b></li>
 <li><b>Letters and greetings:</b> "Kesiva v'chasima tova".</li>
 </ul>
@@ -441,7 +441,7 @@ CP_LESSONS("m6", [
 <li><b>Asking forgiveness</b> from people you've wronged. Yom Kippur doesn't atone for sins between people until you've appeased them (Yoma 85b).</li>
 </ul>
 <p><b>Yom Kippur.</b> Five afflictions: no eating or drinking, washing, anointing, leather shoes, or marital relations. Five prayers, ending with Neilah. It's a day of atonement from Hashem Himself. The essence of the day atones (Yoma 85b), with teshuvah.</p>
-<p><b>Chabad after Neilah.</b> The shofar, "L'shanah haba'ah b'Yerushalayim", and then chassidim sing the joyous <b>"Napoleon's March"</b>, a niggun associated with the Alter Rebbe, as a triumphant close.</p>`,
+<p><b>Chabad at the end of Neilah.</b> Right before the shofar, chassidim break into the joyous <b>"Napoleon's March"</b>, which the Alter Rebbe designated a song of victory. Then the shofar and "L'shanah haba'ah b'Yerushalayim".</p>`,
     terms: [
       { t: "Tekias shofar", h: "תקיעת שופר", m: "The shofar blowing" },
       { t: "Tashlich", h: "תשליך", m: "The prayer at a body of water" },
@@ -456,7 +456,7 @@ CP_LESSONS("m6", [
       { id: "m6-12-q1", t: "mc", q: "The core of Rosh Hashanah, per Chassidus:", o: ["Crowning Hashem as King", "Eating simanim", "Tashlich", "Resting"], a: 0, x: "Hamlachah." },
       { id: "m6-12-q2", t: "mc", q: "Yom Kippur atones for sins between people:", o: ["Only after appeasing the person wronged", "Automatically", "Never", "Only with a fast"], a: 0, x: "Yoma 85b." },
       { id: "m6-12-q3", t: "recall", q: "Name the five afflictions of Yom Kippur.", model: "No eating or drinking, washing, anointing, leather shoes, or marital relations.", x: "SA 611." },
-      { id: "m6-12-q4", t: "mc", q: "What do Chabad chassidim sing after Neilah?", o: ["Napoleon's March", "Hatikvah", "Lecha Dodi", "Adon Olam"], a: 0, x: "A joyous close." },
+      { id: "m6-12-q4", t: "mc", q: "What do Chabad chassidim sing right before the shofar at the end of Neilah?", o: ["Napoleon's March", "Hatikvah", "Lecha Dodi", "Adon Olam"], a: 0, x: "A song of victory." },
       { id: "m6-12-q5", t: "mc", q: "Chabad does kapparos with:", o: ["Chickens", "Money only", "Fish", "Nothing"], a: 0, x: "Many others use money." },
       { id: "m6-12-q6", t: "mc", q: "Lekach on Erev Yom Kippur is:", o: ["Honey cake, asked for and given", "A prayer", "A fast", "A Torah reading"], a: 0, x: "A sweet year received from a fellow Jew." }
     ],

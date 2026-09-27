@@ -7,8 +7,8 @@ CP_LESSONS("m5", [
 <p><b>Waiting.</b></p>
 <ul>
 <li><b>After meat before dairy:</b> Chabad waits <b>six hours</b>, following the Rambam and the Shulchan Aruch (Yoreh De'ah 89:1). <span class="diff">Difference: some Ashkenazi communities wait three hours, and Dutch Jews wait one.</span></li>
-<li><b>After dairy before meat:</b> rinse your mouth, eat something pareve, and wash your hands. Then meat is permitted.</li>
-<li><b>Hard aged cheese:</b> many wait six hours after it before meat. Ask Zalmy what Chabad practice is for the cheeses you eat.</li>
+<li><b>After dairy before meat:</b> the basic halacha is to rinse your mouth, eat something pareve, and wash your hands. Chabad custom, based on the Zohar, adds a wait of <b>one hour</b>. <span class="diff">Difference: many others wait only for the rinse and a bite.</span></li>
+<li><b>Hard aged cheese:</b> Chabad waits six hours after it before meat. Ask Zalmy which cheeses count as hard.</li>
 </ul>
 <p><b>Separation in the kitchen.</b> Separate dishes, pots, and utensils for meat and dairy; many also keep separate sinks or basins, sponges, and towels. Pareve items cooked in a meat pot take on meat status in some ways (<i>nat bar nat</i>). The rules are detailed.</p>
 <p><b>Meat and fish.</b> They aren't eaten together, for health reasons cited in the Gemara (Pesachim 76b). In between, rinse your mouth and eat or drink something.</p>
@@ -27,7 +27,7 @@ CP_LESSONS("m5", [
       { id: "m5-1-q2", t: "recall", q: "What three prohibitions derive from the triple verse?", model: "Cooking meat and milk together, eating the mixture, and benefiting from it.", x: "Chullin 115b." },
       { id: "m5-1-q3", t: "scenario", q: "You accidentally stir a meat soup with a dairy spoon.", o: ["Ask a rav before using the pot or food", "Throw everything out", "Ignore it"], a: 0, x: "Often nothing is lost, but it depends on details." },
       { id: "m5-1-q4", t: "tf", q: "Chicken with cheese is permitted because the Torah only forbids meat.", a: false, x: "False. Poultry with milk is rabbinically forbidden." },
-      { id: "m5-1-q5", t: "mc", q: "After a milk shake (not hard cheese), before meat:", o: ["Rinse, eat something pareve, wash hands", "Wait 6 hours", "Nothing needed", "Wait 3 hours"], a: 0, x: "Then meat is permitted." },
+      { id: "m5-1-q5", t: "mc", q: "After a milk shake (not hard cheese), before meat:", o: ["Rinse, eat something pareve, wash hands, and wait an hour", "Wait 6 hours", "Nothing needed", "Wait 3 hours"], a: 0, x: "The hour is the Chabad custom, based on the Zohar." },
       { id: "m5-1-q6", t: "mc", q: "Why are meat and fish not eaten together?", o: ["A health concern cited in the Gemara", "Basar b'chalav", "Chabad custom only", "Taste"], a: 0, x: "Pesachim 76b." }
     ],
     deeper: [

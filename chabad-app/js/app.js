@@ -23,9 +23,63 @@
       return Object.assign(blank(), JSON.parse(raw));
     } catch (e) { storageOk = false; return blank(); }
   }
-  function save() {
+  // keepStamp: write without marking a real change (used for the first-open
+  // seed, so a fresh device never outranks progress saved in the cloud).
+  function save(keepStamp) {
+    if (!keepStamp) S.savedAt = Date.now();
     try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { storageOk = false; }
+    if (cloud) queuePush();
   }
+
+  /* ---------------- Cloud save ----------------
+     When the app runs as a claude.ai artifact, progress is also stored in
+     the viewer's private space (data/users/<id>/progress). Everywhere else
+     window.claude is absent and all of this is a no-op. Newest copy wins. */
+  let cloud = null, cloudState = "off", pushTimer = null, pushing = false, pushAgain = false;
+  function queuePush() {
+    clearTimeout(pushTimer);
+    pushTimer = setTimeout(push, 1500);
+  }
+  async function push() {
+    if (!cloud) return;
+    if (pushing) { pushAgain = true; return; }
+    pushing = true;
+    try { await cloud.set(JSON.parse(JSON.stringify(S))); cloudState = "on"; }
+    catch (e) { cloudState = "error"; }
+    pushing = false;
+    if (pushAgain) { pushAgain = false; push(); }
+    refreshSync();
+  }
+  async function initCloud() {
+    const cl = window.claude;
+    if (!cl || typeof cl.use !== "function") return;
+    try {
+      const [db, user] = await Promise.all([cl.use("db"), cl.use("user")]);
+      if (!db || !user) return;
+      const uid = await user.id();
+      if (!uid) return;
+      const ref = db.doc("data/users/" + uid + "/progress");
+      const snap = await ref.get();
+      const remote = snap.exists ? snap.data() : null;
+      const rAt = (remote && remote.v === 1 && remote.savedAt) || 0;
+      cloud = ref; cloudState = "on";
+      if (rAt > (S.savedAt || 0)) {
+        S = Object.assign(blank(), remote);
+        try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { storageOk = false; }
+        applyTheme(); route();
+        toast("Progress loaded from your account");
+      } else if ((S.savedAt || 0) > rAt) {
+        push();
+      }
+    } catch (e) { cloud = null; cloudState = "error"; }
+    refreshSync();
+  }
+  function syncText() {
+    if (cloudState === "on") return "Saved to your claude.ai account and on this device. It follows you to any device where you open this app while signed in.";
+    if (cloudState === "error") return "Couldn't reach your claude.ai account right now. Progress is still saved on this device and will sync when the connection comes back.";
+    return "Saved on this device only. Open the app from claude.ai while signed in to also save it to your account.";
+  }
+  function refreshSync() { const el = document.getElementById("syncText"); if (el) el.textContent = syncText(); }
 
   /* ---------------- Dates ---------------- */
   const pad = n => String(n).padStart(2, "0");
@@ -889,8 +943,9 @@
     setChrome("Settings", { back: true, tab: "more", tabs: S.onboarded });
     app.innerHTML = `
       <div class="card"><h3>Theme</h3><div class="chips">${["auto", "light", "dark"].map(t => `<button class="chip ${S.settings.theme === t ? "on" : ""}" data-th="${t}">${t[0].toUpperCase() + t.slice(1)}</button>`).join("")}</div></div>
-      <div class="card"><h3>Backup</h3>
-        <p class="small muted">Progress lives only in this browser. Copy a backup into your notes now and then, especially before clearing your browser or switching phones.</p>
+      <div class="card"><h3>Saved data</h3>
+        <p class="small muted" id="syncText"></p>
+        <p class="small muted">You can also copy a backup into your notes now and then, especially before clearing your browser or switching phones.</p>
         <div class="btn-row"><button class="btn soft" id="exp">Copy backup</button><button class="btn soft" id="imp">Paste backup</button></div>
         <p class="small" style="margin:12px 0 0"><button class="linkish" id="impFileBtn">Restore from a file instead</button></p>
         <input type="file" id="impFile" accept="application/json" class="hidden"></div>
@@ -898,6 +953,7 @@
         <p class="small muted">Your starting levels come from the setup interview. You can retake the quiz any time; it resets your module levels, and lessons you've finished stay finished.</p>
         <button class="btn ghost block" id="retake">Retake placement quiz</button></div>
       <div class="card"><h3>Reset</h3><button class="btn danger block" id="reset">Erase all progress</button></div>`;
+    refreshSync();
     $$("[data-th]").forEach(b => b.onclick = () => { S.settings.theme = b.dataset.th; save(); applyTheme(); viewSettings(); });
     // Backups travel as text (copy and paste), which works everywhere, including
     // hosts that block file downloads. Importing from a file also works.
@@ -928,10 +984,11 @@
   // re-asking the same questions. The quiz stays available in Settings.
   if (!S.onboarded && C.interviewPlacement) {
     Object.entries(C.interviewPlacement).forEach(([mid, p]) => { if (moduleNum[mid] !== undefined) applyPlacement(mid, Object.assign({ date: today(), fromInterview: true }, p)); });
-    S.onboarded = true; save();
+    S.onboarded = true; save(true);
   }
   applyTheme();
   route();
+  initCloud();
   if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
     navigator.serviceWorker.register("sw.js").catch(() => {});
   }
