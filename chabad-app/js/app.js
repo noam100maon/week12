@@ -185,13 +185,51 @@
 
   /* ---------------- Router ---------------- */
   const TAB_ROUTES = { "": "home", learn: "learn", review: "review", tracker: "tracker", more: "more" };
-  function setChrome(title, { back = false, tabs = true, tab = null } = {}) {
+  /* Top-level pages get an iOS-style large title that collapses into the
+     bar on scroll; sub-pages show a compact title with a back button. */
+  function setChrome(title, { back = false, tabs = true, tab = null, sub = "" } = {}) {
+    const large = !back && tabs;
     document.getElementById("topTitle").textContent = title;
+    document.getElementById("largeTitleText").textContent = title;
+    document.getElementById("largeSub").textContent = sub;
+    document.getElementById("largeTitle").hidden = !large;
+    document.body.classList.toggle("has-large", large);
     document.getElementById("backBtn").hidden = !back;
     document.getElementById("tabbar").classList.toggle("hide", !tabs);
     document.body.classList.toggle("no-tabs", !tabs);
     $$("#tabbar a", document).forEach(a => a.classList.toggle("active", a.dataset.tab === tab));
+    onScroll();
     renderStreak();
+  }
+  function onScroll() { document.body.classList.toggle("scrolled", window.scrollY > 36); }
+  window.addEventListener("scroll", onScroll, { passive: true });
+
+  /* Bottom sheet, replacing window.prompt / window.confirm.
+     Resolves to the entered text (input sheets), true (confirm), or null (cancel). */
+  function sheet({ title, message = "", input = false, placeholder = "", value = "", confirmText = "Save", destructive = false }) {
+    return new Promise(resolve => {
+      const wrap = document.createElement("div");
+      wrap.className = "sheet-wrap";
+      wrap.innerHTML = `<div class="sheet-backdrop"></div>
+        <div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(title)}">
+          <div class="sheet-grabber"></div>
+          <h3>${esc(title)}</h3>
+          ${message ? `<p class="muted small">${esc(message)}</p>` : ""}
+          ${input ? `<textarea class="sheet-input" placeholder="${esc(placeholder)}">${esc(value)}</textarea>` : ""}
+          <div class="btn-row"><button class="btn soft" data-s="0">Cancel</button><button class="btn ${destructive ? "destructive" : ""}" data-s="1">${esc(confirmText)}</button></div>
+        </div>`;
+      document.body.appendChild(wrap);
+      requestAnimationFrame(() => wrap.classList.add("open"));
+      const ta = wrap.querySelector("textarea");
+      if (ta) setTimeout(() => { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }, 250);
+      const close = v => { wrap.classList.remove("open"); setTimeout(() => wrap.remove(), 250); resolve(v); };
+      wrap.querySelector(".sheet-backdrop").onclick = () => close(null);
+      wrap.querySelector('[data-s="0"]').onclick = () => close(null);
+      wrap.querySelector('[data-s="1"]').onclick = () => {
+        if (!input) return close(true);
+        const v = ta.value.trim(); if (!v) { ta.focus(); return; } close(v);
+      };
+    });
   }
   document.getElementById("backBtn").onclick = () => { if (history.length > 1) history.back(); else location.hash = "#/"; };
 
@@ -221,44 +259,44 @@
      HOME
      ================================================================ */
   function viewHome() {
-    setChrome("Chabad Path", { tab: "home" });
+    const d = new Date();
+    setChrome("Today", { tab: "home", sub: `${hebDate(d)} · ${civDate(d)}` });
     const nl = nextLesson();
     const due = dueList().length;
     const doneCount = allLessons.filter(l => isDone(l.id)).length;
+    const pct = Math.round(doneCount / allLessons.length * 100);
     const pending = pendingCheckin();
     const needs = allLessons.filter(l => LS(l.id).needsReview);
-    const d = new Date();
     app.innerHTML = `
-      <div class="date-line">${esc(hebDate(d))}</div>
-      <div class="small muted">${esc(civDate(d))}. The Hebrew date changes at nightfall.</div>
-      ${storageOk ? "" : `<div class="card flat flag">Your browser is blocking storage. Progress will not be saved.</div>`}
+      ${storageOk ? "" : `<div class="card flag">Your browser is blocking storage. Progress will not be saved.</div>`}
 
-      ${nl ? `<div class="card">
-        <div class="eyebrow">${esc(moduleOf(nl.id).title)}</div>
-        <h2>${esc(nl.title)}</h2>
-        <p class="muted small">${nl.minutes || 5} min lesson${pending ? ". Starts with a check-in on yesterday's action." : ""}</p>
-        <a class="btn block" href="#/lesson/${nl.id}">${LS(nl.id).started ? "Continue lesson" : "Start lesson"}</a>
-      </div>` : `<div class="card"><h2>All built lessons done</h2><p class="muted">New modules are added one at a time. Keep your reviews going in the meantime.</p></div>`}
+      ${nl ? `<a class="hero" href="#/lesson/${nl.id}">
+        <div class="hero-eyebrow">${LS(nl.id).started ? "Continue" : "Up next"} · ${esc(moduleOf(nl.id).title)}</div>
+        <div class="hero-title">${esc(nl.title)}</div>
+        <div class="hero-meta">${nl.minutes || 5} min${pending ? " · starts with a check-in" : ""}</div>
+        <div class="hero-foot"><div class="bar light"><i style="width:${pct}%"></i></div><span>${doneCount} of ${allLessons.length}</span></div>
+        <span class="hero-go" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>` : `<div class="card"><h2>Course complete</h2><p class="muted">Keep your reviews going so it all stays with you.</p></div>`}
 
       <div class="grid2">
-        <a class="stat" href="#/review" style="text-decoration:none;color:inherit"><b>${due}</b><span>review question${due === 1 ? "" : "s"} due</span></a>
-        <div class="stat"><b>${doneCount}<span class="muted" style="font-size:1rem"> / ${allLessons.length}</span></b><span>lessons done</span></div>
+        <a class="stat tappable" href="#/review"><span class="stat-label">Review</span><b>${due}</b><span>due now</span></a>
+        <a class="stat tappable" href="#/tracker"><span class="stat-label">Streak</span><b>${streak()}</b><span>day${streak() === 1 ? "" : "s"}</span></a>
       </div>
 
-      ${needs.length ? `<div class="card flat"><div class="eyebrow">Needs review</div>
-        <p class="small">You scored under 70% on: ${needs.map(l => `<a href="#/lesson/${l.id}">${esc(l.title)}</a>`).join(", ")}. Redo the quiz or run a review.</p></div>` : ""}
+      ${needs.length ? `<div class="section-label">Needs review</div><div class="card list-card">${needs.map(l => `
+        <a class="row-link" href="#/lesson/${l.id}"><span>${esc(l.title)}</span><span class="badge bad">Under 70%</span></a>`).join("")}</div>` : ""}
 
+      <div class="section-label">Question of the day</div>
       <div class="card" id="qotd"></div>
 
-      <div class="card">
-        <div class="row between"><h3 style="margin:0">Today's practice</h3><a class="small" href="#/tracker">Tracker</a></div>
-        <div id="homePractice"></div>
-      </div>
+      <div class="section-label row between"><span>Today's practice</span><a href="#/tracker">Tracker</a></div>
+      <div class="card list-card" id="homePractice"></div>
 
-      <div class="card flat">
-        <h3>Question for Zalmy?</h3>
-        <div class="row"><input type="text" id="quickQ" placeholder="Write it before you forget it"><button class="btn" id="quickQBtn" style="flex:none">Save</button></div>
-      </div>`;
+      <div class="section-label">Question for Zalmy</div>
+      <div class="card">
+        <div class="input-row"><input type="text" id="quickQ" placeholder="Write it before you forget it"><button class="btn small-btn" id="quickQBtn">Save</button></div>
+      </div>
+      <p class="footnote">The Hebrew date changes at nightfall.</p>`;
     renderQotd($("#qotd"));
     renderPracticeChecks($("#homePractice"), true);
     $("#quickQBtn").onclick = () => {
@@ -271,7 +309,7 @@
     const t = today();
     const pool = Object.keys(S.srs).filter(id => qIndex[id]);
     if (!pool.length) {
-      el.innerHTML = `<div class="eyebrow">Question of the day</div><p class="muted small" style="margin:0">Unlocks after your first lesson. It pulls from everything you've learned.</p>`;
+      el.innerHTML = `<p class="muted small" style="margin:0">Unlocks after your first lesson. It pulls from everything you've learned.</p>`;
       return;
     }
     if (!S.qotd || S.qotd.date !== t || !qIndex[S.qotd.qid]) {
@@ -282,12 +320,11 @@
     const { qid, result } = S.qotd;
     const q = qIndex[qid].q;
     if (result !== null) {
-      el.innerHTML = `<div class="eyebrow">Question of the day</div>
-        <p style="margin:0 0 6px">${esc(q.q)}</p>
+      el.innerHTML = `<p style="margin:0 0 10px">${esc(q.q)}</p>
         <span class="badge ${result ? "good" : "bad"}">${result ? "Answered correctly" : "Missed: it will come back in review"}</span>`;
       return;
     }
-    el.innerHTML = `<div class="eyebrow">Question of the day</div><div id="qotdQ"></div>`;
+    el.innerHTML = `<div id="qotdQ"></div>`;
     renderQuestion($("#qotdQ", el), q, { cont: "Done" }, ok => {
       srsUpdate(qid, ok); S.qotd.result = ok; markActive("qotd"); renderQotd(el); renderStreak();
     });
@@ -366,45 +403,52 @@
      LEARN (module map)
      ================================================================ */
   function viewLearn() {
-    setChrome("Learn", { tab: "learn" });
+    const total = allLessons.length, doneAll = allLessons.filter(l => isDone(l.id)).length;
+    setChrome("Learn", { tab: "learn", sub: `${doneAll} of ${total} lessons · ${modules.length} modules` });
     const nl = nextLesson();
+    const CHECK = `<svg viewBox="0 0 24 24" width="14" height="14"><path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    const ring = (frac, label) => {
+      const r = 17, c = 2 * Math.PI * r;
+      return `<div class="ring"><svg viewBox="0 0 40 40" width="40" height="40"><circle cx="20" cy="20" r="${r}" class="ring-bg"/><circle cx="20" cy="20" r="${r}" class="ring-fg" stroke-dasharray="${c}" stroke-dashoffset="${c * (1 - frac)}"/></svg><span>${label}</span></div>`;
+    };
     app.innerHTML = modules.map((m, i) => {
       const st = moduleStats(m);
       const p = S.placement[m.id];
       const lvlBadge = p ? `<span class="badge ${p.level === "Advanced" ? "good" : p.level === "Review" ? "gold" : "bad"}">${p.level}</span>` : "";
       let adapt = "";
       if (m.built && st.done >= 2 && st.avg !== null) {
-        if (st.avg >= 0.9) adapt = `<span class="badge good">Strong: deeper set open</span>`;
-        else if (st.avg < 0.6) adapt = `<span class="badge bad">Struggling: review added</span>`;
+        if (st.avg >= 0.9) adapt = `<span class="badge good">Strong</span>`;
+        else if (st.avg < 0.6) adapt = `<span class="badge bad">Review added</span>`;
       }
-      const open = m.built && (m.id === (nl && moduleOf(nl.id).id) || i === 0);
+      const open = m.built && (m.id === (nl && moduleOf(nl.id).id));
       const lessons = m.lessons.map(l => {
         const b = lessonById[l.id].built;
         if (!b) return `<li><div class="locked"><span class="dot"></span><span class="t">${esc(l.title)}</span><span class="small">Soon</span></div></li>`;
         const done = isDone(l.id), sk = isSkipped(l.id), unl = isUnlocked(l.id);
         const isNext = nl && nl.id === l.id;
         const s = LS(l.id);
-        const right = done ? `<span class="small muted">${s.total ? s.score + "/" + s.total : ""}</span>` : sk ? `<span class="badge">Tested out</span>` : !unl ? `<span class="small muted">Locked</span>` : "";
+        const right = done ? `<span class="small muted">${s.total ? s.score + "/" + s.total : ""}</span>` : sk ? `<span class="badge">Tested out</span>` : isNext ? `<span class="badge accent">Next</span>` : !unl ? `<svg class="lock" viewBox="0 0 24 24" width="15" height="15"><rect x="5" y="11" width="14" height="10" rx="2.5" fill="currentColor"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2"/></svg>` : "";
         return `<li><a href="#/lesson/${l.id}" class="${!unl && !done ? "locked" : ""}">
-          <span class="dot ${done ? "done" : sk ? "skip" : isNext ? "next" : ""}">${done ? "✓" : ""}</span>
+          <span class="dot ${done ? "done" : sk ? "skip" : isNext ? "next" : ""}">${done ? CHECK : ""}</span>
           <span class="t">${esc(l.title)}</span>${right}</a></li>`;
       }).join("");
-      const extra = m.built && st.done ? `<div style="padding:0 16px 12px" class="btn-row">
+      const extra = m.built && st.done ? `<div class="module-actions">
           <a class="btn soft" href="#/review/${m.id}">Review module</a>
-          ${st.avg !== null && st.avg >= 0.9 ? `<a class="btn ghost" href="#/review/deep-${m.id}">Go deeper</a>` : ""}</div>` : "";
-      return `<div class="card module">
-        <div class="module-head" data-m="${m.id}">
-          <div class="module-num">${i}</div>
-          <div style="flex:1">
-            <h3>${esc(m.title)}</h3>
+          ${st.avg !== null && st.avg >= 0.9 ? `<a class="btn tinted" href="#/review/deep-${m.id}">Go deeper</a>` : ""}</div>` : "";
+      return `<div class="card module ${open ? "open" : ""}">
+        <button class="module-head" data-m="${m.id}" aria-expanded="${open}">
+          ${ring(st.built ? st.done / st.built : 0, i)}
+          <div class="module-info">
+            <div class="module-title">${esc(m.title)}</div>
             <div class="small muted">${esc(m.subtitle || "")}</div>
-            <div class="chips" style="margin:6px 0 0">${m.built ? `<span class="badge">${st.done}/${st.built} done</span>` : `<span class="badge">Coming soon</span>`} ${lvlBadge} ${adapt}</div>
+            <div class="chips">${`<span class="badge">${st.done}/${st.built}</span>`} ${lvlBadge} ${adapt}</div>
           </div>
-        </div>
-        <div class="mbody ${open ? "" : "hidden"}"><ul class="lesson-list">${lessons}</ul>${extra}</div>
+          <svg class="chev" viewBox="0 0 24 24" width="18" height="18"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="mbody"><ul class="lesson-list">${lessons}</ul>${extra}</div>
       </div>`;
     }).join("");
-    $$(".module-head").forEach(h => h.onclick = () => h.nextElementSibling.classList.toggle("hidden"));
+    $$(".module-head").forEach(h => h.onclick = () => { const c = h.parentElement; c.classList.toggle("open"); h.setAttribute("aria-expanded", c.classList.contains("open")); });
   }
 
   /* ================================================================
@@ -448,7 +492,7 @@
     const stepsShown = ["teach", "terms", "quiz", "reflect", "finish"];
     const curIdx = stepsShown.indexOf(L.step === "deeper" ? "quiz" : L.step === "checkin" ? "teach" : L.step);
     const bar = `<div class="steps">${stepsShown.map((s, i) => `<i class="${i <= curIdx ? "on" : ""}"></i>`).join("")}</div>`;
-    const head = `${bar}<div class="eyebrow" style="margin-top:8px">${esc(m.title)}</div><h1>${esc(l.title)}</h1>`;
+    const head = `${bar}<div class="lesson-head"><div class="eyebrow">${esc(m.title)}</div><h1>${esc(l.title)}</h1></div>`;
     const go = step => { L.step = step; window.scrollTo(0, 0); renderLessonStep(l, m); };
 
     if (L.step === "checkin") {
@@ -492,7 +536,7 @@
         const perfect = score === total && (l.deeper || []).length;
         const verdict = pct === 1 ? "Perfect score." : pct >= 0.7 ? "Solid. The ones you missed will come back in review." : "Under 70%. The missed questions are scheduled for tomorrow. Reread the teaching before moving on.";
         app.innerHTML = `${head}<div class="card center"><div class="eyebrow">Quiz result</div>
-          <div style="font-family:var(--serif);font-size:2.4rem;font-weight:600">${score} / ${total}</div>
+          <div class="big-num">${score} / ${total}</div>
           <p>${verdict}</p>
           ${pct < 0.7 ? `<button class="btn ghost block" id="reteach" style="margin-bottom:8px">Reread the teaching</button>` : ""}
           ${perfect ? `<button class="btn soft block" id="deep" style="margin-bottom:8px">Go deeper (${l.deeper.length} harder questions)</button>` : ""}
@@ -517,7 +561,7 @@
       if (L.di >= l.deeper.length) {
         const sc = L.dres.filter(Boolean).length;
         app.innerHTML = `${head}<div class="card center"><div class="eyebrow">Deeper set</div>
-          <div style="font-family:var(--serif);font-size:2rem;font-weight:600">${sc} / ${l.deeper.length}</div>
+          <div class="big-num">${sc} / ${l.deeper.length}</div>
           <p class="small muted">These are now in your review rotation too.</p>
           <button class="btn block" id="nx">Continue</button></div>`;
         $("#nx").onclick = () => go("reflect");
@@ -607,7 +651,7 @@
       RV.done = true;
       setChrome("Review", { tab: "review", back: !!RV.arg });
       app.innerHTML = `<div class="card center"><div class="eyebrow">Review done</div>
-        <div style="font-family:var(--serif);font-size:2.2rem;font-weight:600">${RV.right} / ${RV.n}</div>
+        <div class="big-num">${RV.right} / ${RV.n}</div>
         <p class="small muted">First-try accuracy. Missed questions are scheduled for tomorrow.</p>
         <a class="btn block" href="#/">Home</a></div>`;
       RV = null;
@@ -653,7 +697,7 @@
       const desc = it.k === "doToday" ? (ld ? ld.doToday : "Finish a lesson to get your first action.") : it.d;
       return `<label class="check"><input type="checkbox" data-k="${it.k}" ${p[it.k] ? "checked" : ""} ${it.k === "doToday" && !ld ? "disabled" : ""}>
         <span class="t"><b>${it.t}</b><br><span class="small muted">${esc(compact && desc.length > 90 ? desc.slice(0, 88) + "..." : desc)}</span></span></label>`;
-    }).join("") + (stage < 3 ? `<p class="small muted" style="margin:8px 0 0">Plan stage ${stage} of 3. Add more in the Tracker once this is steady.</p>` : "");
+    }).join("") + (compact && stage < 3 ? `<p class="small muted">Plan stage ${stage} of 3. Add more in the Tracker once this is steady.</p>` : "");
     $$("input[data-k]", el).forEach(cb => cb.onchange = () => {
       logPractice(cb.dataset.k, cb.checked);
       if (cb.dataset.k === "doToday" && ld && cb.checked) { S.checkins[ld.id] = "yes"; save(); }
@@ -672,26 +716,28 @@
     });
     const stage = S.settings.stage || 1;
     app.innerHTML = `
-      <div class="grid2" style="margin-top:12px">
-        <div class="stat"><b>${streak()}</b><span>day streak</span></div>
-        <div class="stat"><b>${best}</b><span>best streak</span></div>
+      <div class="grid2">
+        <div class="stat"><span class="stat-label">Current</span><b>${streak()}</b><span>day streak</span></div>
+        <div class="stat"><span class="stat-label">Best</span><b>${best}</b><span>day streak</span></div>
       </div>
-      <div class="card"><h3>Today</h3><div id="pc"></div></div>
-      <div class="card"><h3>Last 4 weeks</h3>
+      <div class="section-label">Today</div>
+      <div class="card list-card" id="pc"></div>
+      <div class="section-label">Last 4 weeks</div>
+      <div class="card">
         <div class="days">${days.map(d => {
           const p = S.practice[d] || {}; const n = ["tanya", "tehillim", "chumash", "rambam", "doToday"].filter(k => p[k]).length + (activeOn(d) ? 1 : 0);
           return `<div class="day ${n >= 3 ? "l2" : n ? "l1" : ""} ${d === t ? "today" : ""}">${Number(d.slice(8))}</div>`;
         }).join("")}</div>
-        <p class="small muted" style="margin:10px 0 0">Darker means more of your plan was done that day.</p></div>
-      <div class="card"><h3>This week</h3>
-        <ul class="list small">${PRACTICE.map(it => `<li class="row between"><span>${it.t}</span><b>${cnt(it.k)} / 7</b></li>`).join("")}</ul></div>
-      <div class="card"><h3>Your Chitas and Rambam plan</h3>
-        <p class="small muted">You said you have about 10 minutes a night. Start small, keep it daily, then add.</p>
+        <p class="small muted" style="margin:12px 0 0">Darker means more of your plan was done that day.</p></div>
+      <div class="section-label">This week</div>
+      <div class="card list-card">${PRACTICE.map(it => `<div class="row-link"><span>${it.t}</span><span class="muted">${cnt(it.k)} of 7</span></div>`).join("")}</div>
+      <div class="section-label">Chitas and Rambam plan</div>
+      <div class="card">
         <div class="chips">${[1, 2, 3].map(s => `<button class="chip ${stage === s ? "on" : ""}" data-s="${s}">Stage ${s}</button>`).join("")}</div>
-        <p class="small">${stage === 1 ? "<b>Stage 1:</b> the daily Tanya portion (a few minutes) and the daily Tehillim portion (the Tehillim divided by day of the month). Move up after 3 steady weeks." :
-          stage === 2 ? "<b>Stage 2:</b> Stage 1, plus the daily Chumash aliyah. Add Rashi when you can." :
-          "<b>Stage 3:</b> the full Chitas plus Rambam. Choose one chapter a day or Sefer HaMitzvos; three chapters is the full cycle. Ask Zalmy which track fits your seder."}</p>
-        <p class="small muted" style="margin:0">Module 9 covers what these are and why the Rebbe asked for them.</p></div>`;
+        <p style="margin:6px 0 10px">${stage === 1 ? "<b>Stage 1.</b> The daily Tanya portion (a few minutes) and the daily Tehillim portion (divided by day of the month). Move up after 3 steady weeks." :
+          stage === 2 ? "<b>Stage 2.</b> Stage 1, plus the daily Chumash aliyah. Add Rashi when you can." :
+          "<b>Stage 3.</b> Full Chitas plus Rambam: one chapter a day or Sefer HaMitzvos (three chapters is the full cycle). Ask Zalmy which track fits your seder."}</p>
+        <p class="small muted" style="margin:0">You have about 10 minutes a night. Start small, keep it daily, then add. Module 9 explains why.</p></div>`;
     renderPracticeChecks($("#pc"));
     $$("[data-s]").forEach(b => b.onclick = () => { S.settings.stage = Number(b.dataset.s); save(); viewTracker(); });
   }
@@ -704,18 +750,18 @@
     const open = S.notebook.filter(n => !n.answered).length;
     app.innerHTML = `
       <div class="card menu">
-        <a href="#/notebook">Questions notebook ${open ? `<span class="badge gold">${open} open</span>` : ""}</a>
-        <a href="#/glossary">Glossary</a>
+        <a href="#/notebook"><span class="ico" style="background:#FF9500"><svg viewBox="0 0 24 24" width="17" height="17"><path d="M6 4h12v16l-6-4-6 4z" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="menu-label">Questions notebook</span>${open ? `<span class="badge gold">${open}</span>` : ""}</a>
+        <a href="#/glossary"><span class="ico" style="background:#34C759"><svg viewBox="0 0 24 24" width="17" height="17"><path d="M4 5h7v14H4zM13 5h7v14h-7z" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="menu-label">Glossary</span></a>
       </div>
-      <div class="eyebrow" style="margin:18px 0 0">Reference</div>
+      <div class="section-label">Reference</div>
       <div class="card menu">
-        <a href="#/ref/rebbeim">The 7 Rebbeim</a>
-        <a href="#/ref/calendar">Chabad calendar</a>
-        <a href="#/ref/brachos">Brachos lookup</a>
-        <a href="#/ref/melachos">The 39 melachos</a>
+        <a href="#/ref/rebbeim"><span class="ico" style="background:#5856D6"><svg viewBox="0 0 24 24" width="17" height="17"><path d="M12 3l2.6 5.6 6 .6-4.5 4 1.3 6-5.4-3.1-5.4 3.1 1.3-6-4.5-4 6-.6z" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="menu-label">The 7 Rebbeim</span></a>
+        <a href="#/ref/calendar"><span class="ico" style="background:#FF3B30"><svg viewBox="0 0 24 24" width="17" height="17"><path d="M5 6h14v14H5zM5 10h14M9 3v5M15 3v5" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="menu-label">Chabad calendar</span></a>
+        <a href="#/ref/brachos"><span class="ico" style="background:#30B0C7"><svg viewBox="0 0 24 24" width="17" height="17"><path d="M12 3c4 4 6 7 6 10a6 6 0 0 1-12 0c0-3 2-6 6-10z" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="menu-label">Brachos lookup</span></a>
+        <a href="#/ref/melachos"><span class="ico" style="background:#AF52DE"><svg viewBox="0 0 24 24" width="17" height="17"><path d="M4 7h16M4 12h16M4 17h10" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="menu-label">The 39 melachos</span></a>
       </div>
-      <div class="card menu"><a href="#/settings">Settings and backup</a></div>
-      <p class="small muted center">When a question needs a real person, ask Zalmy or a rav at Mayanot.</p>`;
+      <div class="card menu"><a href="#/settings"><span class="ico" style="background:#8E8E93"><svg viewBox="0 0 24 24" width="17" height="17"><path d="M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="menu-label">Settings and backup</span></a></div>
+      <p class="footnote">When a question needs a real person, ask Zalmy or a rav at Mayanot.</p>`;
   }
 
   function addNote(text, tag) {
@@ -723,8 +769,8 @@
     save();
   }
   function promptNote(prefix) {
-    const v = window.prompt("Your question (saved to the notebook):", prefix || "");
-    if (v && v.trim()) { addNote(v.trim(), "Zalmy"); toast("Saved to your notebook."); }
+    sheet({ title: "Save a question", message: "It goes to your notebook, to ask Zalmy.", input: true, value: prefix || "", placeholder: "What do you want to ask?" })
+      .then(v => { if (v) { addNote(v, "Zalmy"); toast("Saved to your notebook"); } });
   }
   let nbFilter = "open";
   function viewNotebook() {
@@ -734,7 +780,7 @@
     app.innerHTML = `
       <div class="card">
         <textarea id="nbText" placeholder="What do you want to ask?"></textarea>
-        <div class="chips" id="nbTags">${TAGS.map((t, i) => `<button class="chip ${i === 0 ? "on" : ""}" data-t="${t}">Ask ${t === "Farbrengen" ? "at a farbrengen" : t === "Other" ? "later" : t}</button>`).join("")}</div>
+        <div class="small muted" style="margin-top:12px">Who to ask</div><div class="chips" id="nbTags">${TAGS.map((t, i) => `<button class="chip ${i === 0 ? "on" : ""}" data-t="${t}">${t === "Other" ? "Later" : t}</button>`).join("")}</div>
         <button class="btn block" id="nbAdd">Save question</button>
       </div>
       <div class="chips">${["open", "answered", "all"].map(f => `<button class="chip ${nbFilter === f ? "on" : ""}" data-f="${f}">${f[0].toUpperCase() + f.slice(1)}</button>`).join("")}</div>
@@ -754,9 +800,13 @@
     $$("[data-f]").forEach(c => c.onclick = () => { nbFilter = c.dataset.f; viewNotebook(); });
     $$("[data-a]").forEach(b => b.onclick = () => {
       const id = b.closest("li").dataset.id; const n = S.notebook.find(x => x.id === id);
-      if (b.dataset.a === "del") { if (confirm("Delete this question?")) { S.notebook = S.notebook.filter(x => x.id !== id); save(); viewNotebook(); } return; }
-      const ans = prompt("What was the answer, and who gave it?"); if (ans === null) return;
-      n.answered = true; n.answer = ans.trim(); save(); viewNotebook();
+      if (b.dataset.a === "del") {
+        sheet({ title: "Delete this question?", confirmText: "Delete", destructive: true })
+          .then(ok => { if (ok) { S.notebook = S.notebook.filter(x => x.id !== id); save(); viewNotebook(); } });
+        return;
+      }
+      sheet({ title: "Log the answer", message: n.text, input: true, placeholder: "What was the answer, and who gave it?" })
+        .then(ans => { if (ans) { n.answered = true; n.answer = ans; save(); viewNotebook(); } });
     });
   }
 
@@ -859,7 +909,8 @@
       r.readAsText(f);
     };
     $("#retake").onclick = () => { OB = null; location.hash = "#/onboarding"; };
-    $("#reset").onclick = () => { if (confirm("Erase all progress? This can't be undone.")) { S = blank(); save(); applyTheme(); location.hash = "#/onboarding"; } };
+    $("#reset").onclick = () => sheet({ title: "Erase all progress?", message: "This can't be undone. Export a backup first if you might want it.", confirmText: "Erase", destructive: true })
+      .then(ok => { if (ok) { S = blank(); save(); applyTheme(); location.hash = "#/onboarding"; } });
   }
 
   /* ---------------- Boot ---------------- */
